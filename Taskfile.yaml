@@ -1,0 +1,38 @@
+---
+version: 3
+includes:
+  init:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/backstage/init.yaml
+  git:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/git/git.yaml
+
+tasks:
+  default:
+    desc: Default task is select & do (work)
+    cmds:
+      - task do
+
+  dev:
+    desc: Start Backstage in development mode with .env loaded
+    cmds:
+      - |
+        set -a
+        source .env
+        set +a
+        echo "Environment variables loaded:"
+        echo "GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:0:10}..."
+        echo "GITHUB_CLIENT_SECRET is set"
+        echo "GITHUB_TOKEN is set"
+        echo "BACKEND_SECRET is set"
+        yarn start
+
+  do:
+    desc: Select a task to run
+    cmds:
+      - |
+        # Extract task names (keep internal colons, remove trailing colon)
+        task_name=$(task -l | awk '/^\*/ {print $2}' | \
+          sed 's/:$//' | gum choose)
+
+        # Run the selected task
+        [ -n "$task_name" ] && task "$task_name"
