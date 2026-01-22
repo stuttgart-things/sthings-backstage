@@ -19,7 +19,6 @@ node_modules/
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
-!.yarn/releases
 !.yarn/sdks
 !.yarn/versions
 
@@ -46,6 +45,11 @@ site
 # Sensitive credentials
 *-credentials.yaml
 
+# Catalog data (tracked separately)
+examples/entities.yaml
+examples/org.yaml
+examples/template/
+
 # vscode database functionality support files
 *.session.sql
 
@@ -54,6 +58,9 @@ e2e-test-report/
 
 # Cache
 .cache/
+
+# Task remote taskfiles
+.task/
 
 # Python
 .venv

@@ -1,9 +1,9 @@
 app:
-  title: Scaffolded Backstage App
-  baseUrl: http://maverick.tiab.labda.sva.de:3000
+  title: Backstage
+  baseUrl: ${APP_BASE_URL}
 
 organization:
-  name: stuttgart-things
+  name: ${ORGANIZATION_NAME}
 
 backend:
   # Used for enabling authentication, secret is shared by all backend plugins
@@ -11,10 +11,10 @@ backend:
   # information on the format
   auth:
     keys:
-      - secret: ${BACKEND_SECRET}
-  baseUrl: http://maverick.tiab.labda.sva.de:7007
+      - secret: ${BACKEND_SECRET:-change-me-in-production}
+  baseUrl: ${BACKEND_BASE_URL:-http://localhost:7007}
   listen:
-    port: 7007
+    port: ${BACKEND_PORT:-7007}
     # Uncomment the following host directive to bind to specific interfaces
     # host: 127.0.0.1
   csp:
@@ -22,7 +22,7 @@ backend:
     # Content-Security-Policy directives follow the Helmet format: https://helmetjs.github.io/#reference
     # Default Helmet Content-Security-Policy values can be removed by setting the key to false
   cors:
-    origin: http://maverick.tiab.labda.sva.de:3000
+    origin: ${CORS_ORIGIN:-http://localhost:3000}
     methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
     credentials: true
   # This is for local development only, it is not recommended to use this in production
@@ -88,31 +88,17 @@ catalog:
   rules:
     - allow: [Component, System, API, Resource, Location]
   locations:
-    # Local example data, file locations are relative to the backend process, typically `packages/backend`
-    - type: file
-      target: ../../examples/entities.yaml
-
-    # Local example template
-    - type: file
-      target: ../../examples/template/template.yaml
-      rules:
-        - allow: [Template]
-
-    # Local example organizational data
-    - type: file
-      target: ../../examples/org.yaml
+    # Organizational data from separate repository
+    - type: url
+      target: https://github.com/stuttgart-things/backstage-resources/blob/main/org/sthings-dev/org.yaml
       rules:
         - allow: [User, Group]
 
-    ## Uncomment these lines to add more example data
-    # - type: url
-    #   target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/all.yaml
-
-    ## Uncomment these lines to add an example org
-    # - type: url
-    #   target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/acme-corp.yaml
-    #   rules:
-    #     - allow: [User, Group]
+    # Central catalog index with all services
+    - type: url
+      target: https://github.com/stuttgart-things/backstage-resources/blob/main/services/sthings-dev/catalog-index.yaml
+      rules:
+        - allow: [Component, Location, System, API, Resource]
 
 kubernetes:
   # see https://backstage.io/docs/features/kubernetes/configuration for kubernetes configuration options
