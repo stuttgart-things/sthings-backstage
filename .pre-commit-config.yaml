@@ -28,6 +28,8 @@ repos:
           - DL4006
           - --ignore
           - DL3015
+          - --ignore
+          - DL3008
   - repo: https://github.com/sirosen/check-jsonschema
     rev: 0.30.0
     hooks:
@@ -48,3 +50,7 @@ repos:
           - "configurations/apps/ansible-run/README.md"
           - "--exclude-files"
           - "dagger.json"
+          - "--exclude-files"
+          - ".yarn/releases/.*"
+          - "--exclude-files"
+          - ".env.example"

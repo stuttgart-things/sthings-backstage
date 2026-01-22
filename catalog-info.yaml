@@ -1,13 +1,90 @@
+---
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: sthings-backstage
-  description: An example of a Backstage application.
-  # Example for optional annotations
-  # annotations:
-  #   github.com/project-slug: backstage/backstage
-  #   backstage.io/techdocs-ref: dir:.
+  description: Stuttgart Things Backstage - Internal Developer Portal for platform engineering and service catalog
+  annotations:
+    github.com/project-slug: stuttgart-things/sthings-backstage
+    backstage.io/source-location: url:https://github.com/stuttgart-things/sthings-backstage
+    backstage.io/techdocs-ref: dir:.
+  tags:
+    - backstage
+    - developer-portal
+    - platform-engineering
+    - typescript
+    - react
+    - nodejs
+  links:
+    - url: https://github.com/stuttgart-things/sthings-backstage
+      title: GitHub Repository
+      icon: github
 spec:
   type: website
-  owner: john@example.com
-  lifecycle: experimental
+  lifecycle: production
+  owner: user:patrick-hermann-sva
+  system: developer-experience
+  dependsOn:
+    - resource:default/backstage-database
+    - component:default/backstage-backend
+  providesApis:
+    - backstage-catalog-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-backend
+  description: Backstage Backend API
+  annotations:
+    github.com/project-slug: stuttgart-things/sthings-backstage
+spec:
+  type: service
+  lifecycle: production
+  owner: user:patrick-hermann-sva
+  system: developer-experience
+  dependsOn:
+    - resource:default/backstage-database
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: backstage-catalog-api
+  description: Backstage Software Catalog API
+  annotations:
+    github.com/project-slug: stuttgart-things/sthings-backstage
+  tags:
+    - rest
+    - catalog
+spec:
+  type: openapi
+  lifecycle: production
+  owner: user:patrick-hermann-sva
+  system: developer-experience
+  definition: |
+    openapi: 3.0.0
+    info:
+      title: Backstage Catalog API
+      version: 1.0.0
+    paths:
+      /api/catalog/entities:
+        get:
+          summary: List catalog entities
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: backstage-database
+  description: Backstage SQLite Database
+spec:
+  type: database
+  owner: user:patrick-hermann-sva
+  system: developer-experience
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: developer-experience
+  description: Developer Experience Platform - Tools and services for internal developers
+spec:
+  owner: user:patrick-hermann-sva
+  domain: platform
