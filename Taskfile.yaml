@@ -5,14 +5,32 @@ includes:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/backstage/init.yaml
   git:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/git/git.yaml
+  docker:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/build.yaml
 
 dotenv: ['.env', '{{.HOME}}/.env']
 
+vars:
+  PROJECT_NAME:
+    sh: echo ${PWD##*/}
+  DOCKERFILE: "packages/backend/Dockerfile"
+  DEV_IMAGE_TAG:
+    sh: date +"%y.%m%d.%H%M"
+  DEV_IMAGE_REGISTRY: ttl.sh
+  DEV_IMAGE_REPOSITORY: stuttgart-things
+
+
 tasks:
-  default:
-    desc: Default task is select & do (work)
+  image-build:
+    desc: Build image
     cmds:
-      - task do
+      - task: docker:image-build
+        vars:
+          REGISTRY_URL: "{{ .DEV_IMAGE_REGISTRY }}"
+          IMAGE_REPOSITORY: "{{ .DEV_IMAGE_REPOSITORY }}"
+          IMAGE_NAME: "{{ .PROJECT_NAME }}"
+          PATH_TO_DOCKERFILE: "{{ .DOCKERFILE }}"
+          TAG: "{{ .DEV_IMAGE_TAG }}"
 
   dev:
     desc: Start Backstage in development mode with .env loaded
@@ -40,3 +58,8 @@ tasks:
 
         # Run the selected task
         [ -n "$task_name" ] && task "$task_name"
+
+  default:
+    desc: Default task is select & do (work)
+    cmds:
+      - task do
