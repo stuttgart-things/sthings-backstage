@@ -19,7 +19,6 @@ vars:
   DEV_IMAGE_REGISTRY: ttl.sh
   DEV_IMAGE_REPOSITORY: stuttgart-things
 
-
 tasks:
   image-build:
     desc: Build image
