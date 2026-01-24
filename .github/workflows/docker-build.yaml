@@ -1,0 +1,39 @@
+---
+name: Docker Build & Push
+on:
+  push:
+    branches:
+      - main
+      - feat/*
+      - fix/*
+  pull_request:
+    branches:
+      - main
+      - feat/*
+      - fix/*
+
+jobs:
+  docker-build:
+    name: docker-build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Dagger Build and Push
+        uses: dagger/dagger-for-github@v8.2.0
+        with:
+          module: github.com/stuttgart-things/dagger/docker
+          call: >
+            build-and-push
+            --source .
+            --repository-name stuttgart-things
+            --registry-url ttl.sh/stuttgart-things/sthings-backstage
+            --tag ${{ github.sha }}
+            --dockerfile packages/backend/Dockerfile
+            --progress plain
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
