@@ -28,12 +28,12 @@ jobs:
         uses: dagger/dagger-for-github@v8.2.0
         with:
           module: github.com/stuttgart-things/dagger/docker
-          call: >
+          call: >-
             build-and-push
             --source .
             --repository-name stuttgart-things
             --registry-url ttl.sh/stuttgart-things/sthings-backstage
-            --tag ${{ github.sha }}
+            --tag "${{ github.sha }}"
             --dockerfile packages/backend/Dockerfile
             --progress plain
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
