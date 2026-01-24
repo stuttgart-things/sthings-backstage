@@ -13,7 +13,36 @@ GitHub integration in Backstage provides:
 
 ## GitHub OAuth App Setup
 
-### Step 1: Create OAuth App
+There are two ways to create a GitHub OAuth App:
+
+1. **Organization-owned** (recommended for teams) - Managed by the org, persists when members leave
+2. **User-owned** - Personal account, simpler but tied to individual
+
+### Option A: Organization OAuth App (Recommended)
+
+1. Go to your GitHub organization page
+2. Click **Settings** → **Developer settings** → **OAuth Apps**
+3. Click **New OAuth App**
+4. Fill in the application details:
+
+| Field | Value |
+|-------|-------|
+| Application name | `sthings-backstage` |
+| Homepage URL | `http://localhost:3000` (or production URL) |
+| Authorization callback URL | `http://localhost:7007/api/auth/github/handler/frame` |
+
+5. Click **Register application**
+6. After creation, click **Generate a new client secret**
+7. Copy both the **Client ID** and **Client Secret**
+
+Benefits of organization-owned OAuth apps:
+
+- Centralized management under the organization
+- App persists even if creating member leaves
+- Org admins can manage access and credentials
+- Clearer ownership for production deployments
+
+### Option B: Personal OAuth App
 
 1. Go to GitHub → Settings → Developer settings → OAuth Apps
 2. Click **New OAuth App**
