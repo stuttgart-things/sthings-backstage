@@ -32,7 +32,25 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get install -y --no-install-recommends libsqlite3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# From here on we use the least-privileged `node` user to run the backend.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+      python3 \
+      python3-pip \
+      g++ \
+      build-essential \
+      libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install mkdocs + Backstage TechDocs plugin (PEP 668 override)
+# hadolint ignore=DL3013,DL3042
+RUN python3 -m pip install --break-system-packages \
+      mkdocs \
+      mkdocs-material \
+      mkdocs-techdocs-core
+
+# From here on we use the least-privileged `node` user
 USER node
 
 # This should create the app dir as `node`.
