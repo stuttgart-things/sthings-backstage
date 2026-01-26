@@ -19,7 +19,8 @@ vars:
   DEV_IMAGE_TAG:
     sh: date +"%y.%m%d.%H%M"
   DEV_IMAGE_REGISTRY: ttl.sh
-  DEV_IMAGE_REPOSITORY: stuttgart-things
+  DEV_IMAGE_NAME:
+    sh: echo "sthings-backstage-$(openssl rand -hex 6)"
 
 tasks:
   image-build:
@@ -28,13 +29,13 @@ tasks:
       - task: docker:image-build
         vars:
           REGISTRY_URL: "{{ .DEV_IMAGE_REGISTRY }}"
-          IMAGE_REPOSITORY: "{{ .DEV_IMAGE_REPOSITORY }}"
-          IMAGE_NAME: "{{ .PROJECT_NAME }}"
+          IMAGE_REPOSITORY: ""
+          IMAGE_NAME: "{{ .DEV_IMAGE_NAME }}"
           PATH_TO_DOCKERFILE: "{{ .DOCKERFILE }}"
           TAG: "{{ .DEV_IMAGE_TAG }}"
       - task: trivy:scan-image
         vars:
-          IMAGE_REF: "{{ .DEV_IMAGE_REGISTRY }}/{{ .DEV_IMAGE_REPOSITORY }}/{{ .PROJECT_NAME }}:{{ .DEV_IMAGE_TAG }}"
+          IMAGE_REF: "{{ .DEV_IMAGE_REGISTRY }}/{{ .DEV_IMAGE_NAME }}:{{ .DEV_IMAGE_TAG }}"
           SEVERITY: "HIGH,CRITICAL"
           TRIVY_VERSION: "0.68.2"
 

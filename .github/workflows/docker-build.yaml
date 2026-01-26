@@ -53,8 +53,8 @@ jobs:
           call: >-
             build-and-push
             --source .
-            --repository-name ""
-            --registry-url ttl.sh/${{ steps.image-name.outputs.name }}
+            --repository-name ${{ steps.image-name.outputs.name }}
+            --registry-url ttl.sh
             --tag "${{ github.sha }}"
             --dockerfile packages/backend/Dockerfile
             --progress plain
