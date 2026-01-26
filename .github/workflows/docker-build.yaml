@@ -53,7 +53,7 @@ jobs:
           call: >-
             build-and-push
             --source .
-            --repository-name stuttgart-things
+            --repository-name ""
             --registry-url ttl.sh/${{ steps.image-name.outputs.name }}
             --tag "${{ github.sha }}"
             --dockerfile packages/backend/Dockerfile

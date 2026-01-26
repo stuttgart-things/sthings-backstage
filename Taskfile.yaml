@@ -7,6 +7,8 @@ includes:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/git/git.yaml
   docker:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/build.yaml
+  trivy:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/scan.yaml
 
 dotenv: ['.env', '{{.HOME}}/.env']
 
@@ -30,6 +32,12 @@ tasks:
           IMAGE_NAME: "{{ .PROJECT_NAME }}"
           PATH_TO_DOCKERFILE: "{{ .DOCKERFILE }}"
           TAG: "{{ .DEV_IMAGE_TAG }}"
+      - task: trivy:scan-image
+        vars:
+          IMAGE_REF: "{{ .DEV_IMAGE_REGISTRY }}/{{ .DEV_IMAGE_REPOSITORY }}/{{ .PROJECT_NAME }}:{{ .DEV_IMAGE_TAG }}"
+          SEVERITY: "HIGH,CRITICAL"
+          TRIVY_VERSION: "0.68.2"
+
 
   dev:
     desc: Start Backstage in development mode with .env loaded
