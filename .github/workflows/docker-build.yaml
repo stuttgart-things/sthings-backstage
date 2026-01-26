@@ -40,6 +40,7 @@ jobs:
         run: yarn build:backend
 
       - name: Dagger Build and Push
+        id: build-image
         uses: dagger/dagger-for-github@v8.2.0
         with:
           module: github.com/stuttgart-things/dagger/docker
@@ -52,3 +53,59 @@ jobs:
             --dockerfile packages/backend/Dockerfile
             --progress plain
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+
+      - name: Scan image with Trivy
+        uses: dagger/dagger-for-github@v8.2.0
+        with:
+          module: github.com/stuttgart-things/dagger/trivy
+          call: scan-image --image-ref="ttl.sh/stuttgart-things/sthings-backstage:${{ github.sha }}" --severity="HIGH,CRITICAL" --trivy-version="0.64.1" export --path=/tmp/trivy-scan-report.json
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+
+      - name: Upload scan report
+        uses: actions/upload-artifact@v6
+        with:
+          name: trivy-scan-report
+          path: /tmp/trivy-scan-report.json
+          retention-days: 30
+
+      - name: Check for vulnerabilities
+        run: |
+          if command -v jq &> /dev/null; then
+            VULN_COUNT=$(jq '[.Results[]?.Vulnerabilities[]?] | length' /tmp/trivy-scan-report.json 2>/dev/null || echo "0")
+            echo "Found $VULN_COUNT HIGH/CRITICAL vulnerabilities"
+
+            if [ "$VULN_COUNT" -gt 0 ]; then
+              echo "::warning::Image contains $VULN_COUNT HIGH/CRITICAL vulnerabilities"
+              jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
+                /tmp/trivy-scan-report.json
+            else
+              echo "✅ No HIGH/CRITICAL vulnerabilities found!"
+            fi
+          fi
+
+      - name: Build Summary
+        run: |
+          echo "## 🎉 Container Image Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`ttl.sh/stuttgart-things/sthings-backstage:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Pull command:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ttl.sh/stuttgart-things/sthings-backstage:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⏰ **Note:** ttl.sh images expire after 1 hour" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if command -v jq &> /dev/null; then
+            VULN_COUNT=$(jq '[.Results[]?.Vulnerabilities[]?] | length' /tmp/trivy-scan-report.json 2>/dev/null || echo "0")
+            if [ "$VULN_COUNT" -gt 0 ]; then
+              echo "### ⚠️ Security Scan Results" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Found **$VULN_COUNT HIGH/CRITICAL vulnerabilities**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "### ✅ Security Scan Results" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "No HIGH/CRITICAL vulnerabilities found!" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi

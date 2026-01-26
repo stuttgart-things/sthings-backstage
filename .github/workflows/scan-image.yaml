@@ -1,0 +1,77 @@
+---
+name: Scan Container Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        description: 'Image reference to scan (e.g., ghcr.io/stuttgart-things/backstage:latest)'
+        required: true
+        type: string
+      severity:
+        description: 'Vulnerability severity levels'
+        required: false
+        default: 'HIGH,CRITICAL'
+        type: string
+
+jobs:
+  scan-image:
+    name: Scan Container Image
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Scan image with Trivy
+        uses: dagger/dagger-for-github@v8.2.0
+        with:
+          module: github.com/stuttgart-things/dagger/trivy
+          call: scan-image --image-ref="${{ inputs.image_ref }}" --severity="${{ inputs.severity }}" --trivy-version="0.64.1" export --path=/tmp/trivy-scan-report.json
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+
+      - name: Upload scan report
+        uses: actions/upload-artifact@v6
+        with:
+          name: trivy-scan-report
+          path: /tmp/trivy-scan-report.json
+          retention-days: 30
+
+      - name: Check for vulnerabilities
+        run: |
+          if command -v jq &> /dev/null; then
+            VULN_COUNT=$(jq '[.Results[]?.Vulnerabilities[]?] | length' /tmp/trivy-scan-report.json 2>/dev/null || echo "0")
+            echo "Found $VULN_COUNT ${{ inputs.severity }} vulnerabilities"
+
+            if [ "$VULN_COUNT" -gt 0 ]; then
+              echo "::warning::Image contains $VULN_COUNT ${{ inputs.severity }} vulnerabilities"
+              jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
+                /tmp/trivy-scan-report.json
+            else
+              echo "✅ No ${{ inputs.severity }} vulnerabilities found!"
+            fi
+          fi
+
+      - name: Scan Summary
+        run: |
+          echo "## 🔍 Container Image Scan Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ inputs.image_ref }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Severity:** \`${{ inputs.severity }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if command -v jq &> /dev/null; then
+            VULN_COUNT=$(jq '[.Results[]?.Vulnerabilities[]?] | length' /tmp/trivy-scan-report.json 2>/dev/null || echo "0")
+            if [ "$VULN_COUNT" -gt 0 ]; then
+              echo "⚠️ **Found $VULN_COUNT vulnerabilities**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Vulnerability Details:" >> $GITHUB_STEP_SUMMARY
+              jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
+                /tmp/trivy-scan-report.json >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ **No vulnerabilities found!**" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
