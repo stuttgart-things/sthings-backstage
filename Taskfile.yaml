@@ -17,28 +17,37 @@ vars:
     sh: echo ${PWD##*/}
   DOCKERFILE: "packages/backend/Dockerfile"
   DEV_IMAGE_TAG:
-    sh: date +"%y.%m%d.%H%M"
+    sh: date +"%y%m%d.%H%M"
   DEV_IMAGE_REGISTRY: ttl.sh
   DEV_IMAGE_NAME:
     sh: echo "sthings-backstage-$(openssl rand -hex 6)"
+  DAGGER_MODULE: github.com/stuttgart-things/dagger/docker
 
 tasks:
-  image-build:
-    desc: Build image
+  build-push-scan-image:
+    desc: Build and push image with scan
     cmds:
-      - task: docker:image-build
-        vars:
-          REGISTRY_URL: "{{ .DEV_IMAGE_REGISTRY }}"
-          IMAGE_REPOSITORY: ""
-          IMAGE_NAME: "{{ .DEV_IMAGE_NAME }}"
-          PATH_TO_DOCKERFILE: "{{ .DOCKERFILE }}"
-          TAG: "{{ .DEV_IMAGE_TAG }}"
-      - task: trivy:scan-image
-        vars:
-          IMAGE_REF: "{{ .DEV_IMAGE_REGISTRY }}/{{ .DEV_IMAGE_NAME }}:{{ .DEV_IMAGE_TAG }}"
-          SEVERITY: "HIGH,CRITICAL"
-          TRIVY_VERSION: "0.68.2"
+      - |
+        dagger call -m github.com/stuttgart-things/blueprints/kubernetes-microservice@v1.51.0 \
+          bake-and-scan-image \
+          --src . \
+          --repository-name "{{ .DEV_IMAGE_NAME }}" \
+          --registry-url "{{ .DEV_IMAGE_REGISTRY }}" \
+          --tag "{{ .DEV_IMAGE_TAG }}" \
+          --dockerfile "{{ .DOCKERFILE }}" \
+          --progress plain \
+          export --path=/tmp/trivy-scan-{{ .PROJECT_NAME }}.json
 
+        echo ""
+        echo "✅ Build, push, and scan complete!"
+        echo "📄 Report: /tmp/trivy-scan-{{ .PROJECT_NAME }}.json"
+
+        if command -v jq &> /dev/null; then
+          echo ""
+          echo "📊 Vulnerability Summary:"
+          jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
+            /tmp/trivy-scan-{{ .PROJECT_NAME }}.json 2>/dev/null || echo "✅ No vulnerabilities found!"
+        fi
 
   dev:
     desc: Start Backstage in development mode with .env loaded
