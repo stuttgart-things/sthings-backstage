@@ -1,20 +1,20 @@
 import { apiDocsPlugin, ApiExplorerPage } from '@backstage/plugin-api-docs';
 import {
-  CatalogEntityPage,
-  CatalogIndexPage,
-  catalogPlugin,
+    CatalogEntityPage,
+    CatalogIndexPage,
+    catalogPlugin,
 } from '@backstage/plugin-catalog';
 import {
-  CatalogImportPage,
-  catalogImportPlugin,
+    CatalogImportPage,
+    catalogImportPlugin,
 } from '@backstage/plugin-catalog-import';
 import { orgPlugin } from '@backstage/plugin-org';
-import { ScaffolderPage, scaffolderPlugin } from '@backstage/plugin-scaffolder';
+import { ScaffolderFieldExtensions, ScaffolderPage, scaffolderPlugin } from '@backstage/plugin-scaffolder';
 import { SearchPage } from '@backstage/plugin-search';
 import {
-  TechDocsIndexPage,
-  techdocsPlugin,
-  TechDocsReaderPage,
+    TechDocsIndexPage,
+    techdocsPlugin,
+    TechDocsReaderPage,
 } from '@backstage/plugin-techdocs';
 import { ReportIssue } from '@backstage/plugin-techdocs-module-addons-contrib';
 import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
@@ -24,13 +24,17 @@ import { apis } from './apis';
 import { entityPage } from './components/catalog/EntityPage';
 import { Root } from './components/Root';
 import { searchPage } from './components/search/SearchPage';
+import {
+    ClaimMachineryParametersFieldExtension,
+    ClaimMachineryPickerFieldExtension,
+} from './scaffolder';
 
 import { createApp } from '@backstage/app-defaults';
 import { AppRouter, FlatRoutes } from '@backstage/core-app-api';
 import {
-  AlertDisplay,
-  OAuthRequestDialog,
-  SignInPage,
+    AlertDisplay,
+    OAuthRequestDialog,
+    SignInPage,
 } from '@backstage/core-components';
 import { githubAuthApiRef } from '@backstage/core-plugin-api';
 import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
@@ -96,7 +100,12 @@ const routes = (
         <ReportIssue />
       </TechDocsAddons>
     </Route>
-    <Route path="/create" element={<ScaffolderPage />} />
+    <Route path="/create" element={<ScaffolderPage />}>
+      <ScaffolderFieldExtensions>
+        <ClaimMachineryPickerFieldExtension />
+        <ClaimMachineryParametersFieldExtension />
+      </ScaffolderFieldExtensions>
+    </Route>
     <Route path="/api-docs" element={<ApiExplorerPage />} />
     <Route
       path="/catalog-import"
