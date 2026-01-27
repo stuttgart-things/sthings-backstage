@@ -4,6 +4,7 @@ site_description: Documentation for the Stuttgart Things Backstage Instance
 nav:
   - Home: index.md
   - Scaffolding: scaffolding.md
+  - Claim Machinery Plugin: claim-machinery-plugin.md
   - GitHub Integration: github-integration.md
   - Configuration: configuration.md
 

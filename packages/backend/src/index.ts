@@ -20,6 +20,9 @@ backend.add(
   import('@backstage/plugin-scaffolder-backend-module-notifications'),
 );
 
+// claim-machinery scaffolder module
+backend.add(import('./plugins/scaffolder-claim-machinery'));
+
 // techdocs plugin
 backend.add(import('@backstage/plugin-techdocs-backend'));
 

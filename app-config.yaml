@@ -46,10 +46,14 @@ integrations:
 proxy:
   ### Example for how to add a proxy endpoint for the frontend.
   ### A typical reason to do this is to handle HTTPS and CORS for internal services.
-  # endpoints:
-  #   '/test':
-  #     target: 'https://example.com'
-  #     changeOrigin: true
+  endpoints:
+    '/claim-machinery':
+      target: ${CLAIM_MACHINERY_API_URL:-https://claim-api.idp.kubermatic.sva.dev}
+      changeOrigin: true
+      pathRewrite:
+        '^/api/proxy/claim-machinery': ''
+      allowedHeaders: ['*']
+      credentials: 'dangerously-allow-unauthenticated'
 
 # Reference documentation http://backstage.io/docs/features/techdocs/configuration
 # Note: After experimenting with basic setup, use CI/CD to generate docs
@@ -81,12 +85,16 @@ auth:
 scaffolder:
   # see https://backstage.io/docs/features/software-templates/configuration for software template options
 
+# Claim Machinery API configuration
+claimMachinery:
+  apiUrl: ${CLAIM_MACHINERY_API_URL:-https://claim-api.idp.kubermatic.sva.dev}
+
 catalog:
   import:
     entityFilename: catalog-info.yaml
     pullRequestBranchName: backstage-integration
   rules:
-    - allow: [Component, System, API, Resource, Location]
+    - allow: [Component, System, API, Resource, Location, Template]
   locations:
     # Organizational data from separate repository
     - type: url
@@ -94,11 +102,11 @@ catalog:
       rules:
         - allow: [User, Group]
 
-    # Central catalog index with all services
+    # Central catalog index with all services and templates
     - type: url
       target: https://github.com/stuttgart-things/backstage-resources/blob/main/services/sthings-dev/catalog-index.yaml
       rules:
-        - allow: [Component, Location, System, API, Resource]
+        - allow: [Component, Location, System, API, Resource, Template]
 
 kubernetes:
   # see https://backstage.io/docs/features/kubernetes/configuration for kubernetes configuration options
