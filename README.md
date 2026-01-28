@@ -11,6 +11,7 @@ sthings-backstage provides a centralized platform for managing software developm
 - **Software Templates** - Scaffolding system for creating new projects
 - **Kubernetes Integration** - Visibility and management of Kubernetes clusters
 - **GitHub Integration** - Authentication, catalog import, and scaffolder actions
+- **GitHub Scaffolder Module** - Extended GitHub actions for software templates
 - **Claim Machinery Plugin** - Integration with Claim Machinery API for dynamic claim templates
 - **Unified Search** - Cross-entity search functionality
 
@@ -61,6 +62,7 @@ See the [docs](docs/) folder for detailed documentation:
 
 - [Configuration](docs/configuration.md) - Environment variables and secrets
 - [GitHub Integration](docs/github-integration.md) - OAuth and API setup
+- [GitHub Scaffolder Module](docs/github-scaffolder-module.md) - Extended GitHub actions for templates
 - [Scaffolding](docs/scaffolding.md) - Project templates and structure
 - [Claim Machinery Plugin](docs/claim-machinery-plugin.md) - Installation and configuration guide
 
