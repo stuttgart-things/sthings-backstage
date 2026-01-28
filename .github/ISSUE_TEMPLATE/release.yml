@@ -1,0 +1,77 @@
+name: Release
+description: Create a new release of sthings-backstage
+title: "[RELEASE] "
+labels: ["release"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Release Checklist
+        Create a new release of sthings-backstage
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Semantic version number (e.g., v1.2.0)
+      placeholder: "v1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Release Type
+      options:
+        - "Major (breaking changes)"
+        - "Minor (new features)"
+        - "Patch (bug fixes)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: highlights
+    attributes:
+      label: Release Highlights
+      description: Key features/changes in this release
+      placeholder: |
+        - New feature X
+        - Improved Y
+        - Fixed Z
+    validations:
+      required: true
+
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Release Checklist
+      description: Tasks to complete before release
+      value: |
+        - [ ] Update version in package.json
+        - [ ] Update CHANGELOG.md
+        - [ ] Update documentation
+        - [ ] Run tests (`yarn test`)
+        - [ ] Build successfully (`yarn build`)
+        - [ ] Create git tag
+        - [ ] Push tag to GitHub
+        - [ ] Create GitHub release
+        - [ ] Build and push container image
+        - [ ] Deploy to staging
+        - [ ] Verify staging deployment
+        - [ ] Deploy to production
+    validations:
+      required: true
+
+  - type: textarea
+    id: breaking-changes
+    attributes:
+      label: Breaking Changes
+      description: List any breaking changes (for major releases)
+      placeholder: "None or list breaking changes..."
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any additional information for this release

@@ -1,0 +1,65 @@
+name: Bug Report
+description: Report a bug in existing functionality
+title: "[BUG] "
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Bug Report
+        Help us understand and reproduce the bug
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is the bug?
+      placeholder: "Describe the issue..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction Steps
+      description: How can we reproduce the bug?
+      placeholder: |
+        1. Navigate to...
+        2. Click on...
+        3. Then it happens...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happens?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Error Messages
+      description: Error messages or logs
+      render: bash
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        - Backstage Version: 1.32.0
+        - Node.js Version: 22.x
+        - OS: Ubuntu 22.04
+        - Browser: Chrome 120

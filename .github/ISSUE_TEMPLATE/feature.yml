@@ -1,0 +1,70 @@
+name: Feature Implementation
+description: Implement a new feature or enhancement
+title: "[FEATURE] "
+labels: ["feature", "enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Feature Implementation
+        Propose and implement a new feature or enhancement
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: What feature should be implemented?
+      placeholder: "Describe the feature..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Requirements
+      description: Concrete requirements for the feature
+      placeholder: |
+        - [ ] Requirement 1
+        - [ ] Requirement 2
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What makes this task complete?
+      placeholder: |
+        - [ ] Code is written
+        - [ ] Tests added
+        - [ ] Documentation updated
+        - [ ] Code review passed
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Complexity
+      options:
+        - "Trivial (< 1 day)"
+        - "Easy (1-2 days)"
+        - "Medium (2-5 days)"
+        - "Complex (1-2 weeks)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - "Frontend (packages/app)"
+        - "Backend (packages/backend)"
+        - "Plugin"
+        - "Configuration"
+        - "Documentation"
+        - "Infrastructure"
+    validations:
+      required: true
