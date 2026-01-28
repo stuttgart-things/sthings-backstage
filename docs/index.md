@@ -19,6 +19,7 @@ This Backstage instance serves as the central developer portal for Stuttgart Thi
 | [Scaffolding](scaffolding.md) | How this Backstage instance was created |
 | [Claim Machinery Plugin](claim-machinery-plugin.md) | Integration with Claim Machinery API for scaffolder templates |
 | [GitHub Integration](github-integration.md) | GitHub plugin and OAuth configuration |
+| [GitHub Scaffolder Module](github-scaffolder-module.md) | Extended GitHub actions for software templates |
 | [Configuration](configuration.md) | Environment variables and secrets reference |
 
 ## Quick Links
