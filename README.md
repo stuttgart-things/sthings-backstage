@@ -23,6 +23,7 @@ sthings-backstage provides a centralized platform for managing software developm
 - **GitHub Integration** - Authentication, catalog import, and scaffolder actions
 - **GitHub Scaffolder Module** - Extended GitHub actions for software templates
 - **Claim Machinery Plugin** - Integration with Claim Machinery API for dynamic claim templates
+- **YAML Utils Module** - Scaffolder action for parsing workspace YAML files in template workflows
 - **Unified Search** - Cross-entity search functionality
 
 ## Getting Started
@@ -75,6 +76,7 @@ See the [docs](docs/) folder for detailed documentation:
 - [GitHub Scaffolder Module](docs/github-scaffolder-module.md) - Extended GitHub actions for templates
 - [Scaffolding](docs/scaffolding.md) - Project templates and structure
 - [Claim Machinery Plugin](docs/claim-machinery-plugin.md) - Installation and configuration guide
+- [YAML Utils Module](docs/yaml-utils-module.md) - Scaffolder action for parsing YAML files
 
 ## Claim Machinery Plugin
 
@@ -108,3 +110,21 @@ proxy:
 | `CLAIM_MACHINERY_API_URL` | URL of the Claim Machinery API |
 
 For complete installation and usage details, see the [Claim Machinery Plugin documentation](docs/claim-machinery-plugin.md).
+
+## YAML Utils Module
+
+The `utils:yaml:parse` scaffolder action reads and parses YAML files from the scaffolder workspace. This enables append-mode templates that fetch existing configuration from a repository, merge new entries, and create a PR with the combined result.
+
+### Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Backend Action | `packages/backend/src/plugins/scaffolder-yaml-utils/` | `utils:yaml:parse` scaffolder action |
+
+### Key Features
+
+- Reads YAML files from the scaffolder workspace and outputs parsed content
+- Graceful error handling: returns `{}` for missing or invalid files
+- Designed for use with `fetch:plain` to enable merge/append workflows
+
+For complete details, see the [YAML Utils Module documentation](docs/yaml-utils-module.md).
