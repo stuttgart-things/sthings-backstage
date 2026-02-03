@@ -23,6 +23,9 @@ backend.add(
 // claim-machinery scaffolder module
 backend.add(import('./plugins/scaffolder-claim-machinery'));
 
+// yaml-utils scaffolder module
+backend.add(import('./plugins/scaffolder-yaml-utils'));
+
 // techdocs plugin
 backend.add(import('@backstage/plugin-techdocs-backend'));
 
