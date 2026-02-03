@@ -9,6 +9,8 @@ includes:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/build.yaml
   trivy:
     taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/scan.yaml
+  image:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/copy.yaml
 
 dotenv: ['.env', '{{.HOME}}/.env']
 
@@ -25,7 +27,11 @@ vars:
 
 tasks:
   build-push-scan-image:
-    desc: Build and push image with scan
+    desc: Build, scan and push image to ghcr
+    vars:
+      SOURCE_IMAGE: "{{ .DEV_IMAGE_REGISTRY }}/{{ .DEV_IMAGE_NAME }}:{{ .DEV_IMAGE_TAG }}"
+      PROJECT: "{{ .PROJECT_NAME }}"
+      VERSION: "{{ .DEV_IMAGE_TAG }}"
     cmds:
       - |
         dagger call -m github.com/stuttgart-things/blueprints/kubernetes-microservice@v1.51.0 \
@@ -48,6 +54,13 @@ tasks:
           jq -r '.Results[]? | select(.Vulnerabilities) | "\(.Target): \(.Vulnerabilities | length) vulnerabilities"' \
             /tmp/trivy-scan-{{ .PROJECT_NAME }}.json 2>/dev/null || echo "✅ No vulnerabilities found!"
         fi
+      - gum confirm "Push {{ .SOURCE_IMAGE }} to ghcr.io/stuttgart-things/{{ .PROJECT }}:{{ .VERSION }}?"
+      - task: image:copy-image
+        vars:
+          SOURCE: "{{ .SOURCE_IMAGE }}"
+          TARGET: ghcr.io/stuttgart-things/{{ .PROJECT }}:{{ .VERSION }}
+          TARGET_USERNAME: $GITHUB_USER
+          TARGET_PASSWORD: env:GITHUB_TOKEN # pragma: allowlist secret
 
   dev:
     desc: Start Backstage in development mode with .env loaded

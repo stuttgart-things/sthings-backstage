@@ -24,6 +24,7 @@ sthings-backstage provides a centralized platform for managing software developm
 - **GitHub Scaffolder Module** - Extended GitHub actions for software templates
 - **Claim Machinery Plugin** - Integration with Claim Machinery API for dynamic claim templates
 - **YAML Utils Module** - Scaffolder action for parsing workspace YAML files in template workflows
+- **GitHub Actions Plugin** - CI/CD visibility for GitHub Actions workflow runs on entity pages
 - **Unified Search** - Cross-entity search functionality
 
 ## Getting Started
@@ -77,6 +78,7 @@ See the [docs](docs/) folder for detailed documentation:
 - [Scaffolding](docs/scaffolding.md) - Project templates and structure
 - [Claim Machinery Plugin](docs/claim-machinery-plugin.md) - Installation and configuration guide
 - [YAML Utils Module](docs/yaml-utils-module.md) - Scaffolder action for parsing YAML files
+- [GitHub Actions Plugin](docs/github-actions-plugin.md) - CI/CD workflow visibility on entity pages
 
 ## Claim Machinery Plugin
 
@@ -128,3 +130,26 @@ The `utils:yaml:parse` scaffolder action reads and parses YAML files from the sc
 - Designed for use with `fetch:plain` to enable merge/append workflows
 
 For complete details, see the [YAML Utils Module documentation](docs/yaml-utils-module.md).
+
+## GitHub Actions Plugin
+
+The CI/CD tab on service and website entity pages displays GitHub Actions workflow runs for the associated repository.
+
+### Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Frontend Plugin | `@backstage-community/plugin-github-actions` | `EntityGithubActionsContent` on CI/CD tab |
+| Entity Page Integration | `packages/app/src/components/catalog/EntityPage.tsx` | Conditional rendering via `isGithubActionsAvailable` |
+
+### Required Annotation
+
+Catalog entities must have the `github.com/project-slug` annotation to enable the CI/CD tab:
+
+```yaml
+metadata:
+  annotations:
+    github.com/project-slug: 'org/repo-name'
+```
+
+For complete details, see the [GitHub Actions Plugin documentation](docs/github-actions-plugin.md).

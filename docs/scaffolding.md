@@ -114,6 +114,7 @@ The following plugins are included:
 | auth | Authentication providers |
 | claim-machinery | Custom action for rendering Kubernetes claim manifests |
 | yaml-utils | Custom action for parsing YAML files in scaffolder workflows |
+| github-actions | CI/CD tab showing GitHub Actions workflow runs on entity pages |
 
 ## Running Locally
 
