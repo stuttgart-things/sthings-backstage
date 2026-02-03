@@ -112,6 +112,8 @@ The following plugins are included:
 | signals | Real-time updates |
 | permission | Authorization framework |
 | auth | Authentication providers |
+| claim-machinery | Custom action for rendering Kubernetes claim manifests |
+| yaml-utils | Custom action for parsing YAML files in scaffolder workflows |
 
 ## Running Locally
 
