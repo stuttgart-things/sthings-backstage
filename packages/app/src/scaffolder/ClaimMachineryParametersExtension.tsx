@@ -2,9 +2,11 @@ import { FieldExtensionComponentProps } from '@backstage/plugin-scaffolder-react
 import {
     Box,
     Checkbox,
+    Chip,
     FormControl,
     FormControlLabel,
     FormHelperText,
+    Input,
     MenuItem,
     Select,
     TextField,
@@ -34,6 +36,9 @@ interface ClaimTemplate {
       description?: string;
       default?: any;
       enum?: string[];
+      multiselect?: boolean;
+      hidden?: boolean;
+      allowRandom?: boolean;
       pattern?: string;
       minLength?: number;
       maxLength?: number;
@@ -175,7 +180,9 @@ export const ClaimMachineryParametersExtension = ({
         </Typography>
       )}
 
-      {template.spec.parameters.map((param) => {
+      {template.spec.parameters
+        .filter((param) => !param.hidden)
+        .map((param) => {
         const value = parameters[param.name] ?? param.default ?? '';
         const isRequired = param.required ?? false;
 
@@ -205,6 +212,45 @@ export const ClaimMachineryParametersExtension = ({
                   </Box>
                 }
               />
+            </FormControl>
+          );
+        }
+
+        if (param.multiselect && param.enum && param.enum.length > 0) {
+          const multiValue = Array.isArray(value) ? value : (value ? [value] : []);
+          return (
+            <FormControl key={param.name} fullWidth margin="normal" required={isRequired}>
+              <Typography variant="body2" gutterBottom>
+                {param.title || param.name}
+                {isRequired && <span style={{ color: 'red' }}> *</span>}
+              </Typography>
+              <Select
+                multiple
+                value={multiValue}
+                onChange={(e) => handleParameterChange(param.name, e.target.value as string[])}
+                input={<Input />}
+                renderValue={(selected) => (
+                  <Box display="flex" flexWrap="wrap" style={{ gap: 4 }}>
+                    {(selected as string[]).map((val) => (
+                      <Chip key={val} label={val} size="small" />
+                    ))}
+                  </Box>
+                )}
+              >
+                {param.enum.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    <Checkbox
+                      checked={multiValue.indexOf(option) > -1}
+                      color="primary"
+                      size="small"
+                    />
+                    {option}
+                  </MenuItem>
+                ))}
+              </Select>
+              {param.description && (
+                <FormHelperText>{param.description}</FormHelperText>
+              )}
             </FormControl>
           );
         }
