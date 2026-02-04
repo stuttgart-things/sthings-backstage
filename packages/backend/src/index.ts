@@ -20,6 +20,9 @@ backend.add(
   import('@backstage/plugin-scaffolder-backend-module-notifications'),
 );
 
+// roadiehq scaffolder utils (merge, json/yaml manipulation, etc.)
+backend.add(import('@roadiehq/scaffolder-backend-module-utils'));
+
 // claim-machinery scaffolder module
 backend.add(import('./plugins/scaffolder-claim-machinery'));
 
