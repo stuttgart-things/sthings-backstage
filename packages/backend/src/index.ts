@@ -21,7 +21,7 @@ backend.add(
 );
 
 // roadiehq scaffolder utils (merge, json/yaml manipulation, etc.)
-backend.add(import('@roadiehq/scaffolder-backend-module-utils'));
+backend.add(import('@roadiehq/scaffolder-backend-module-utils/new-backend'));
 
 // claim-machinery scaffolder module
 backend.add(import('./plugins/scaffolder-claim-machinery'));
