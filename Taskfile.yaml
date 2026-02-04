@@ -34,7 +34,7 @@ tasks:
       VERSION: "{{ .DEV_IMAGE_TAG }}"
     cmds:
       - |
-        dagger call -m github.com/stuttgart-things/blueprints/kubernetes-microservice@v1.51.0 \
+        dagger call -m github.com/stuttgart-things/blueprints/kubernetes-microservice@v1.52.0 \
           bake-and-scan-image \
           --src . \
           --repository-name "{{ .DEV_IMAGE_NAME }}" \
