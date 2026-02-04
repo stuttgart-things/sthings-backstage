@@ -34,6 +34,13 @@ interface ClaimTemplate {
       required?: boolean;
       description?: string;
       default?: any;
+      enum?: string[];
+      multiselect?: boolean;
+      hidden?: boolean;
+      allowRandom?: boolean;
+      pattern?: string;
+      minLength?: number;
+      maxLength?: number;
     }>;
   };
 }
@@ -184,7 +191,7 @@ export const ClaimMachineryPickerExtension = ({
               </Typography>
               <Box display="flex" flexWrap="wrap" gap={1} marginTop={1}>
                 {selectedTemplate.spec.parameters
-                  .filter(p => p.required)
+                  .filter(p => p.required && !p.hidden)
                   .map(param => (
                     <Chip
                       key={param.name}
