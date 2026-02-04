@@ -40,6 +40,11 @@
     "prettier": "^2.3.2",
     "typescript": "~5.8.0"
   },
+  "dependenciesMeta": {
+    "isolated-vm": {
+      "built": false
+    }
+  },
   "resolutions": {
     "@types/react": "^18",
     "@types/react-dom": "^18"
