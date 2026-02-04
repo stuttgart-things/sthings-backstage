@@ -11,7 +11,8 @@ import {
     Select,
     Typography,
 } from '@material-ui/core';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { useApi, configApiRef } from '@backstage/core-plugin-api';
 
 interface ClaimTemplate {
@@ -103,7 +104,7 @@ export const ClaimMachineryPickerExtension = ({
 
   if (loading) {
     return (
-      <Box display="flex" alignItems="center" gap={2}>
+      <Box display="flex" alignItems="center" style={{ gap: 16 }}>
         <CircularProgress size={24} />
         <Typography>Loading Claim Machinery templates...</Typography>
       </Box>
@@ -172,7 +173,7 @@ export const ClaimMachineryPickerExtension = ({
           )}
 
           {selectedTemplate.metadata.tags && selectedTemplate.metadata.tags.length > 0 && (
-            <Box display="flex" flexWrap="wrap" gap={1} marginBottom={2}>
+            <Box display="flex" flexWrap="wrap" style={{ gap: 8 }} marginBottom={2}>
               {selectedTemplate.metadata.tags.map(tag => (
                 <Chip
                   key={tag}
@@ -189,7 +190,7 @@ export const ClaimMachineryPickerExtension = ({
               <Typography variant="body2" gutterBottom style={{ marginTop: '8px' }}>
                 Required Parameters:
               </Typography>
-              <Box display="flex" flexWrap="wrap" gap={1} marginTop={1}>
+              <Box display="flex" flexWrap="wrap" style={{ gap: 8 }} marginTop={1}>
                 {selectedTemplate.spec.parameters
                   .filter(p => p.required && !p.hidden)
                   .map(param => (
