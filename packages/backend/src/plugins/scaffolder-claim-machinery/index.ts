@@ -11,6 +11,7 @@ const claimMachineryRenderAction = (options: { config: any }) => {
   return createTemplateAction<{
     template: string;
     parameters?: Record<string, any>;
+    nameOverride?: string;
     outputPath?: string;
   }>({
     id: 'claim-machinery:render',
@@ -18,7 +19,11 @@ const claimMachineryRenderAction = (options: { config: any }) => {
 
     async handler(ctx) {
       const template = ctx.input.template;
-      const parameters = ctx.input.parameters || {};
+      const nameOverride = ctx.input.nameOverride;
+      const parameters = {
+        ...ctx.input.parameters,
+        ...(nameOverride ? { name: nameOverride } : {}),
+      };
       const outputPath = ctx.input.outputPath || '.';
 
       // Read API URL from config, with a fallback
