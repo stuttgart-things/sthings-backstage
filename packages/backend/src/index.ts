@@ -26,6 +26,9 @@ backend.add(import('@roadiehq/scaffolder-backend-module-utils/new-backend'));
 // claim-machinery scaffolder module
 backend.add(import('./plugins/scaffolder-claim-machinery'));
 
+// claim-registry scaffolder module (delete claims via PR)
+backend.add(import('./plugins/scaffolder-claim-registry'));
+
 // yaml-utils scaffolder module
 backend.add(import('./plugins/scaffolder-yaml-utils'));
 
