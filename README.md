@@ -23,6 +23,7 @@ sthings-backstage provides a centralized platform for managing software developm
 - **GitHub Integration** - Authentication, catalog import, and scaffolder actions
 - **GitHub Scaffolder Module** - Extended GitHub actions for software templates
 - **Claim Machinery Plugin** - Integration with Claim Machinery API for dynamic claim templates
+- **Claim Registry Plugin** - Scaffolder extensions for browsing and deleting claims via GitHub PRs
 - **YAML Utils Module** - Scaffolder action for parsing workspace YAML files in template workflows
 - **GitHub Actions Plugin** - CI/CD visibility for GitHub Actions workflow runs on entity pages
 - **Unified Search** - Cross-entity search functionality
@@ -77,6 +78,7 @@ See the [docs](docs/) folder for detailed documentation:
 - [GitHub Scaffolder Module](docs/github-scaffolder-module.md) - Extended GitHub actions for templates
 - [Scaffolding](docs/scaffolding.md) - Project templates and structure
 - [Claim Machinery Plugin](docs/claim-machinery-plugin.md) - Installation and configuration guide
+- [Claim Registry Plugin](docs/claim-registry-plugin.md) - Claim browsing and deletion via GitHub PRs
 - [YAML Utils Module](docs/yaml-utils-module.md) - Scaffolder action for parsing YAML files
 - [GitHub Actions Plugin](docs/github-actions-plugin.md) - CI/CD workflow visibility on entity pages
 
@@ -112,6 +114,37 @@ proxy:
 | `CLAIM_MACHINERY_API_URL` | URL of the Claim Machinery API |
 
 For complete installation and usage details, see the [Claim Machinery Plugin documentation](docs/claim-machinery-plugin.md).
+
+## Claim Registry Plugin
+
+This instance includes the `backstage-claim-registry-plugin` which provides a scaffolder field extension for browsing claims from the Machinery Registry API and a backend action for deleting claims via GitHub pull requests.
+
+### Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Backend Action | `packages/backend/src/plugins/scaffolder-claim-registry/` | `claim-registry:delete` scaffolder action |
+| Field Extension | `packages/app/src/scaffolder/` | `RegistryClaimPicker` UI component |
+
+### Configuration
+
+```yaml
+# app-config.yaml
+proxy:
+  endpoints:
+    '/machinery-registry':
+      target: ${CLAIM_MACHINERY_API_URL}
+      changeOrigin: true
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `CLAIM_MACHINERY_API_URL` | URL of the Machinery Registry API |
+| `GITHUB_TOKEN` | GitHub PAT for creating deletion PRs |
+
+For complete installation and usage details, see the [Claim Registry Plugin documentation](docs/claim-registry-plugin.md).
 
 ## YAML Utils Module
 

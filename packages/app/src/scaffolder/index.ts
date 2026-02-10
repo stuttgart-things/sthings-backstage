@@ -18,5 +18,15 @@ export const ClaimMachineryParametersFieldExtension = scaffolderPlugin.provide(
   }),
 );
 
+// Registry Claim Picker field extension (claim-registry plugin)
+import { RegistryClaimPickerExtension } from './RegistryClaimPickerExtension';
+
+export const RegistryClaimPickerFieldExtension = scaffolderPlugin.provide(
+  createScaffolderFieldExtension({
+    name: 'RegistryClaimPicker',
+    component: RegistryClaimPickerExtension,
+  }),
+);
+
 // Also export the raw components if needed
-export { ClaimMachineryPickerExtension, ClaimMachineryParametersExtension };
+export { ClaimMachineryPickerExtension, ClaimMachineryParametersExtension, RegistryClaimPickerExtension };

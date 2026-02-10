@@ -27,6 +27,7 @@ import { searchPage } from './components/search/SearchPage';
 import {
     ClaimMachineryParametersFieldExtension,
     ClaimMachineryPickerFieldExtension,
+    RegistryClaimPickerFieldExtension,
 } from './scaffolder';
 
 import { createApp } from '@backstage/app-defaults';
@@ -104,6 +105,7 @@ const routes = (
       <ScaffolderFieldExtensions>
         <ClaimMachineryPickerFieldExtension />
         <ClaimMachineryParametersFieldExtension />
+        <RegistryClaimPickerFieldExtension />
       </ScaffolderFieldExtensions>
     </Route>
     <Route path="/api-docs" element={<ApiExplorerPage />} />
