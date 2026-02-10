@@ -55,7 +55,7 @@ proxy:
       allowedHeaders: ['*']
       credentials: 'dangerously-allow-unauthenticated'
     '/machinery-registry':
-      target: ${CLAIM_MACHINERY_API_URL:-https://claim-api.idp.kubermatic.sva.dev}
+      target: ${CLAIM_MACHINERY_REGISTRY_URL:-https://claim-api.idp.kubermatic.sva.dev}
       changeOrigin: true
       pathRewrite:
         '^/api/proxy/machinery-registry': ''
