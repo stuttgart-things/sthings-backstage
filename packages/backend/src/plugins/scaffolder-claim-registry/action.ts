@@ -49,7 +49,7 @@ export const claimRegistryDeleteAction = (options: { config: Config }) => {
 
       // Resolve GitHub token from Backstage integrations config
       const githubToken =
-        config.getOptionalString('integrations.github[0].token') ??
+        config.getOptionalConfigArray('integrations.github')?.[0]?.getOptionalString('token') ??
         process.env.GITHUB_TOKEN;
 
       if (!githubToken) {
