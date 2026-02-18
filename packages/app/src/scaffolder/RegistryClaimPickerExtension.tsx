@@ -147,7 +147,7 @@ export const RegistryClaimPickerExtension = ({
 
   if (loading) {
     return (
-      <Box display="flex" alignItems="center" gap={2}>
+      <Box display="flex" alignItems="center" style={{ gap: 16 }}>
         <CircularProgress size={24} />
         <Typography>Loading claims from registry...</Typography>
       </Box>
@@ -209,7 +209,7 @@ export const RegistryClaimPickerExtension = ({
             Claim Details
           </Typography>
 
-          <Box display="flex" flexWrap="wrap" gap={1} marginBottom={1}>
+          <Box display="flex" flexWrap="wrap" style={{ gap: 8 }} marginBottom={1}>
             <Chip label={`Template: ${selectedClaim.template}`} size="small" variant="outlined" />
             <Chip label={`Category: ${selectedClaim.category}`} size="small" variant="outlined" />
             <Chip label={`Status: ${selectedClaim.status}`} size="small" color="primary" variant="outlined" />

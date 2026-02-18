@@ -11,16 +11,23 @@ export const claimRegistryDeleteAction = (options: { config: Config }) => {
 
     schema: {
       input: {
-        claimData: z => z.string().describe('JSON string from RegistryClaimPicker containing the full claim object'),
-        claimName: z => z.string().optional().describe('Override: the name of the claim to delete'),
-        claimPath: z => z.string().optional().describe('Override: the path to the claim file in the repository'),
-        claimCategory: z => z.string().optional().describe('Override: the category of the claim (e.g., infra, apps)'),
-        repository: z => z.string().optional().describe('Override: the GitHub repository in owner/repo format'),
-        targetBranch: z => z.string().optional().default('main').describe('The target branch for the PR'),
+        type: 'object' as const,
+        required: ['claimData'],
+        properties: {
+          claimData: { type: 'string' as const, description: 'JSON string from RegistryClaimPicker containing the full claim object' },
+          claimName: { type: 'string' as const, description: 'Override: the name of the claim to delete' },
+          claimPath: { type: 'string' as const, description: 'Override: the path to the claim file in the repository' },
+          claimCategory: { type: 'string' as const, description: 'Override: the category of the claim (e.g., infra, apps)' },
+          repository: { type: 'string' as const, description: 'Override: the GitHub repository in owner/repo format' },
+          targetBranch: { type: 'string' as const, description: 'The target branch for the PR', default: 'main' },
+        },
       },
       output: {
-        pullRequestUrl: z => z.string().describe('The URL of the created pull request'),
-        pullRequestNumber: z => z.number().describe('The PR number'),
+        type: 'object' as const,
+        properties: {
+          pullRequestUrl: { type: 'string' as const, description: 'The URL of the created pull request' },
+          pullRequestNumber: { type: 'number' as const, description: 'The PR number' },
+        },
       },
     },
 
@@ -28,17 +35,17 @@ export const claimRegistryDeleteAction = (options: { config: Config }) => {
       // Parse claim data from the picker's JSON string
       let parsedClaim: { name?: string; path?: string; category?: string; repository?: string } = {};
       try {
-        parsedClaim = JSON.parse(ctx.input.claimData);
+        parsedClaim = JSON.parse(ctx.input.claimData as string);
       } catch {
         ctx.logger.warn('Could not parse claimData as JSON, using individual input fields');
       }
 
       // Individual inputs override parsed claim data
-      const claimName = ctx.input.claimName || parsedClaim.name || '';
-      const claimPath = ctx.input.claimPath || parsedClaim.path || '';
-      const claimCategory = ctx.input.claimCategory || parsedClaim.category || '';
-      const repository = ctx.input.repository || parsedClaim.repository || '';
-      const branch = ctx.input.targetBranch ?? 'main';
+      const claimName = (ctx.input.claimName as string) || parsedClaim.name || '';
+      const claimPath = (ctx.input.claimPath as string) || parsedClaim.path || '';
+      const claimCategory = (ctx.input.claimCategory as string) || parsedClaim.category || '';
+      const repository = (ctx.input.repository as string) || parsedClaim.repository || '';
+      const branch = (ctx.input.targetBranch as string) ?? 'main';
 
       if (!claimName) {
         throw new Error('claimName is required — provide it via claimData JSON or claimName input');
@@ -211,10 +218,12 @@ export const claimRegistryDeleteAction = (options: { config: Config }) => {
 
         // Add updated kustomization.yaml
         if (updatedKustomization !== null) {
+          const existingKustom = treeData.tree.find(item => item.path === kustomizationPath);
           treeItems.push({
             path: kustomizationPath,
             mode: '100644',
             type: 'blob',
+            sha: existingKustom?.sha ?? null,
             content: updatedKustomization,
           });
         }
