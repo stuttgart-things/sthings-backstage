@@ -26,15 +26,24 @@ vars:
   DAGGER_MODULE: github.com/stuttgart-things/dagger/docker
 
 tasks:
+  build-backend:
+    desc: Build backstage backend bundle
+    cmds:
+      - yarn install --immutable
+      - yarn tsc
+      - yarn build:backend
+
   build-push-scan-image:
     desc: Build, scan and push image to ghcr
+    deps:
+      - build-backend
     vars:
       SOURCE_IMAGE: "{{ .DEV_IMAGE_REGISTRY }}/{{ .DEV_IMAGE_NAME }}:{{ .DEV_IMAGE_TAG }}"
       PROJECT: "{{ .PROJECT_NAME }}"
       VERSION: "{{ .DEV_IMAGE_TAG }}"
     cmds:
       - |
-        dagger call -m github.com/stuttgart-things/blueprints/kubernetes-microservice@v1.52.0 \
+        dagger call -m github.com/stuttgart-things/blueprints/kubernetes-microservice@v1.62.0 \
           bake-and-scan-image \
           --src . \
           --repository-name "{{ .DEV_IMAGE_NAME }}" \
