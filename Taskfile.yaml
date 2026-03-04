@@ -94,6 +94,16 @@ tasks:
         }
         trap cleanup INT TERM
 
+        # Kill leftover API processes from previous runs
+        for proc in claim-machinery-api machinery-registry-api; do
+          OLD_PIDS=$(pgrep -f "$proc" 2>/dev/null)
+          if [ -n "$OLD_PIDS" ]; then
+            echo "Killing leftover $proc (PIDs: $OLD_PIDS)..."
+            pkill -f "$proc" 2>/dev/null
+            sleep 1
+          fi
+        done
+
         # Start claim-machinery-api in background
         echo "Starting claim-machinery-api on port 8080..."
         (cd {{ .CLAIM_MACHINERY_API_DIR }} && claim-machinery-api --templates-dir {{ .CLAIM_MACHINERY_TEMPLATES_DIR }} --template-profile-path {{ .CLAIM_MACHINERY_PROFILE_PATH }} server) &
