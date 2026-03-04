@@ -50,6 +50,7 @@ proxy:
     '/claim-machinery':
       target: ${CLAIM_MACHINERY_API_URL:-https://claim-api.dev-infra-pre.sthings-vsphere.labul.sva.de}
       changeOrigin: true
+      secure: false
       pathRewrite:
         '^/api/proxy/claim-machinery': ''
       allowedHeaders: ['*']
@@ -57,6 +58,7 @@ proxy:
     '/machinery-registry':
       target: ${CLAIM_MACHINERY_REGISTRY_URL:-https://claim-api.dev-infra-pre.sthings-vsphere.labul.sva.de}
       changeOrigin: true
+      secure: false
       pathRewrite:
         '^/api/proxy/machinery-registry': ''
       allowedHeaders: ['*']
