@@ -48,14 +48,14 @@ proxy:
   ### A typical reason to do this is to handle HTTPS and CORS for internal services.
   endpoints:
     '/claim-machinery':
-      target: ${CLAIM_MACHINERY_API_URL:-https://claim-api.idp.kubermatic.sva.dev}
+      target: ${CLAIM_MACHINERY_API_URL:-https://claim-api.dev-infra-pre.sthings-vsphere.labul.sva.de}
       changeOrigin: true
       pathRewrite:
         '^/api/proxy/claim-machinery': ''
       allowedHeaders: ['*']
       credentials: 'dangerously-allow-unauthenticated'
     '/machinery-registry':
-      target: ${CLAIM_MACHINERY_REGISTRY_URL:-https://claim-api.idp.kubermatic.sva.dev}
+      target: ${CLAIM_MACHINERY_REGISTRY_URL:-https://claim-api.dev-infra-pre.sthings-vsphere.labul.sva.de}
       changeOrigin: true
       pathRewrite:
         '^/api/proxy/machinery-registry': ''
@@ -94,7 +94,7 @@ scaffolder:
 
 # Claim Machinery API configuration
 claimMachinery:
-  apiUrl: ${CLAIM_MACHINERY_API_URL:-https://claim-api.idp.kubermatic.sva.dev}
+  apiUrl: ${CLAIM_MACHINERY_API_URL:-https://claim-api.dev-infra-pre.sthings-vsphere.labul.sva.de}
 
 catalog:
   import:
