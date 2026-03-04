@@ -3,6 +3,7 @@ import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
 import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node/alpha';
 import fs from 'fs-extra';
 import fetch from 'node-fetch';
+import https from 'https';
 import path from 'path';
 
 const claimMachineryRenderAction = (options: { config: any }) => {
@@ -28,7 +29,7 @@ const claimMachineryRenderAction = (options: { config: any }) => {
 
       // Read API URL from config, with a fallback
       const baseUrl = config.getOptionalString('claimMachinery.apiUrl')
-        ?? 'https://claim-api.idp.kubermatic.sva.dev';
+        ?? 'https://claim-api.dev-infra-pre.sthings-vsphere.labul.sva.de';
 
       ctx.logger.info(`Rendering template: ${template}`);
       ctx.logger.info(`Using API: ${baseUrl}`);
@@ -43,6 +44,7 @@ const claimMachineryRenderAction = (options: { config: any }) => {
       const timeout = setTimeout(() => controller.abort(), 60000);
 
       try {
+        const agent = url.startsWith('https') ? new https.Agent({ rejectUnauthorized: false }) : undefined;
         const res = await fetch(url, {
           method: 'POST',
           headers: {
@@ -51,6 +53,7 @@ const claimMachineryRenderAction = (options: { config: any }) => {
           },
           body: JSON.stringify(requestBody),
           signal: controller.signal,
+          ...(agent && { agent }),
         });
 
         clearTimeout(timeout);
