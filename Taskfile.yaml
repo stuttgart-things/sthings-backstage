@@ -73,11 +73,6 @@ tasks:
 
   dev:
     desc: Start Backstage in development mode with .env loaded
-    vars:
-      CLAIM_MACHINERY_API_DIR: '{{.CLAIM_MACHINERY_API_DIR | default "../claim-machinery-api"}}'
-      CLAIM_MACHINERY_TEMPLATES_DIR: '{{.CLAIM_MACHINERY_TEMPLATES_DIR | default "internal/claimtemplate/testdata"}}'
-      CLAIM_MACHINERY_PROFILE_PATH: '{{.CLAIM_MACHINERY_PROFILE_PATH | default "tests/profile.yaml"}}'
-      MACHINERY_REGISTRY_API_DIR: '{{.MACHINERY_REGISTRY_API_DIR | default "../machinery-registry-api"}}'
     cmds:
       - |
         bash -c '
@@ -85,49 +80,14 @@ tasks:
         source .env
         set +a
 
-        cleanup() {
-          echo ""
-          echo "Stopping background services..."
-          [ -n "$CLAIM_API_PID" ] && kill $CLAIM_API_PID 2>/dev/null && echo "Stopped claim-machinery-api (PID $CLAIM_API_PID)"
-          [ -n "$REGISTRY_API_PID" ] && kill $REGISTRY_API_PID 2>/dev/null && echo "Stopped machinery-registry-api (PID $REGISTRY_API_PID)"
-          exit 0
-        }
-        trap cleanup INT TERM
-
-        # Kill leftover API processes from previous runs
-        for proc in claim-machinery-api machinery-registry-api; do
-          OLD_PIDS=$(pgrep -f "$proc" 2>/dev/null)
-          if [ -n "$OLD_PIDS" ]; then
-            echo "Killing leftover $proc (PIDs: $OLD_PIDS)..."
-            pkill -f "$proc" 2>/dev/null
-            sleep 1
-          fi
-        done
-
-        # Start claim-machinery-api in background
-        echo "Starting claim-machinery-api on port 8080..."
-        (cd {{ .CLAIM_MACHINERY_API_DIR }} && claim-machinery-api --templates-dir {{ .CLAIM_MACHINERY_TEMPLATES_DIR }} --template-profile-path {{ .CLAIM_MACHINERY_PROFILE_PATH }} server) &
-        CLAIM_API_PID=$!
-
-        # Start machinery-registry-api in background
-        echo "Starting machinery-registry-api on port 8090..."
-        (cd {{ .MACHINERY_REGISTRY_API_DIR }} && REGISTRY_REPO=${REGISTRY_REPO:-stuttgart-things/harvester} machinery-registry-api server) &
-        REGISTRY_API_PID=$!
-
-        sleep 2
-        echo ""
         echo "Environment variables loaded:"
         echo "GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:0:10}..."
         echo "GITHUB_CLIENT_SECRET is set"
         echo "GITHUB_TOKEN is set"
         echo "BACKEND_SECRET is set"
-        echo "claim-machinery-api PID: $CLAIM_API_PID (port 8080)"
-        echo "machinery-registry-api PID: $REGISTRY_API_PID (port 8090)"
         echo ""
 
         yarn start
-
-        cleanup
         '
 
   do:
