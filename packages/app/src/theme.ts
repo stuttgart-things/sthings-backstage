@@ -154,8 +154,8 @@ export const sthingsLightTheme = createUnifiedTheme({
       aborted: '#6b7280',
     },
     background: {
-      default: '#f8f9fb',
-      paper: '#ffffff',
+      default: '#edeef2',
+      paper: '#f5f5f8',
     },
     navigation: {
       background: '#1A1547',
