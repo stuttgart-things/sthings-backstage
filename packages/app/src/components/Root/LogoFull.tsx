@@ -13,9 +13,17 @@ const useStyles = makeStyles({
   },
   text: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 700,
     letterSpacing: 1.2,
+    whiteSpace: 'nowrap',
+    lineHeight: 1.2,
+  },
+  subtitle: {
+    color: '#9D8FE8',
+    fontSize: 9,
+    fontWeight: 400,
+    letterSpacing: 0.5,
     whiteSpace: 'nowrap',
   },
 });
@@ -26,7 +34,10 @@ const LogoFull = () => {
   return (
     <div className={classes.container}>
       <img className={classes.img} src={sthingsLogo} alt="sthings" />
-      <span className={classes.text}>sTHINGS</span>
+      <div>
+        <div className={classes.text}>sthings</div>
+        <div className={classes.subtitle}>[s&#x2C8;&#x3B8;&#x026A;&#x014B;z]</div>
+      </div>
     </div>
   );
 };
