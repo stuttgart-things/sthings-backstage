@@ -1,9 +1,9 @@
 app:
-  title: Backstage
+  title: ${APP_TITLE:-sthings}
   baseUrl: ${APP_BASE_URL}
 
 organization:
-  name: ${ORGANIZATION_NAME}
+  name: ${ORGANIZATION_NAME:-sthings | using modularity to speed up parallel builds}
 
 backend:
   # Used for enabling authentication, secret is shared by all backend plugins

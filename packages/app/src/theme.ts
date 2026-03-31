@@ -67,6 +67,33 @@ const commonOverrides = {
       root: {
         borderRadius: 8,
         fontWeight: 500,
+        transition: 'all 0.15s ease',
+        '&:hover': {
+          filter: 'brightness(1.1)',
+          transform: 'scale(1.03)',
+        },
+      },
+    },
+  },
+  MuiTableContainer: {
+    styleOverrides: {
+      root: {
+        borderRadius: 12,
+        overflow: 'hidden',
+      },
+    },
+  },
+  MuiTableCell: {
+    styleOverrides: {
+      root: {
+        padding: '14px 16px',
+        fontSize: '0.875rem',
+      },
+      head: {
+        fontWeight: 700,
+        textTransform: 'uppercase' as const,
+        fontSize: '0.75rem',
+        letterSpacing: '0.05em',
       },
     },
   },
@@ -74,6 +101,9 @@ const commonOverrides = {
     styleOverrides: {
       root: {
         transition: 'background-color 0.15s ease',
+        '&:hover': {
+          backgroundColor: 'rgba(59,48,132,0.04)',
+        },
       },
     },
   },
@@ -83,6 +113,13 @@ const commonOverrides = {
         textTransform: 'none' as const,
         fontWeight: 600,
         fontSize: '0.9rem',
+      },
+    },
+  },
+  MuiDrawer: {
+    styleOverrides: {
+      paper: {
+        borderRight: 'none',
       },
     },
   },
@@ -126,6 +163,23 @@ const commonOverrides = {
       },
     },
   },
+  MuiIconButton: {
+    styleOverrides: {
+      root: {
+        transition: 'all 0.15s ease',
+        '&:hover': {
+          transform: 'scale(1.1)',
+        },
+      },
+    },
+  },
+  MuiLink: {
+    styleOverrides: {
+      root: {
+        transition: 'color 0.15s ease',
+      },
+    },
+  },
   BackstageHeader: {
     styleOverrides: {
       header: {
@@ -155,12 +209,12 @@ export const sthingsLightTheme = createUnifiedTheme({
     },
     background: {
       default: '#edeef2',
-      paper: '#f5f5f8',
+      paper: '#ffffff',
     },
     navigation: {
       background: '#1A1547',
       indicator: '#E8A317',
-      color: '#FFFFFF',
+      color: '#d4d0f0',
       selectedColor: '#E8A317',
       navItem: {
         hoverBackground: '#2A2367',
@@ -204,32 +258,32 @@ export const sthingsDarkTheme = createUnifiedTheme({
       aborted: '#9ca3af',
     },
     background: {
-      default: '#0f1117',
-      paper: '#1a1d2e',
+      default: '#0c0e16',
+      paper: '#161929',
     },
     navigation: {
-      background: '#0F0C2E',
+      background: '#08061e',
       indicator: '#E8A317',
-      color: '#FFFFFF',
+      color: '#a09cc0',
       selectedColor: '#E8A317',
       navItem: {
-        hoverBackground: '#1A1547',
+        hoverBackground: '#141130',
       },
     },
   },
   defaultPageTheme: 'home',
   pageTheme: {
-    home: genPageTheme({ colors: ['#1A1547', '#0F0C2E'], shape: shapes.wave }),
+    home: genPageTheme({ colors: ['#1A1547', '#0c0e16'], shape: shapes.wave }),
     documentation: genPageTheme({
       colors: ['#1A1547', '#134e4a'],
       shape: shapes.wave2,
     }),
     tool: genPageTheme({
-      colors: ['#0F0C2E', '#1A1547'],
+      colors: ['#0c0e16', '#1A1547'],
       shape: shapes.round,
     }),
     other: genPageTheme({
-      colors: ['#1A1547', '#0F0C2E'],
+      colors: ['#1A1547', '#0c0e16'],
       shape: shapes.wave,
     }),
   },
@@ -239,10 +293,12 @@ export const sthingsDarkTheme = createUnifiedTheme({
       styleOverrides: {
         root: {
           borderRadius: 14,
-          boxShadow: '0 1px 3px 0 rgba(0,0,0,0.2), 0 1px 2px -1px rgba(0,0,0,0.15)',
-          transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+          border: '1px solid rgba(157,143,232,0.08)',
+          boxShadow: '0 1px 3px 0 rgba(0,0,0,0.25), 0 1px 2px -1px rgba(0,0,0,0.2)',
+          transition: 'box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease',
           '&:hover': {
-            boxShadow: '0 4px 16px 0 rgba(0,0,0,0.3), 0 2px 8px -2px rgba(0,0,0,0.2)',
+            borderColor: 'rgba(157,143,232,0.15)',
+            boxShadow: '0 4px 16px 0 rgba(0,0,0,0.35), 0 2px 8px -2px rgba(0,0,0,0.25)',
             transform: 'translateY(-1px)',
           },
         },
@@ -254,10 +310,20 @@ export const sthingsDarkTheme = createUnifiedTheme({
           borderRadius: 12,
         },
         elevation1: {
-          boxShadow: '0 1px 3px 0 rgba(0,0,0,0.2), 0 1px 2px -1px rgba(0,0,0,0.15)',
+          boxShadow: '0 1px 3px 0 rgba(0,0,0,0.25), 0 1px 2px -1px rgba(0,0,0,0.2)',
         },
         elevation2: {
-          boxShadow: '0 4px 12px 0 rgba(0,0,0,0.25), 0 2px 6px -2px rgba(0,0,0,0.15)',
+          boxShadow: '0 4px 12px 0 rgba(0,0,0,0.3), 0 2px 6px -2px rgba(0,0,0,0.2)',
+        },
+      },
+    },
+    MuiTableRow: {
+      styleOverrides: {
+        root: {
+          transition: 'background-color 0.15s ease',
+          '&:hover': {
+            backgroundColor: 'rgba(157,143,232,0.06)',
+          },
         },
       },
     },
