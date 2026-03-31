@@ -5,7 +5,29 @@ import {
   shapes,
 } from '@backstage/theme';
 
+const fontFamily = '"Inter", "Helvetica Neue", Arial, sans-serif';
+
 const commonOverrides = {
+  MuiCssBaseline: {
+    styleOverrides: {
+      body: {
+        fontFamily,
+      },
+    },
+  },
+  MuiTypography: {
+    styleOverrides: {
+      root: {
+        fontFamily,
+      },
+      h1: { fontFamily, fontWeight: 700 },
+      h2: { fontFamily, fontWeight: 700 },
+      h3: { fontFamily, fontWeight: 600 },
+      h4: { fontFamily, fontWeight: 600 },
+      h5: { fontFamily, fontWeight: 600 },
+      h6: { fontFamily, fontWeight: 600 },
+    },
+  },
   MuiCard: {
     styleOverrides: {
       root: {
@@ -185,6 +207,14 @@ const commonOverrides = {
       header: {
         backgroundImage: 'none',
         boxShadow: '0 1px 3px 0 rgba(0,0,0,0.08)',
+      },
+      title: {
+        fontFamily,
+        fontWeight: 600,
+        letterSpacing: '-0.01em',
+      },
+      subtitle: {
+        fontFamily,
       },
     },
   },

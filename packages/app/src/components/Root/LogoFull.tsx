@@ -3,17 +3,17 @@ import sthingsLogo from '../../assets/sthings-logo.png';
 
 const useStyles = makeStyles({
   img: {
-    height: 52,
+    height: 64,
     width: 'auto',
   },
   container: {
     display: 'flex',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
   },
   text: {
     color: '#ffffff',
-    fontSize: 20,
+    fontSize: 26,
     fontWeight: 700,
     letterSpacing: 1.5,
     whiteSpace: 'nowrap',
@@ -21,7 +21,7 @@ const useStyles = makeStyles({
   },
   subtitle: {
     color: '#9D8FE8',
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: 400,
     letterSpacing: 0.5,
     whiteSpace: 'nowrap',
