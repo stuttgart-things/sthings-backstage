@@ -1,5 +1,5 @@
 import { createBackendModule, coreServices } from '@backstage/backend-plugin-api';
-import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node/alpha';
+import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node';
 import { claimRegistryDeleteAction } from './action';
 
 export default createBackendModule({

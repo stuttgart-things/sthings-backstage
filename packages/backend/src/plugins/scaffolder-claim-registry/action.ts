@@ -11,23 +11,16 @@ export const claimRegistryDeleteAction = (options: { config: Config }) => {
 
     schema: {
       input: {
-        type: 'object' as const,
-        required: ['claimData'],
-        properties: {
-          claimData: { type: 'string' as const, description: 'JSON string from RegistryClaimPicker containing the full claim object' },
-          claimName: { type: 'string' as const, description: 'Override: the name of the claim to delete' },
-          claimPath: { type: 'string' as const, description: 'Override: the path to the claim file in the repository' },
-          claimCategory: { type: 'string' as const, description: 'Override: the category of the claim (e.g., infra, apps)' },
-          repository: { type: 'string' as const, description: 'Override: the GitHub repository in owner/repo format' },
-          targetBranch: { type: 'string' as const, description: 'The target branch for the PR', default: 'main' },
-        },
+        claimData: z => z.string().describe('JSON string from RegistryClaimPicker containing the full claim object'),
+        claimName: z => z.string().optional().describe('Override: the name of the claim to delete'),
+        claimPath: z => z.string().optional().describe('Override: the path to the claim file in the repository'),
+        claimCategory: z => z.string().optional().describe('Override: the category of the claim (e.g., infra, apps)'),
+        repository: z => z.string().optional().describe('Override: the GitHub repository in owner/repo format'),
+        targetBranch: z => z.string().optional().default('main').describe('The target branch for the PR'),
       },
       output: {
-        type: 'object' as const,
-        properties: {
-          pullRequestUrl: { type: 'string' as const, description: 'The URL of the created pull request' },
-          pullRequestNumber: { type: 'number' as const, description: 'The PR number' },
-        },
+        pullRequestUrl: z => z.string().describe('The URL of the created pull request'),
+        pullRequestNumber: z => z.number().describe('The PR number'),
       },
     },
 
