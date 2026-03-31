@@ -21,7 +21,7 @@ jobs:
       app-directory: "./"
       output-file: "/tmp/sthings-backstage.txt"
       continue-error: "true"
-      dagger-version: v0.19.9
+      dagger-version: v0.20.3
       dagger-module-version: v1.17.0
       branch-name: ${{ github.head_ref || github.ref_name }}
     secrets: inherit # pragma: allowlist secret
