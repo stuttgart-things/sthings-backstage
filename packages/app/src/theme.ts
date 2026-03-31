@@ -208,8 +208,8 @@ export const sthingsLightTheme = createUnifiedTheme({
       aborted: '#6b7280',
     },
     background: {
-      default: '#edeef2',
-      paper: '#ffffff',
+      default: '#f5f0eb',
+      paper: '#fffcf8',
     },
     navigation: {
       background: '#1A1547',
