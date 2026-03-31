@@ -3,25 +3,25 @@ import sthingsLogo from '../../assets/sthings-logo.png';
 
 const useStyles = makeStyles({
   img: {
-    height: 40,
+    height: 52,
     width: 'auto',
   },
   container: {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   text: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 20,
     fontWeight: 700,
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
     whiteSpace: 'nowrap',
     lineHeight: 1.2,
   },
   subtitle: {
     color: '#9D8FE8',
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: 400,
     letterSpacing: 0.5,
     whiteSpace: 'nowrap',

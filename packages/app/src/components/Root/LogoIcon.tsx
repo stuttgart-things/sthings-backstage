@@ -3,7 +3,7 @@ import sthingsLogo from '../../assets/sthings-logo.png';
 
 const useStyles = makeStyles({
   img: {
-    height: 28,
+    height: 36,
     width: 'auto',
   },
 });
