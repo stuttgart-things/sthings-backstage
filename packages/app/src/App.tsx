@@ -50,6 +50,18 @@ import { SignalsDisplay } from '@backstage/plugin-signals';
 
 const app = createApp({
   apis,
+  __experimentalTranslations: {
+    resources: [
+      {
+        $$type: '@backstage/TranslationMessages' as const,
+        id: 'catalog',
+        full: false,
+        messages: {
+          'indexPage.title': 'using modularity to speed up parallel builds',
+        },
+      },
+    ],
+  },
   themes: [
     {
       id: 'sthings-light',
