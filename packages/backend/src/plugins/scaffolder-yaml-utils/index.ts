@@ -1,17 +1,22 @@
 import { createBackendModule } from '@backstage/backend-plugin-api';
-import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
-import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node/alpha';
+import { createTemplateAction, scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node';
 import fs from 'fs-extra';
 import yaml from 'js-yaml';
 import path from 'path';
 
 const yamlParseAction = () => {
-  return createTemplateAction<{
-    filePath: string;
-  }>({
+  return createTemplateAction({
     id: 'utils:yaml:parse',
     description:
       'Reads a YAML file from the scaffolder workspace and outputs its parsed content',
+    schema: {
+      input: {
+        filePath: z => z.string().describe('Path to the YAML file within the workspace'),
+      },
+      output: {
+        content: z => z.record(z.any()).describe('Parsed YAML content'),
+      },
+    },
 
     async handler(ctx) {
       const filePath = path.resolve(ctx.workspacePath, ctx.input.filePath);

@@ -47,9 +47,9 @@ jobs:
 
       - name: Dagger Build and Push
         id: build-image
-        uses: dagger/dagger-for-github@v8.2.0
+        uses: dagger/dagger-for-github@v8.5.0
         with:
-          module: github.com/stuttgart-things/dagger/docker
+          module: github.com/stuttgart-things/dagger/docker@v0.90.0
           call: >-
             build-and-push
             --source .
@@ -61,9 +61,9 @@ jobs:
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
       - name: Scan image with Trivy
-        uses: dagger/dagger-for-github@v8.2.0
+        uses: dagger/dagger-for-github@v8.5.0
         with:
-          module: github.com/stuttgart-things/dagger/trivy
+          module: github.com/stuttgart-things/dagger/trivy@v0.90.0
           call: scan-image --image-ref="ttl.sh/${{ steps.image-name.outputs.name }}:${{ github.sha }}" --severity="HIGH,CRITICAL" --trivy-version="0.64.1" export --path=/tmp/trivy-scan-report.json
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 

@@ -1,6 +1,5 @@
 import { coreServices, createBackendModule } from '@backstage/backend-plugin-api';
-import { createTemplateAction } from '@backstage/plugin-scaffolder-node';
-import { scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node/alpha';
+import { createTemplateAction, scaffolderActionsExtensionPoint } from '@backstage/plugin-scaffolder-node';
 import fs from 'fs-extra';
 import fetch from 'node-fetch';
 import https from 'https';
@@ -9,14 +8,21 @@ import path from 'path';
 const claimMachineryRenderAction = (options: { config: any }) => {
   const { config } = options;
 
-  return createTemplateAction<{
-    template: string;
-    parameters?: Record<string, any>;
-    nameOverride?: string;
-    outputPath?: string;
-  }>({
+  return createTemplateAction({
     id: 'claim-machinery:render',
     description: 'Render a Claim Machinery template into workspace files',
+    schema: {
+      input: {
+        template: z => z.string().describe('The template name to render'),
+        parameters: z => z.record(z.any()).optional().describe('Template parameters'),
+        nameOverride: z => z.string().optional().describe('Override for the name parameter'),
+        outputPath: z => z.string().optional().describe('Output path within workspace'),
+      },
+      output: {
+        manifest: z => z.string().describe('The rendered manifest content'),
+        filePath: z => z.string().describe('The file path of the rendered manifest'),
+      },
+    },
 
     async handler(ctx) {
       const template = ctx.input.template;
