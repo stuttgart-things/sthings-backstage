@@ -36,8 +36,10 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
           z.string().describe('GitHub repository in owner/repo format'),
         targetBranch: z =>
           z.string().optional().default('main').describe('Target branch for the PR'),
+        basePath: z =>
+          z.string().optional().default('claims').describe('Base path in the repository for claim files (e.g. "claims" or "clusters/labul/claims")'),
         claimCategory: z =>
-          z.string().optional().default('infra').describe('Category folder under claims/'),
+          z.string().optional().default('infra').describe('Category folder under the base path'),
         prTitle: z =>
           z.string().optional().describe('Custom PR title'),
         mode: z =>
@@ -62,6 +64,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
         : (rawClaims as ClaimEntry[]);
       const repository = ctx.input.repository as string;
       const targetBranch = (ctx.input.targetBranch as string) ?? 'main';
+      const basePath = ((ctx.input.basePath as string) ?? 'claims').replace(/\/+$/, '');
       const claimCategory = (ctx.input.claimCategory as string) ?? 'infra';
       const customPrTitle = ctx.input.prTitle as string | undefined;
       const mode = (ctx.input.mode as string) ?? 'flux';
@@ -239,7 +242,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
             const claimName = claimNames[i];
             const templateName = claimTemplateNames[i];
             const manifest = renderedManifests[i];
-            const claimDir = `claims/${claimCategory}/${claimName}`;
+            const claimDir = `${basePath}/${claimCategory}/${claimName}`;
 
             // Rendered manifest
             const manifestPath = `${claimDir}/${templateName}.yaml`;
@@ -309,7 +312,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
           }
 
           // Fetch and update (or create) parent kustomization.yaml
-          const kustomizationPath = `claims/${claimCategory}/kustomization.yaml`;
+          const kustomizationPath = `${basePath}/${claimCategory}/kustomization.yaml`;
           const existingKustom = treeData.tree.find(
             item => item.path === kustomizationPath,
           );
@@ -361,7 +364,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
           for (let i = 0; i < claimNames.length; i++) {
             const claimName = claimNames[i];
             const manifest = renderedManifests[i];
-            const manifestPath = `claims/${claimCategory}/${claimName}.yaml`;
+            const manifestPath = `${basePath}/${claimCategory}/${claimName}.yaml`;
 
             treeItems.push({
               path: manifestPath,
