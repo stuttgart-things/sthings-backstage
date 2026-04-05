@@ -38,11 +38,18 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
           z.string().optional().default('infra').describe('Category folder under claims/'),
         prTitle: z =>
           z.string().optional().describe('Custom PR title'),
+        generateCatalogInfo: z =>
+          z.boolean().optional().default(false).describe('Generate a catalog-info.yaml per claim for Backstage catalog registration'),
+        catalogOwner: z =>
+          z.string().optional().default('platform-team').describe('Owner for catalog-info.yaml spec.owner'),
+        generateKustomization: z =>
+          z.boolean().optional().default(false).describe('Generate a per-claim kustomization.yaml referencing the rendered manifest'),
       },
       output: {
         manifest: z => z.string().describe('The combined rendered manifest content'),
         pullRequestUrl: z => z.string().describe('URL of the created pull request'),
         pullRequestNumber: z => z.number().describe('The PR number'),
+        branchName: z => z.string().describe('The name of the created branch'),
       },
     },
 
@@ -52,6 +59,9 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
       const targetBranch = (ctx.input.targetBranch as string) ?? 'main';
       const claimCategory = (ctx.input.claimCategory as string) ?? 'infra';
       const customPrTitle = ctx.input.prTitle as string | undefined;
+      const generateCatalogInfo = (ctx.input.generateCatalogInfo as boolean) ?? false;
+      const catalogOwner = (ctx.input.catalogOwner as string) ?? 'platform-team';
+      const generateKustomization = (ctx.input.generateKustomization as boolean) ?? false;
 
       const baseUrl =
         config.getOptionalString('claimMachinery.apiUrl') ??
@@ -79,6 +89,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
       // Step 1: Render all claim templates via the API
       const renderedManifests: string[] = [];
       const claimNames: string[] = [];
+      const claimTemplateNames: string[] = [];
       const agent = baseUrl.startsWith('https')
         ? new https.Agent({ rejectUnauthorized: false })
         : undefined;
@@ -130,6 +141,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
           const name =
             claim.nameOverride ?? claim.parameters?.name ?? claim.template;
           claimNames.push(name);
+          claimTemplateNames.push(claim.template);
 
           ctx.logger.info(`Rendered template "${claim.template}" as "${name}"`);
         } catch (err) {
@@ -212,20 +224,79 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
           content: string;
         }> = [];
 
-        // Add each claim manifest as its own file under claims/{category}/{name}/
+        // Add each claim manifest + optional catalog-info + optional kustomization
         for (let i = 0; i < claimNames.length; i++) {
           const claimName = claimNames[i];
+          const templateName = claimTemplateNames[i];
           const manifest = renderedManifests[i];
-          const filePath = `claims/${claimCategory}/${claimName}/${claimName}.yaml`;
+          const claimDir = `claims/${claimCategory}/${claimName}`;
 
+          // Rendered manifest — use template name as filename (matching existing convention)
+          const manifestPath = `${claimDir}/${templateName}.yaml`;
           treeItems.push({
-            path: filePath,
+            path: manifestPath,
             mode: '100644',
             type: 'blob',
             content: manifest,
           });
+          ctx.logger.info(`Adding manifest: ${manifestPath}`);
 
-          ctx.logger.info(`Adding file: ${filePath}`);
+          // Per-claim kustomization.yaml
+          if (generateKustomization) {
+            const claimKustomPath = `${claimDir}/kustomization.yaml`;
+            const claimKustomContent = [
+              '---',
+              'apiVersion: kustomize.config.k8s.io/v1beta1',
+              'kind: Kustomization',
+              'resources:',
+              `  - ${templateName}.yaml`,
+              '',
+            ].join('\n');
+
+            treeItems.push({
+              path: claimKustomPath,
+              mode: '100644',
+              type: 'blob',
+              content: claimKustomContent,
+            });
+            ctx.logger.info(`Adding kustomization: ${claimKustomPath}`);
+          }
+
+          // Per-claim catalog-info.yaml
+          if (generateCatalogInfo) {
+            const catalogPath = `${claimDir}/catalog-info.yaml`;
+            const catalogContent = [
+              '---',
+              'apiVersion: backstage.io/v1alpha1',
+              'kind: Component',
+              'metadata:',
+              `  name: ${claimName}`,
+              `  description: Crossplane claim (${templateName}) - ${claimName}`,
+              '  annotations:',
+              `    github.com/project-slug: ${repository}`,
+              `    backstage.io/source-location: url:https://github.com/${repository}/tree/main/${claimDir}`,
+              `    claim-machinery/template: ${templateName}`,
+              `    claim-machinery/category: ${claimCategory}`,
+              '  tags:',
+              '    - crossplane',
+              '    - claim',
+              `    - ${templateName}`,
+              `    - ${claimCategory}`,
+              'spec:',
+              '  type: crossplane-claim',
+              '  lifecycle: production',
+              `  owner: ${catalogOwner}`,
+              '',
+            ].join('\n');
+
+            treeItems.push({
+              path: catalogPath,
+              mode: '100644',
+              type: 'blob',
+              content: catalogContent,
+            });
+            ctx.logger.info(`Adding catalog-info: ${catalogPath}`);
+          }
         }
 
         // Fetch and update (or create) parent kustomization.yaml
@@ -257,7 +328,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
           kustomContent = 'apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n';
         }
 
-        // Handle "resources: []" → convert to list format
+        // Handle "resources: []" -> convert to list format
         kustomContent = kustomContent.replace(/resources:\s*\[\]/, 'resources:');
 
         // Add new claim entries to resources
@@ -353,6 +424,13 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
           customPrTitle ??
           `Create ${claimNames.length} resource claim(s) - ${claimNames.join(', ')}`;
 
+        const prBodyFiles = claimNames.flatMap((name, i) => {
+          const files = [`- \`claims/${claimCategory}/${name}/${claimTemplateNames[i]}.yaml\``];
+          if (generateKustomization) files.push(`- \`claims/${claimCategory}/${name}/kustomization.yaml\``);
+          if (generateCatalogInfo) files.push(`- \`claims/${claimCategory}/${name}/catalog-info.yaml\``);
+          return files;
+        });
+
         ctx.logger.info('Creating pull request...');
         const prRes = await fetch(`${apiBase}/pulls`, {
           method: 'POST',
@@ -374,10 +452,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
               ),
               '',
               '### Files Added',
-              ...claimNames.map(
-                name =>
-                  `- \`claims/${claimCategory}/${name}/${name}.yaml\``,
-              ),
+              ...prBodyFiles,
               `- Updated \`${kustomizationPath}\``,
               '',
               'Created automatically via Backstage Claim Machinery integration.',
@@ -402,6 +477,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
         ctx.output('manifest', combinedManifest);
         ctx.output('pullRequestUrl', prData.html_url);
         ctx.output('pullRequestNumber', prData.number);
+        ctx.output('branchName', prBranch);
       } catch (err) {
         clearTimeout(ghTimeout);
         if (err instanceof Error && err.name === 'AbortError') {
