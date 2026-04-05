@@ -1,7 +1,6 @@
 import { apiDocsPlugin, ApiExplorerPage } from '@backstage/plugin-api-docs';
 import {
     CatalogEntityPage,
-    CatalogIndexPage,
     catalogPlugin,
 } from '@backstage/plugin-catalog';
 import {
@@ -22,11 +21,13 @@ import { UserSettingsPage } from '@backstage/plugin-user-settings';
 import { Navigate, Route } from 'react-router-dom';
 import { apis } from './apis';
 import { entityPage } from './components/catalog/EntityPage';
+import { CustomCatalogPage } from './components/catalog/CustomCatalogPage';
 import { Root } from './components/Root';
 import { searchPage } from './components/search/SearchPage';
 import {
     ClaimMachineryParametersFieldExtension,
     ClaimMachineryPickerFieldExtension,
+    ClaimMachineryMultiClaimFieldExtension,
     RegistryClaimPickerFieldExtension,
 } from './scaffolder';
 
@@ -121,7 +122,7 @@ const app = createApp({
 const routes = (
   <FlatRoutes>
     <Route path="/" element={<Navigate to="catalog" />} />
-    <Route path="/catalog" element={<CatalogIndexPage />} />
+    <Route path="/catalog" element={<CustomCatalogPage />} />
     <Route
       path="/catalog/:namespace/:kind/:name"
       element={<CatalogEntityPage />}
@@ -141,6 +142,7 @@ const routes = (
       <ScaffolderFieldExtensions>
         <ClaimMachineryPickerFieldExtension />
         <ClaimMachineryParametersFieldExtension />
+        <ClaimMachineryMultiClaimFieldExtension />
         <RegistryClaimPickerFieldExtension />
       </ScaffolderFieldExtensions>
     </Route>

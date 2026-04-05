@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 import fetch from 'node-fetch';
 import https from 'https';
 import path from 'path';
+import { claimMachineryRenderMultipleAction } from './action-render-multiple';
 
 const claimMachineryRenderAction = (options: { config: any }) => {
   const { config } = options;
@@ -116,7 +117,8 @@ export default createBackendModule({
       },
       async init({ scaffolderActions, config }) {
         const action = claimMachineryRenderAction({ config });
-        scaffolderActions.addActions(action);
+        const multiAction = claimMachineryRenderMultipleAction({ config });
+        scaffolderActions.addActions(action, multiAction);
       },
     });
   },
