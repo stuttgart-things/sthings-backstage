@@ -20,16 +20,18 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
     schema: {
       input: {
         claims: z =>
-          z
-            .array(
-              z.object({
-                template: z.string().describe('The template name to render'),
-                parameters: z.record(z.any()).optional().describe('Template parameters'),
-                nameOverride: z.string().optional().describe('Override for the name parameter'),
-              }),
-            )
-            .min(1)
-            .describe('Array of claim entries to render'),
+          z.union([
+            z
+              .array(
+                z.object({
+                  template: z.string().describe('The template name to render'),
+                  parameters: z.record(z.any()).optional().describe('Template parameters'),
+                  nameOverride: z.string().optional().describe('Override for the name parameter'),
+                }),
+              )
+              .min(1),
+            z.string().describe('JSON-stringified array of claim entries'),
+          ]).describe('Array of claim entries to render (or JSON string)'),
         repository: z =>
           z.string().describe('GitHub repository in owner/repo format'),
         targetBranch: z =>
@@ -54,7 +56,10 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
     },
 
     async handler(ctx) {
-      const claims = ctx.input.claims as ClaimEntry[];
+      const rawClaims = ctx.input.claims;
+      const claims: ClaimEntry[] = typeof rawClaims === 'string'
+        ? JSON.parse(rawClaims)
+        : (rawClaims as ClaimEntry[]);
       const repository = ctx.input.repository as string;
       const targetBranch = (ctx.input.targetBranch as string) ?? 'main';
       const claimCategory = (ctx.input.claimCategory as string) ?? 'infra';
