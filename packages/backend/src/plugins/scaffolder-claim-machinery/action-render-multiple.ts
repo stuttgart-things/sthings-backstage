@@ -7,6 +7,8 @@ interface ClaimEntry {
   template: string;
   parameters?: Record<string, any>;
   nameOverride?: string;
+  destPath?: string;
+  destFilename?: string;
 }
 
 export const claimMachineryRenderMultipleAction = (options: { config: Config }) => {
@@ -27,6 +29,8 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
                   template: z.string().describe('The template name to render'),
                   parameters: z.record(z.any()).optional().describe('Template parameters'),
                   nameOverride: z.string().optional().describe('Override for the name parameter'),
+                  destPath: z.string().optional().describe('Override destination folder for this claim (e.g. "clusters/prod/manifests")'),
+                  destFilename: z.string().optional().describe('Override destination filename for this claim (e.g. "my-vm.yaml")'),
                 }),
               )
               .min(1),
@@ -242,10 +246,16 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
             const claimName = claimNames[i];
             const templateName = claimTemplateNames[i];
             const manifest = renderedManifests[i];
-            const claimDir = `${basePath}/${claimCategory}/${claimName}`;
+            const claim = claims[i];
+
+            // Per-claim destination override or default structure
+            const claimDir = claim.destPath
+              ? claim.destPath.replace(/\/+$/, '')
+              : `${basePath}/${claimCategory}/${claimName}`;
+            const manifestFilename = claim.destFilename || `${templateName}.yaml`;
 
             // Rendered manifest
-            const manifestPath = `${claimDir}/${templateName}.yaml`;
+            const manifestPath = `${claimDir}/${manifestFilename}`;
             treeItems.push({
               path: manifestPath,
               mode: '100644',
@@ -262,7 +272,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
               'apiVersion: kustomize.config.k8s.io/v1beta1',
               'kind: Kustomization',
               'resources:',
-              `  - ${templateName}.yaml`,
+              `  - ${manifestFilename}`,
               '',
             ].join('\n');
 
@@ -364,7 +374,11 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
           for (let i = 0; i < claimNames.length; i++) {
             const claimName = claimNames[i];
             const manifest = renderedManifests[i];
-            const manifestPath = `${basePath}/${claimCategory}/${claimName}.yaml`;
+            const claim = claims[i];
+
+            const manifestPath = claim.destPath
+              ? `${claim.destPath.replace(/\/+$/, '')}/${claim.destFilename || `${claimName}.yaml`}`
+              : `${basePath}/${claimCategory}/${claimName}.yaml`;
 
             treeItems.push({
               path: manifestPath,
