@@ -28,4 +28,4 @@ This Backstage instance serves as the central developer portal for Stuttgart Thi
 
 - **Backstage Version**: 1.47.0
 - **Node.js**: 22 or 24
-- **Package Manager**: Yarn 4.4.1
+- **Package Manager**: Yarn 4.13.0

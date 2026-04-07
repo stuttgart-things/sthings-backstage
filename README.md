@@ -30,7 +30,7 @@ sthings-backstage provides a centralized platform for managing software developm
 
 ## Getting Started
 
-**Prerequisites:** Node.js 22 or 24, Yarn 4.4.1
+**Prerequisites:** Node.js 22 or 24, Yarn 4.13.0
 
 ```sh
 yarn install
@@ -186,3 +186,17 @@ metadata:
 ```
 
 For complete details, see the [GitHub Actions Plugin documentation](docs/github-actions-plugin.md).
+
+## Known Upgrade Constraints
+
+### React 19
+
+React 19 upgrade is **blocked** by upstream Backstage dependencies (as of April 2026). Key blockers:
+
+| Dependency | Issue | Status |
+|-----------|-------|--------|
+| `@material-ui/core` (MUI v4) | Uses `ReactDOM.findDOMNode()`, removed in React 19 | Waiting on Backstage MUI v5 migration |
+| `@graphiql/react@0.29.0` | Uses `unmountComponentAtNode`, removed in React 19. Newer versions (0.37+) have breaking API changes incompatible with `@backstage/plugin-api-docs` | Waiting on `@backstage/plugin-api-docs` update |
+| `react-markdown@8.0.7` | TypeScript type errors with `@types/react@19` | Fixable via resolution to `^10.1.0`, but moot given the above |
+
+**Action:** Revisit once Backstage officially supports React 19 and completes the MUI v5 migration. Track progress in the [Backstage MUI v5 migration issue](https://github.com/backstage/backstage/issues/20447).
