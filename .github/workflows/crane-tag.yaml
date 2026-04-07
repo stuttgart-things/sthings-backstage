@@ -46,13 +46,14 @@ jobs:
             --source ghcr.io/stuttgart-things/sthings-backstage:${{ steps.vars.outputs.sha }}
             --target ghcr.io/stuttgart-things/sthings-backstage:${{ steps.vars.outputs.release_tag }}
             --target-registry ghcr.io
-            --target-username ${{ github.actor }}
+            --target-username env:REGISTRY_USERNAME
             --target-password env:REGISTRY_PASSWORD
             --source-registry ghcr.io
-            --source-username ${{ github.actor }}
+            --source-username env:REGISTRY_USERNAME
             --source-password env:REGISTRY_PASSWORD
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
+          REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Summary

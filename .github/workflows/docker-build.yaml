@@ -72,12 +72,13 @@ jobs:
             --repository-name sthings-backstage
             --registry-url ghcr.io/stuttgart-things
             --tag "${{ github.sha }}"
-            --registry-username ${{ github.actor }}
+            --registry-username env:REGISTRY_USERNAME
             --registry-password env:REGISTRY_PASSWORD
             --dockerfile packages/backend/Dockerfile
             --progress plain
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
+          REGISTRY_USERNAME: ${{ github.actor }}
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Scan image with Trivy
