@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.0.0...v1.1.0) (2026-04-07)
+
+
+### Bug Fixes
+
+* pass registry username as env secret to dagger modules ([f7fa3ad](https://github.com/stuttgart-things/sthings-backstage/commit/f7fa3ad1700eae9b1fa0b72153db7097e894d2f3))
+
+
+### Features
+
+* push images to ghcr.io and tag releases with crane ([d1c4c62](https://github.com/stuttgart-things/sthings-backstage/commit/d1c4c623f5f92447bdda7c6a6ff14b6461dafe2d))
+
 # 1.0.0 (2026-04-07)
 
 
