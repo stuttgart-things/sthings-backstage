@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.1.0...v1.1.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* add crane tagging as job in release workflow ([cea3190](https://github.com/stuttgart-things/sthings-backstage/commit/cea319021a9278c6a731ac3cb5f7127aac7ea310))
+
 # [1.1.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.0.0...v1.1.0) (2026-04-07)
 
 
