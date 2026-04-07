@@ -1,0 +1,63 @@
+---
+name: Tag Release Image
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.0.0)"
+        required: true
+
+concurrency:
+  group: crane-tag
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  crane-tag:
+    name: Tag image with release version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set tag variables
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${{ inputs.tag }}"
+          fi
+          echo "release_tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Copy SHA image to release tag
+        uses: dagger/dagger-for-github@v8.4.1
+        with:
+          module: github.com/stuttgart-things/dagger/crane@v0.91.0
+          call: >-
+            copy
+            --source ghcr.io/stuttgart-things/sthings-backstage:${{ steps.vars.outputs.sha }}
+            --target ghcr.io/stuttgart-things/sthings-backstage:${{ steps.vars.outputs.release_tag }}
+            --target-registry ghcr.io
+            --target-username ${{ github.actor }}
+            --target-password env:REGISTRY_PASSWORD
+            --source-registry ghcr.io
+            --source-username ${{ github.actor }}
+            --source-password env:REGISTRY_PASSWORD
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+        env:
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## Image Tagged" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Source:** \`ghcr.io/stuttgart-things/sthings-backstage:${{ steps.vars.outputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Tagged:** \`ghcr.io/stuttgart-things/sthings-backstage:${{ steps.vars.outputs.release_tag }}\`" >> $GITHUB_STEP_SUMMARY
