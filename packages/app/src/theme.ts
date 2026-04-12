@@ -6,10 +6,14 @@ import {
 } from '@backstage/theme';
 
 const fontFamily = '"Inter", "Helvetica Neue", Arial, sans-serif';
+const headerFontFamily = '"JetBrains Mono", "Fira Code", "Source Code Pro", monospace';
 
 const commonOverrides = {
   MuiCssBaseline: {
     styleOverrides: {
+      '@global': {
+        '@import': "url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap')",
+      },
       body: {
         fontFamily,
       },
@@ -209,12 +213,17 @@ const commonOverrides = {
         boxShadow: '0 1px 3px 0 rgba(0,0,0,0.08)',
       },
       title: {
-        fontFamily,
-        fontWeight: 600,
-        letterSpacing: '-0.01em',
+        fontFamily: headerFontFamily,
+        fontWeight: 700,
+        letterSpacing: '-0.02em',
+        fontSize: '2.4rem',
       },
       subtitle: {
-        fontFamily,
+        fontFamily: headerFontFamily,
+        fontWeight: 400,
+        fontSize: '1.15rem',
+        letterSpacing: '0.02em',
+        opacity: 0.85,
       },
     },
   },
@@ -288,8 +297,8 @@ export const sthingsDarkTheme = createUnifiedTheme({
       aborted: '#9ca3af',
     },
     background: {
-      default: '#0c0e16',
-      paper: '#161929',
+      default: '#1a1520',
+      paper: '#241e2e',
     },
     navigation: {
       background: '#08061e',
@@ -303,17 +312,17 @@ export const sthingsDarkTheme = createUnifiedTheme({
   },
   defaultPageTheme: 'home',
   pageTheme: {
-    home: genPageTheme({ colors: ['#1A1547', '#0c0e16'], shape: shapes.wave }),
+    home: genPageTheme({ colors: ['#3B3084', '#1A1547'], shape: shapes.wave }),
     documentation: genPageTheme({
-      colors: ['#1A1547', '#134e4a'],
+      colors: ['#3B3084', '#0D9488'],
       shape: shapes.wave2,
     }),
     tool: genPageTheme({
-      colors: ['#0c0e16', '#1A1547'],
+      colors: ['#2A2367', '#3B3084'],
       shape: shapes.round,
     }),
     other: genPageTheme({
-      colors: ['#1A1547', '#0c0e16'],
+      colors: ['#3B3084', '#1A1547'],
       shape: shapes.wave,
     }),
   },

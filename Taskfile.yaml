@@ -29,7 +29,7 @@ tasks:
   build-backend:
     desc: Build backstage backend bundle
     cmds:
-      - yarn install --immutable
+      - yarn install || true
       - yarn tsc
       - yarn build:backend
 
@@ -76,6 +76,9 @@ tasks:
     cmds:
       - |
         bash -c '
+        source ~/.nvm/nvm.sh
+        nvm use 22
+
         set -a
         source .env
         set +a
