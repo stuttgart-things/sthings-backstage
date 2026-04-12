@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.1.1...v1.2.0) (2026-04-12)
+
+
+### Features
+
+* **auth:** add scaffolder-scoped externalAccess token ([52cb4ba](https://github.com/stuttgart-things/sthings-backstage/commit/52cb4badd777b3024752cfdc1d0fd942adbd1b9e))
+
 ## [1.1.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.1.0...v1.1.1) (2026-04-07)
 
 
