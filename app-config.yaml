@@ -17,9 +17,11 @@ backend:
         options:
           token: ${DAPR_SERVICE_TOKEN}
           subject: dapr-workflow-service
-        # Optional but recommended: restrict to scaffolder plugin only
+        # Restrict to scaffolder + catalog (catalog needed for dry-run
+        # to look up templates by ref instead of passing inline bodies)
         accessRestrictions:
           - plugin: scaffolder
+          - plugin: catalog
 
   baseUrl: ${BACKEND_BASE_URL:-http://localhost:7007}
   listen:
