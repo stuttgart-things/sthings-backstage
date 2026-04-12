@@ -37,20 +37,17 @@ jobs:
           echo "release_tag=${TAG}" >> $GITHUB_OUTPUT
           echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
 
-      - name: Copy SHA image to release tag
+      - name: Copy ttl.sh image to ghcr.io release tag
         uses: dagger/dagger-for-github@v8.4.1
         with:
           module: github.com/stuttgart-things/dagger/crane@v0.91.0
           call: >-
             copy
-            --source ghcr.io/stuttgart-things/sthings-backstage:${{ steps.vars.outputs.sha }}
+            --source ttl.sh/stuttgart-things-sthings-backstage:${{ steps.vars.outputs.sha }}
             --target ghcr.io/stuttgart-things/sthings-backstage:${{ steps.vars.outputs.release_tag }}
             --target-registry ghcr.io
             --target-username env:REGISTRY_USERNAME
             --target-password env:REGISTRY_PASSWORD
-            --source-registry ghcr.io
-            --source-username env:REGISTRY_USERNAME
-            --source-password env:REGISTRY_PASSWORD
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
           REGISTRY_USERNAME: ${{ github.actor }}
@@ -60,5 +57,5 @@ jobs:
         run: |
           echo "## Image Tagged" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Source:** \`ghcr.io/stuttgart-things/sthings-backstage:${{ steps.vars.outputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Source:** \`ttl.sh/stuttgart-things-sthings-backstage:${{ steps.vars.outputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Tagged:** \`ghcr.io/stuttgart-things/sthings-backstage:${{ steps.vars.outputs.release_tag }}\`" >> $GITHUB_STEP_SUMMARY

@@ -63,38 +63,3 @@ jobs:
             echo "new_release_published=false" >> $GITHUB_OUTPUT
           fi
 
-  crane-tag:
-    name: Tag image with release version
-    runs-on: ubuntu-latest
-    needs: release
-    if: needs.release.outputs.new_release_published == 'true'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Copy SHA image to release tag
-        uses: dagger/dagger-for-github@v8.4.1
-        with:
-          module: github.com/stuttgart-things/dagger/crane@v0.91.0
-          call: >-
-            copy
-            --source ghcr.io/stuttgart-things/sthings-backstage:${{ github.event.workflow_run.head_sha || github.sha }}
-            --target ghcr.io/stuttgart-things/sthings-backstage:v${{ needs.release.outputs.new_release_version }}
-            --target-registry ghcr.io
-            --target-username env:REGISTRY_USERNAME
-            --target-password env:REGISTRY_PASSWORD
-            --source-registry ghcr.io
-            --source-username env:REGISTRY_USERNAME
-            --source-password env:REGISTRY_PASSWORD
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-        env:
-          REGISTRY_USERNAME: ${{ github.actor }}
-          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Summary
-        run: |
-          echo "## Image Tagged" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Source:** \`ghcr.io/stuttgart-things/sthings-backstage:${{ github.event.workflow_run.head_sha || github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Tagged:** \`ghcr.io/stuttgart-things/sthings-backstage:v${{ needs.release.outputs.new_release_version }}\`" >> $GITHUB_STEP_SUMMARY

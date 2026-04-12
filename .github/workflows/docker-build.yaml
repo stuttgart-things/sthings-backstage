@@ -43,8 +43,7 @@ jobs:
       - name: Set image name
         id: image-name
         run: |
-          RANDOM_SUFFIX=$(openssl rand -hex 6)
-          echo "name=sthings-backstage-${RANDOM_SUFFIX}" >> $GITHUB_OUTPUT
+          echo "name=stuttgart-things-sthings-backstage" >> $GITHUB_OUTPUT
 
       - name: Dagger Build and Push (ttl.sh)
         id: build-image
@@ -60,26 +59,6 @@ jobs:
             --dockerfile packages/backend/Dockerfile
             --progress plain
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-
-      - name: Dagger Build and Push (ghcr.io)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: dagger/dagger-for-github@v8.4.1
-        with:
-          module: github.com/stuttgart-things/dagger/docker@v0.90.1
-          call: >-
-            build-and-push
-            --source .
-            --repository-name sthings-backstage
-            --registry-url ghcr.io/stuttgart-things
-            --tag "${{ github.sha }}"
-            --registry-username env:REGISTRY_USERNAME
-            --registry-password env:REGISTRY_PASSWORD
-            --dockerfile packages/backend/Dockerfile
-            --progress plain
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-        env:
-          REGISTRY_USERNAME: ${{ github.actor }}
-          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Scan image with Trivy
         uses: dagger/dagger-for-github@v8.4.1
