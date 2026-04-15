@@ -1,0 +1,53 @@
+---
+name: Stage Image (ttl.sh -> ghcr.io)
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Source commit SHA present on ttl.sh (defaults to current ref SHA)"
+        required: false
+        type: string
+      tag:
+        description: "Target tag on ghcr.io"
+        required: false
+        default: stage
+        type: string
+      platform:
+        description: "Image platform"
+        required: false
+        default: linux/amd64
+        type: string
+
+concurrency:
+  group: stage-image-${{ inputs.tag }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  resolve:
+    name: Resolve inputs
+    runs-on: ubuntu-latest
+    outputs:
+      source-image: ${{ steps.vars.outputs.source-image }}
+      target-image: ${{ steps.vars.outputs.target-image }}
+    steps:
+      - id: vars
+        run: |
+          SHA="${{ inputs.sha }}"
+          if [ -z "$SHA" ]; then
+            SHA="${{ github.sha }}"
+          fi
+          echo "source-image=ttl.sh/stuttgart-things-sthings-backstage:${SHA}" >> $GITHUB_OUTPUT
+          echo "target-image=ghcr.io/stuttgart-things/sthings-backstage:${{ inputs.tag }}" >> $GITHUB_OUTPUT
+
+  stage:
+    needs: resolve
+    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-stage-image.yaml@main
+    with:
+      source-image: ${{ needs.resolve.outputs.source-image }}
+      target-image: ${{ needs.resolve.outputs.target-image }}
+      target-registry: ghcr.io
+      platform: ${{ inputs.platform }}
