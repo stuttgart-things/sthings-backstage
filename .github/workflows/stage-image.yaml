@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       sha:
-        description: "Source commit SHA present on ttl.sh (defaults to current ref SHA)"
+        description: "Bare commit SHA on ttl.sh, OR a full image reference (e.g. ttl.sh/foo:abc). Defaults to current ref SHA."
         required: false
         type: string
       tag:
@@ -36,11 +36,16 @@ jobs:
     steps:
       - id: vars
         run: |
-          SHA="${{ inputs.sha }}"
-          if [ -z "$SHA" ]; then
-            SHA="${{ github.sha }}"
+          INPUT="${{ inputs.sha }}"
+          if [ -z "$INPUT" ]; then
+            INPUT="${{ github.sha }}"
           fi
-          echo "source-image=ttl.sh/stuttgart-things-sthings-backstage:${SHA}" >> $GITHUB_OUTPUT
+          if [[ "$INPUT" == *"/"* ]]; then
+            SOURCE="$INPUT"
+          else
+            SOURCE="ttl.sh/stuttgart-things-sthings-backstage:${INPUT}"
+          fi
+          echo "source-image=${SOURCE}" >> $GITHUB_OUTPUT
           echo "target-image=ghcr.io/stuttgart-things/sthings-backstage:${{ inputs.tag }}" >> $GITHUB_OUTPUT
 
   stage:
