@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.3.0...v1.3.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* **stage-image:** accept full image ref in sha input ([#66](https://github.com/stuttgart-things/sthings-backstage/issues/66)) ([115cc88](https://github.com/stuttgart-things/sthings-backstage/commit/115cc882c6a1e9ed18d40eb9b5881b3eefec59ab))
+
 # [1.3.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.2.1...v1.3.0) (2026-04-15)
 
 
