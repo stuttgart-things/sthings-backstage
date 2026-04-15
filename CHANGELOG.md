@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/stuttgart-things/sthings-backstage/compare/v1.3.1...v1.3.2) (2026-04-15)
+
+
+### Bug Fixes
+
+* **stage-image:** drop sha input, always use github.sha ([#67](https://github.com/stuttgart-things/sthings-backstage/issues/67)) ([d90d7db](https://github.com/stuttgart-things/sthings-backstage/commit/d90d7db059bb52b68359acde469db812a8e2cfb9))
+
 ## [1.3.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.3.0...v1.3.1) (2026-04-15)
 
 
