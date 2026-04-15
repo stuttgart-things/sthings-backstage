@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.2.1...v1.3.0) (2026-04-15)
+
+
+### Features
+
+* add on-demand stage-image workflow ([#65](https://github.com/stuttgart-things/sthings-backstage/issues/65)) ([3010f6d](https://github.com/stuttgart-things/sthings-backstage/commit/3010f6dcc75112c75594ae3ef995e2c361899872))
+
 ## [1.2.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.2.0...v1.2.1) (2026-04-15)
 
 
