@@ -1,3 +1,10 @@
+## [1.3.4](https://github.com/stuttgart-things/sthings-backstage/compare/v1.3.3...v1.3.4) (2026-05-22)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @backstage-community/plugin-github-actions to v1 ([#75](https://github.com/stuttgart-things/sthings-backstage/issues/75)) ([43d9404](https://github.com/stuttgart-things/sthings-backstage/commit/43d94044ebaef83dfc34974c1d91f2ff673d5ca6))
+
 ## [1.3.3](https://github.com/stuttgart-things/sthings-backstage/compare/v1.3.2...v1.3.3) (2026-05-22)
 
 
