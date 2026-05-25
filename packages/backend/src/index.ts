@@ -40,6 +40,12 @@ backend.add(import('@backstage/plugin-auth-backend'));
 // See https://backstage.io/docs/backend-system/building-backends/migrating#the-auth-plugin
 backend.add(import('@backstage/plugin-auth-backend-module-guest-provider'));
 backend.add(import('@backstage/plugin-auth-backend-module-github-provider'));
+// OIDC (Zitadel) provider — opt-in via AUTH_OIDC_ENABLED=true to keep
+// GitHub-only environments fully unchanged. When enabled, the provider
+// reads auth.providers.oidc.development from app-config (sthings-backstage#82).
+if (process.env.AUTH_OIDC_ENABLED === 'true') {
+  backend.add(import('@backstage/plugin-auth-backend-module-oidc-provider'));
+}
 // See https://backstage.io/docs/auth/guest/provider
 
 // catalog plugin
