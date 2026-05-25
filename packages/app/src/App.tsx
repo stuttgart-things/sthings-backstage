@@ -37,8 +37,10 @@ import {
     AlertDisplay,
     OAuthRequestDialog,
     SignInPage,
+    SignInProviderConfig,
 } from '@backstage/core-components';
-import { githubAuthApiRef } from '@backstage/core-plugin-api';
+import { githubAuthApiRef, useApi, configApiRef } from '@backstage/core-plugin-api';
+import { oidcAuthApiRef } from './apis';
 import { UnifiedThemeProvider } from '@backstage/theme';
 import LightIcon from '@material-ui/icons/WbSunny';
 import DarkIcon from '@material-ui/icons/Brightness2';
@@ -101,21 +103,36 @@ const app = createApp({
     });
   },
   components: {
-    SignInPage: props => (
-      <SignInPage
-        {...props}
-        auto
-        providers={[
-          'guest',
-          {
-            id: 'github-auth-provider',
-            title: 'GitHub',
-            message: 'Sign in using GitHub',
-            apiRef: githubAuthApiRef,
-          },
-        ]}
-      />
-    ),
+    // Config-driven SignInPage: GitHub stays always-on; OIDC (Zitadel) is
+    // appended only when `app.auth.oidcEnabled=true` in app-config. The
+    // backend-side OIDC module is gated by AUTH_OIDC_ENABLED — both flags
+    // are driven by the same env var via Flux substitution. GitHub-only
+    // environments see exactly the same SignInPage as before.
+    SignInPage: props => {
+      const configApi = useApi(configApiRef);
+      const oidcEnabled =
+        configApi.getOptionalBoolean('app.auth.oidcEnabled') ?? false;
+      const providers: Array<'guest' | SignInProviderConfig> = [
+        'guest',
+        {
+          id: 'github-auth-provider',
+          title: 'GitHub',
+          message: 'Sign in using GitHub',
+          apiRef: githubAuthApiRef,
+        },
+        ...(oidcEnabled
+          ? [
+              {
+                id: 'oidc-auth-provider',
+                title: 'Zitadel',
+                message: 'Sign in using Zitadel SSO',
+                apiRef: oidcAuthApiRef,
+              },
+            ]
+          : []),
+      ];
+      return <SignInPage {...props} auto providers={providers} />;
+    },
   },
 });
 

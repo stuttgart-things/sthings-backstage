@@ -1,6 +1,12 @@
 app:
   title: ${APP_TITLE:-sthings}
   baseUrl: ${APP_BASE_URL}
+  # Frontend-visible auth feature flags. `oidcEnabled` controls whether the
+  # SignInPage shows the Zitadel/OIDC button (the corresponding backend module
+  # is also gated by AUTH_OIDC_ENABLED in packages/backend/src/index.ts).
+  # GitHub stays always-on so existing flows are unaffected.
+  auth:
+    oidcEnabled: ${AUTH_OIDC_ENABLED:-false}
 
 organization:
   name: ${ORGANIZATION_NAME:-sthings}
@@ -100,6 +106,23 @@ auth:
         # enterpriseInstanceUrl: ${GHE_URL}
         signIn:
           resolvers:
+            - resolver: usernameMatchingUserEntityName
+    # OIDC provider (Zitadel). Block is always present so substitution works
+    # everywhere; the backend module is only loaded when AUTH_OIDC_ENABLED=true
+    # (see packages/backend/src/index.ts), so unset env vars don't blow up
+    # GitHub-only environments. Provisioned by the zitadel-config Terraform
+    # module on stuttgart-things.
+    oidc:
+      development:
+        metadataUrl: ${ZITADEL_ISSUER:-}
+        clientId: ${ZITADEL_CLIENT_ID:-}
+        clientSecret: ${ZITADEL_CLIENT_SECRET:-}
+        prompt: auto
+        signIn:
+          resolvers:
+            # Match on email first (works for federated users with no GitHub
+            # entity), fall back to username for legacy entities.
+            - resolver: emailMatchingUserEntityProfileEmail
             - resolver: usernameMatchingUserEntityName
 
 scaffolder:
