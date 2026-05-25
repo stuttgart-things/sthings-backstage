@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.3.4...v1.4.0) (2026-05-25)
+
+
+### Features
+
+* **auth:** add opt-in OIDC (Zitadel) sign-in alongside GitHub ([#86](https://github.com/stuttgart-things/sthings-backstage/issues/86)) ([8be4867](https://github.com/stuttgart-things/sthings-backstage/commit/8be48678bf84d891c2e007d975e1c07ded2ca286))
+
 ## [1.3.4](https://github.com/stuttgart-things/sthings-backstage/compare/v1.3.3...v1.3.4) (2026-05-22)
 
 
