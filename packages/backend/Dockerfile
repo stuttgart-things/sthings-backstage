@@ -53,6 +53,15 @@ RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
 RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
     yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
 
+# better-sqlite3's prebuilt binary isn't fetched under this install, so the
+# install leaves only source and the backend crashes at startup with "Could
+# not locate the bindings file" (core.auth -> core.httpRouter) whenever
+# backend.database uses better-sqlite3 (e.g. the labul cluster's :memory: db).
+# Compile the native binding from source here, where the toolchain exists;
+# the runtime stage then inherits the built .node via COPY --from=builder.
+COPY --chown=node:node scripts/rebuild-native.sh ./scripts/rebuild-native.sh
+RUN bash scripts/rebuild-native.sh
+
 # ---------- Stage 2: runtime (no build toolchain) ----------
 FROM node:24-bookworm-slim
 
