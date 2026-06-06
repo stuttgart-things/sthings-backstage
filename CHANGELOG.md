@@ -1,3 +1,10 @@
+## [1.4.3](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.2...v1.4.3) (2026-06-06)
+
+
+### Bug Fixes
+
+* **ci:** pass real username to ghcr crane copy (fixes DENIED) ([#101](https://github.com/stuttgart-things/sthings-backstage/issues/101)) ([47ed602](https://github.com/stuttgart-things/sthings-backstage/commit/47ed602e439316b431ba73cf64674f2d452c3e51))
+
 ## [1.4.2](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.1...v1.4.2) (2026-06-06)
 
 
