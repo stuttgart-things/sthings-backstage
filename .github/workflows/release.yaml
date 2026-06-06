@@ -63,3 +63,71 @@ jobs:
             echo "new_release_published=false" >> $GITHUB_OUTPUT
           fi
 
+  # Promote the freshly built image to GHCR under the new release tag.
+  #
+  # This lives here (not in crane-tag.yaml's `release: published` trigger)
+  # because semantic-release publishes the GitHub Release with the default
+  # GITHUB_TOKEN, and GitHub does not trigger workflows from GITHUB_TOKEN
+  # events — so the `release: published` promotion never fired. Promoting
+  # inline avoids that, and uses the commit that was actually built to
+  # ttl.sh (workflow_run.head_sha) rather than semantic-release's own
+  # `chore(release) [skip ci]` commit (which has no image).
+  promote-image:
+    name: Promote release image to GHCR
+    needs: release
+    if: needs.release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      # The commit Docker Build & Push built to ttl.sh. For workflow_run this
+      # is the upstream run's head; for manual workflow_dispatch fall back to
+      # the checked-out SHA.
+      SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      VERSION: ${{ needs.release.outputs.new_release_version }}
+
+    steps:
+      - name: Copy ttl.sh image to ghcr.io release tag
+        uses: dagger/dagger-for-github@v8.4.1
+        with:
+          version: v0.20.3
+          module: github.com/stuttgart-things/dagger/crane@v0.91.0
+          call: >-
+            copy
+            --source ttl.sh/stuttgart-things-sthings-backstage:${{ env.SOURCE_SHA }}
+            --target ghcr.io/stuttgart-things/sthings-backstage:v${{ env.VERSION }}
+            --target-registry ghcr.io
+            --target-username env:REGISTRY_USERNAME
+            --target-password env:REGISTRY_PASSWORD
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copy ttl.sh image to ghcr.io latest
+        uses: dagger/dagger-for-github@v8.4.1
+        with:
+          version: v0.20.3
+          module: github.com/stuttgart-things/dagger/crane@v0.91.0
+          call: >-
+            copy
+            --source ttl.sh/stuttgart-things-sthings-backstage:${{ env.SOURCE_SHA }}
+            --target ghcr.io/stuttgart-things/sthings-backstage:latest
+            --target-registry ghcr.io
+            --target-username env:REGISTRY_USERNAME
+            --target-password env:REGISTRY_PASSWORD
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+        env:
+          REGISTRY_USERNAME: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Release image promoted to GHCR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Source:** \`ttl.sh/stuttgart-things-sthings-backstage:${SOURCE_SHA}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:** \`ghcr.io/stuttgart-things/sthings-backstage:v${VERSION}\`, \`:latest\`" >> $GITHUB_STEP_SUMMARY
+
