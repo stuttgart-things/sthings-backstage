@@ -69,6 +69,21 @@ FROM node:24-bookworm-slim
 ENV NODE_OPTIONS="--no-node-snapshot"
 ENV NODE_ENV=production
 
+# TechDocs is configured with generator.runIn: 'local' in this deployment, so
+# the backend spawns `mkdocs` in-process. It must be present at runtime, or doc
+# builds fail with "spawn mkdocs ENOENT". (Only mkdocs + python here — the C/C++
+# build toolchain stays out of the runtime image.)
+# hadolint ignore=DL3013,DL3042
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends python3 python3-pip && \
+    rm -rf /var/lib/apt/lists/* && \
+    python3 -m pip install --break-system-packages --no-cache-dir \
+      mkdocs \
+      mkdocs-material \
+      mkdocs-techdocs-core
+
 USER node
 WORKDIR /app
 
