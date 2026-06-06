@@ -2282,8 +2282,8 @@ __metadata:
   linkType: hard
 
 "@backstage/backend-defaults@npm:^0.17.0":
-  version: 0.17.1
-  resolution: "@backstage/backend-defaults@npm:0.17.1"
+  version: 0.17.2
+  resolution: "@backstage/backend-defaults@npm:0.17.2"
   dependencies:
     "@aws-sdk/abort-controller": "npm:^3.347.0"
     "@aws-sdk/client-codecommit": "npm:^3.350.0"
@@ -2366,7 +2366,7 @@ __metadata:
       optional: true
     better-sqlite3:
       optional: true
-  checksum: 10c0/55580871e4f3f2246d8c7e2629724df9e5203fd9e8e9e17cffd30bef666404212aaca37089a6e8fe1bccd62a55b79afb43db0bf9a7e360c1da7385756144404c
+  checksum: 10c0/9b9c3904ed89b991e1fab3ce1f8aae7cec775618de0b4ada22bba4b494e1638f0054fa5ba0590244462da13a48317c1f6fb61e4444a54f72a417ca51e8ab17e6
   languageName: node
   linkType: hard
 
@@ -2472,6 +2472,21 @@ __metadata:
     lodash: "npm:^4.17.21"
     uri-template: "npm:^2.0.0"
   checksum: 10c0/997d4eaa144d5f951d6185c938cb12a270b6050023013cfff4284833b822fa9be58c10a81815b872fa91ce3b9d3aed6757c5cc4c3e8f2e00ab7c31eee690f7fc
+  languageName: node
+  linkType: hard
+
+"@backstage/catalog-client@npm:^1.15.2":
+  version: 1.15.2
+  resolution: "@backstage/catalog-client@npm:1.15.2"
+  dependencies:
+    "@backstage/catalog-model": "npm:^1.9.0"
+    "@backstage/errors": "npm:^1.3.1"
+    "@backstage/filter-predicates": "npm:^0.1.3"
+    "@backstage/plugin-catalog-common": "npm:^1.1.10"
+    cross-fetch: "npm:^4.0.0"
+    lodash: "npm:^4.17.21"
+    uri-template: "npm:^2.0.0"
+  checksum: 10c0/a0b032f67aebb463db8d51b12f117e09cf8227511a5856777209a90a2fed09de8063d7a1a6d8a53b118420e54c63c5eea035feaaa3195b6d2a12687a11fb39dd
   languageName: node
   linkType: hard
 
@@ -3187,30 +3202,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@backstage/frontend-plugin-api@npm:^0.16.0":
-  version: 0.16.0
-  resolution: "@backstage/frontend-plugin-api@npm:0.16.0"
-  dependencies:
-    "@backstage/errors": "npm:^1.3.0"
-    "@backstage/filter-predicates": "npm:^0.1.2"
-    "@backstage/types": "npm:^1.2.2"
-    "@backstage/version-bridge": "npm:^1.0.12"
-    "@standard-schema/spec": "npm:^1.1.0"
-    zod: "npm:^3.25.76 || ^4.0.0"
-    zod-to-json-schema: "npm:^3.25.1"
-  peerDependencies:
-    "@types/react": ^17.0.0 || ^18.0.0
-    react: ^17.0.0 || ^18.0.0
-    react-dom: ^17.0.0 || ^18.0.0
-    react-router-dom: ^6.30.2
-  peerDependenciesMeta:
-    "@types/react":
-      optional: true
-  checksum: 10c0/a6b37f2c64b7ec6d64b56ae17986819b975bfa65bb9f108f0f46464e044b1fc1f779058386fbbb7e8c8bb3cf44774b27896945646b87f38dd787976a6abedcad
-  languageName: node
-  linkType: hard
-
-"@backstage/frontend-plugin-api@npm:^0.16.2":
+"@backstage/frontend-plugin-api@npm:^0.16.0, @backstage/frontend-plugin-api@npm:^0.16.2":
   version: 0.16.2
   resolution: "@backstage/frontend-plugin-api@npm:0.16.2"
   dependencies:
@@ -3234,9 +3226,10 @@ __metadata:
   linkType: hard
 
 "@backstage/frontend-plugin-api@npm:^0.17.0":
-  version: 0.17.0
-  resolution: "@backstage/frontend-plugin-api@npm:0.17.0"
+  version: 0.17.1
+  resolution: "@backstage/frontend-plugin-api@npm:0.17.1"
   dependencies:
+    "@backstage/config": "npm:^1.3.8"
     "@backstage/errors": "npm:^1.3.1"
     "@backstage/filter-predicates": "npm:^0.1.3"
     "@backstage/types": "npm:^1.2.2"
@@ -3252,7 +3245,7 @@ __metadata:
   peerDependenciesMeta:
     "@types/react":
       optional: true
-  checksum: 10c0/2e041e3dc74d6463195b7c6dfe31d7097e61232564f450b129c4739c4e91ae102653c182c200e988bb53c6f471c742af68ece05a87c4e61917ad5f4bcb359a73
+  checksum: 10c0/b79197554f2d8915ad698405e7c169e0835463060780b48bbbf34e8a3a094b576ad6d21bbe1d72994d3961db7d8654510efcf09f25f9f5c2f439a9e6c71ad68d
   languageName: node
   linkType: hard
 
@@ -3624,12 +3617,12 @@ __metadata:
   linkType: hard
 
 "@backstage/plugin-catalog-backend@npm:^3.5.0, @backstage/plugin-catalog-backend@npm:^3.7.0":
-  version: 3.7.0
-  resolution: "@backstage/plugin-catalog-backend@npm:3.7.0"
+  version: 3.7.1
+  resolution: "@backstage/plugin-catalog-backend@npm:3.7.1"
   dependencies:
     "@backstage/backend-openapi-utils": "npm:^0.6.9"
     "@backstage/backend-plugin-api": "npm:^1.9.1"
-    "@backstage/catalog-client": "npm:^1.15.1"
+    "@backstage/catalog-client": "npm:^1.15.2"
     "@backstage/catalog-model": "npm:^1.9.0"
     "@backstage/config": "npm:^1.3.8"
     "@backstage/errors": "npm:^1.3.1"
@@ -3661,7 +3654,7 @@ __metadata:
     yn: "npm:^4.0.0"
     zod: "npm:^3.25.76 || ^4.0.0"
     zod-validation-error: "npm:^4.0.2"
-  checksum: 10c0/d68fc711a2a97c644445ad1234408585f483ca41884d1fba55b73e9526ba44a3c81d3df8b4be2d18f61154e8172363183add94aaae8b31dd5e6de47864412239
+  checksum: 10c0/6b7911d49a199a0f3a78a8b5651cebb10c73499448ea32f5fded0bed48d640aed3bf2a0a8f4ff47a68f318900b557cf7abe8f8a127d6d7a14b1a34222d75c8ad
   languageName: node
   linkType: hard
 
