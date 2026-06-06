@@ -35,7 +35,7 @@
     "@backstage/plugin-permission-common": "^0.9.7",
     "@backstage/plugin-permission-node": "^0.11.0",
     "@backstage/plugin-proxy-backend": "^0.6.11",
-    "@backstage/plugin-scaffolder-backend": "^3.2.0",
+    "@backstage/plugin-scaffolder-backend": "^4.0.0",
     "@backstage/plugin-scaffolder-backend-module-github": "^0.9.7",
     "@backstage/plugin-scaffolder-backend-module-notifications": "^0.1.20",
     "@backstage/plugin-scaffolder-node": "^0.13.0",
