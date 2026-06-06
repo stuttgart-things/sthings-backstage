@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.0...v1.4.1) (2026-06-06)
+
+
+### Bug Fixes
+
+* **app:** unblock dev on remote VM (rebuild:native, ToastApi bridge, randomUUID polyfill) ([#97](https://github.com/stuttgart-things/sthings-backstage/issues/97)) ([4b020b6](https://github.com/stuttgart-things/sthings-backstage/commit/4b020b6fde8818ecec0d0a3efeb50a5b9afaf6c8))
+
 # [1.4.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.3.4...v1.4.0) (2026-05-25)
 
 
