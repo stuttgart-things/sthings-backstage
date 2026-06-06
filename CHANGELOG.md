@@ -1,3 +1,10 @@
+## [1.4.5](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.4...v1.4.5) (2026-06-06)
+
+
+### Bug Fixes
+
+* **backend:** restore mkdocs in runtime image for local techdocs ([#103](https://github.com/stuttgart-things/sthings-backstage/issues/103)) ([500912d](https://github.com/stuttgart-things/sthings-backstage/commit/500912dad4b3b426b279342e85a7b23d658dfb99))
+
 ## [1.4.4](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.3...v1.4.4) (2026-06-06)
 
 
