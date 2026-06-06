@@ -1,3 +1,10 @@
+## [1.4.4](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.3...v1.4.4) (2026-06-06)
+
+
+### Bug Fixes
+
+* **backend:** compile better-sqlite3 native binding in image ([#102](https://github.com/stuttgart-things/sthings-backstage/issues/102)) ([f5b798a](https://github.com/stuttgart-things/sthings-backstage/commit/f5b798ac8c8269677204e475fe2db6eebb70b63d))
+
 ## [1.4.3](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.2...v1.4.3) (2026-06-06)
 
 
