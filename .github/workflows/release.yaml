@@ -100,11 +100,13 @@ jobs:
             --source ttl.sh/stuttgart-things-sthings-backstage:${{ env.SOURCE_SHA }}
             --target ghcr.io/stuttgart-things/sthings-backstage:v${{ env.VERSION }}
             --target-registry ghcr.io
-            --target-username env:REGISTRY_USERNAME
+            --target-username ${{ github.actor }}
             --target-password env:REGISTRY_PASSWORD
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
-          REGISTRY_USERNAME: ${{ github.actor }}
+          # ghcr validates the basic-auth username, so it must be a real
+          # account (passed inline via --target-username), not an env: ref —
+          # the crane module only resolves env: for the password Secret.
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Copy ttl.sh image to ghcr.io latest
@@ -117,11 +119,13 @@ jobs:
             --source ttl.sh/stuttgart-things-sthings-backstage:${{ env.SOURCE_SHA }}
             --target ghcr.io/stuttgart-things/sthings-backstage:latest
             --target-registry ghcr.io
-            --target-username env:REGISTRY_USERNAME
+            --target-username ${{ github.actor }}
             --target-password env:REGISTRY_PASSWORD
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
-          REGISTRY_USERNAME: ${{ github.actor }}
+          # ghcr validates the basic-auth username, so it must be a real
+          # account (passed inline via --target-username), not an env: ref —
+          # the crane module only resolves env: for the password Secret.
           REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Summary
