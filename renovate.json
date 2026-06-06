@@ -2,5 +2,41 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Defer Backstage major upgrades — done as dedicated, tested rollouts (deploy + verify on labul), not auto PRs",
+      "matchPackageNames": [
+        "@backstage/**",
+        "@backstage-community/**"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Stay on React 18 for Backstage compatibility — defer the React 19 major",
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "@types/react",
+        "@types/react-dom"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Defer isolated-vm major — native module (scaffolder), needs image build + scaffolder verification",
+      "matchPackageNames": [
+        "isolated-vm"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    }
   ]
 }
