@@ -1,3 +1,11 @@
+## [1.4.2](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.1...v1.4.2) (2026-06-06)
+
+
+### Bug Fixes
+
+* **ci:** auto-promote release image to GHCR in release workflow ([#99](https://github.com/stuttgart-things/sthings-backstage/issues/99)) ([5d6c5fd](https://github.com/stuttgart-things/sthings-backstage/commit/5d6c5fd993cec8630552bec5d62d7e570f1952d1))
+* **security:** multi-stage backend image to drop build toolchain CVEs ([#100](https://github.com/stuttgart-things/sthings-backstage/issues/100)) ([d1c19bb](https://github.com/stuttgart-things/sthings-backstage/commit/d1c19bb4b033fa063f57f2646e4f8133b43b963e))
+
 ## [1.4.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.0...v1.4.1) (2026-06-06)
 
 
