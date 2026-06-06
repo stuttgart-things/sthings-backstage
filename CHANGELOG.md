@@ -1,3 +1,10 @@
+## [1.4.6](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.5...v1.4.6) (2026-06-06)
+
+
+### Bug Fixes
+
+* **deps:** roll up dependency updates into a release ([ae57ef2](https://github.com/stuttgart-things/sthings-backstage/commit/ae57ef270ff2e2e78f628beab774bb1a5be8e1eb)), closes [#90](https://github.com/stuttgart-things/sthings-backstage/issues/90) [#91](https://github.com/stuttgart-things/sthings-backstage/issues/91) [#89](https://github.com/stuttgart-things/sthings-backstage/issues/89) [#88](https://github.com/stuttgart-things/sthings-backstage/issues/88) [#92](https://github.com/stuttgart-things/sthings-backstage/issues/92) [#83](https://github.com/stuttgart-things/sthings-backstage/issues/83) [#93](https://github.com/stuttgart-things/sthings-backstage/issues/93)
+
 ## [1.4.5](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.4...v1.4.5) (2026-06-06)
 
 
