@@ -40,6 +40,7 @@ jobs:
       - name: Copy ttl.sh image to ghcr.io release tag
         uses: dagger/dagger-for-github@v8.4.1
         with:
+          version: v0.20.3
           module: github.com/stuttgart-things/dagger/crane@v0.91.0
           call: >-
             copy
