@@ -1,84 +1,73 @@
-# This dockerfile builds an image for the backend package.
-# It should be executed with the root of the repo as docker context.
+# Multi-stage build for the backend package.
+# Execute with the root of the repo as docker context.
 #
-# Before building this image, be sure to have run the following commands in the repo root:
+# Before building, run in the repo root:
+#   yarn install --immutable
+#   yarn tsc
+#   yarn build:backend
 #
-# yarn install --immutable
-# yarn tsc
-# yarn build:backend
+# Stage 1 compiles production deps (incl. native modules better-sqlite3 /
+# isolated-vm) with the build toolchain. Stage 2 is a slim runtime that
+# copies the result, so the compiler chain (g++, build-essential,
+# linux-libc-dev kernel headers, python, dev headers) never ships in the
+# final image. That toolchain accounted for ~180 of the image's
+# HIGH/CRITICAL CVEs (linux-libc-dev alone = 136), none of which apply at
+# runtime.
 #
-# Once the commands have been run, you can build the image using `yarn build-image`
-#
-# Alternatively, there is also a multi-stage Dockerfile documented here:
-# https://backstage.io/docs/deployment/docker#multi-stage-build
+# NOTE: TechDocs is configured with generator.runIn: 'docker' (see
+# app-config.yaml), so mkdocs/python are NOT needed in this image — the
+# generator runs in a separate container. If you switch techdocs to
+# generator.runIn: 'local', reinstate mkdocs in the runtime stage.
 
-FROM node:24-bookworm-slim
+# ---------- Stage 1: builder (has the native build toolchain) ----------
+FROM node:24-bookworm-slim AS builder
 
-# Set Python interpreter for `node-gyp` to use
+# Python interpreter for node-gyp
 ENV PYTHON=/usr/bin/python3
 
-# Install isolate-vm dependencies, these are needed by the @backstage/plugin-scaffolder-backend.
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends python3 g++ build-essential && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install sqlite3 dependencies. You can skip this if you don't use sqlite3 in the image,
-# in which case you should also move better-sqlite3 to "devDependencies" in package.json.
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends libsqlite3-dev && \
-    rm -rf /var/lib/apt/lists/*
-
+# Build deps for native modules (better-sqlite3, isolated-vm).
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends \
       python3 \
-      python3-pip \
       g++ \
       build-essential \
       libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install mkdocs + Backstage TechDocs plugin (PEP 668 override)
-# hadolint ignore=DL3013,DL3042
-RUN python3 -m pip install --break-system-packages \
-      mkdocs \
-      mkdocs-material \
-      mkdocs-techdocs-core
-
-# From here on we use the least-privileged `node` user
 USER node
-
-# This should create the app dir as `node`.
-# If it is instead created as `root` then the `tar` command below will fail: `can't create directory 'packages/': Permission denied`.
-# If this occurs, then ensure BuildKit is enabled (`DOCKER_BUILDKIT=1`) so the app dir is correctly created as `node`.
 WORKDIR /app
 
-# Copy files needed by Yarn
+# Files needed by Yarn
 COPY --chown=node:node .yarn ./.yarn
 COPY --chown=node:node .yarnrc.yml ./
 COPY --chown=node:node backstage.json ./
 
-# This switches many Node.js dependencies to production mode.
 ENV NODE_ENV=production
 
-# This disables node snapshot for Node 20 to work with the Scaffolder
-ENV NODE_OPTIONS="--no-node-snapshot"
-
-# Copy repo skeleton first, to avoid unnecessary docker cache invalidation.
-# The skeleton contains the package.json of each package in the monorepo,
-# and along with yarn.lock and the root package.json, that's enough to run yarn install.
+# Repo skeleton (package.json of every workspace) for a cache-friendly install.
 COPY --chown=node:node yarn.lock package.json packages/backend/dist/skeleton.tar.gz ./
 RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
 
 RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
     yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
 
-# Then copy the rest of the backend bundle, along with any other files we might want.
+# ---------- Stage 2: runtime (no build toolchain) ----------
+FROM node:24-bookworm-slim
+
+# This disables node snapshot for the Scaffolder
+ENV NODE_OPTIONS="--no-node-snapshot"
+ENV NODE_ENV=production
+
+USER node
+WORKDIR /app
+
+# Bring over the installed production node_modules (with compiled native
+# bindings) and the workspace skeleton from the builder.
+COPY --from=builder --chown=node:node /app ./
+
+# Then the backend bundle and runtime config.
 COPY --chown=node:node packages/backend/dist/bundle.tar.gz app-config*.yaml ./
 RUN tar xzf bundle.tar.gz && rm bundle.tar.gz
 
