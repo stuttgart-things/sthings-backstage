@@ -49,6 +49,11 @@ jobs:
         id: build-image
         uses: dagger/dagger-for-github@v8.4.1
         with:
+          # Pin engine to the v0.20.x line the module targets (dagger.json
+          # engineVersion v0.20.3). "latest" pulls v0.21.x, whose dockerBuild
+          # llbtodagger converter rejects this Dockerfile ("mkdir without
+          # makeParents is unsupported").
+          version: v0.20.3
           module: github.com/stuttgart-things/dagger/docker@v0.90.1
           call: >-
             build-and-push
@@ -63,6 +68,7 @@ jobs:
       - name: Scan image with Trivy
         uses: dagger/dagger-for-github@v8.4.1
         with:
+          version: v0.20.3
           module: github.com/stuttgart-things/dagger/trivy@v0.90.1
           call: scan-image --image-ref="ttl.sh/${{ steps.image-name.outputs.name }}:${{ github.sha }}" --severity="HIGH,CRITICAL" --trivy-version="0.64.1" export --path=/tmp/trivy-scan-report.json
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

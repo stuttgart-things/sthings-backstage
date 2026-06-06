@@ -5,6 +5,7 @@ import {
 } from '@backstage/integration-react';
 import {
   AnyApiFactory,
+  alertApiRef,
   configApiRef,
   createApiFactory,
   createApiRef,
@@ -15,6 +16,7 @@ import {
   BackstageIdentityApi,
   SessionApi,
 } from '@backstage/core-plugin-api';
+import { toastApiRef } from '@backstage/frontend-plugin-api';
 import { OAuth2 } from '@backstage/core-app-api';
 
 // Generic OIDC auth API — used to talk to any OIDC IdP configured under
@@ -36,6 +38,39 @@ export const apis: AnyApiFactory[] = [
     factory: ({ configApi }) => ScmIntegrationsApi.fromConfig(configApi),
   }),
   ScmAuth.createDefaultApiFactory(),
+  // Bridge the new-frontend-system ToastApi (core.toast) onto the legacy
+  // AlertApi so plugins built against the new frontend system work in this
+  // legacy createApp() runtime. @backstage/plugin-notifications'
+  // NotificationsSidebarItem calls useApi(toastApiRef), which is otherwise
+  // unbound here and throws NotImplementedError. The legacy app already
+  // renders AlertDisplay, so forwarded toasts surface in the standard
+  // snackbar. Mapping follows the AlertMessage deprecation guide.
+  createApiFactory({
+    api: toastApiRef,
+    deps: { alertApi: alertApiRef },
+    factory: ({ alertApi }) => ({
+      post(toast) {
+        const severity = (
+          {
+            neutral: 'info',
+            info: 'info',
+            success: 'success',
+            warning: 'warning',
+            danger: 'error',
+          } as const
+        )[toast.status ?? 'success'];
+        const message = [toast.title, toast.description]
+          .filter(part => typeof part === 'string' && part.length > 0)
+          .join(' — ');
+        alertApi.post({
+          message: message || 'Notification',
+          severity,
+          display: toast.timeout ? 'transient' : 'permanent',
+        });
+        return { close() {} };
+      },
+    }),
+  }),
   createApiFactory({
     api: oidcAuthApiRef,
     deps: {
