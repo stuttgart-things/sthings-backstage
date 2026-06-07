@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.6...v1.5.0) (2026-06-07)
+
+
+### Features
+
+* **scaffolder:** custom template card with prominent CTA and readable header ([#109](https://github.com/stuttgart-things/sthings-backstage/issues/109)) ([e696e4b](https://github.com/stuttgart-things/sthings-backstage/commit/e696e4be2e2d7391742141eaaa1d92904aa7c0c5))
+
 ## [1.4.6](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.5...v1.4.6) (2026-06-06)
 
 
