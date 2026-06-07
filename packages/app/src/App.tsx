@@ -29,6 +29,7 @@ import {
     ClaimMachineryPickerFieldExtension,
     ClaimMachineryMultiClaimFieldExtension,
     RegistryClaimPickerFieldExtension,
+    TemplateCard,
 } from './scaffolder';
 
 import { createApp } from '@backstage/app-defaults';
@@ -155,7 +156,14 @@ const routes = (
         <ReportIssue />
       </TechDocsAddons>
     </Route>
-    <Route path="/create" element={<ScaffolderPage />}>
+    <Route
+      path="/create"
+      element={
+        <ScaffolderPage
+          components={{ TemplateCardComponent: TemplateCard }}
+        />
+      }
+    >
       <ScaffolderFieldExtensions>
         <ClaimMachineryPickerFieldExtension />
         <ClaimMachineryParametersFieldExtension />

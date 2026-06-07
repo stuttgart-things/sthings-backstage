@@ -37,6 +37,9 @@ export const RegistryClaimPickerFieldExtension = scaffolderPlugin.provide(
   }),
 );
 
+// Custom template card (clickable body + prominent CTA)
+export { TemplateCard } from './TemplateCard';
+
 // Also export the raw components if needed
 export {
   ClaimMachineryPickerExtension,
