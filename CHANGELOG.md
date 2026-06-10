@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.5.0...v1.5.1) (2026-06-10)
+
+
+### Bug Fixes
+
+* **claim-machinery:** surface real branch-create error instead of masking it ([#111](https://github.com/stuttgart-things/sthings-backstage/issues/111)) ([7000e71](https://github.com/stuttgart-things/sthings-backstage/commit/7000e715e76cdeecd731042130a7e6daf2f8eb92))
+
 # [1.5.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.4.6...v1.5.0) (2026-06-07)
 
 
