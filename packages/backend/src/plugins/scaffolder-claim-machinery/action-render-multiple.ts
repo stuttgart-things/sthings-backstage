@@ -446,6 +446,24 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
         });
 
         if (!createBranchRes.ok) {
+          const createErrText = await createBranchRes.text();
+
+          // Only fall back to updating the ref when it already exists (a reused
+          // branch name). Any other failure — 401/403 auth, 5xx, validation —
+          // is the real error and must be surfaced. Previously every failure
+          // fell through to the PATCH below, which then reported the misleading
+          // "Reference does not exist" for a branch that was never created,
+          // masking the true cause (e.g. a transient GitHub auth 401).
+          const refAlreadyExists =
+            createBranchRes.status === 422 &&
+            /already exists/i.test(createErrText);
+
+          if (!refAlreadyExists) {
+            throw new Error(
+              `Failed to create branch: ${createBranchRes.status} ${createErrText}`,
+            );
+          }
+
           const updateBranchRes = await fetch(
             `${apiBase}/git/refs/heads/${prBranch}`,
             {
@@ -459,7 +477,7 @@ export const claimMachineryRenderMultipleAction = (options: { config: Config }) 
           if (!updateBranchRes.ok) {
             const errText = await updateBranchRes.text();
             throw new Error(
-              `Failed to create/update branch: ${updateBranchRes.status} ${errText}`,
+              `Failed to update existing branch: ${updateBranchRes.status} ${errText}`,
             );
           }
         }
