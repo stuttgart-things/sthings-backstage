@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.5.1...v1.6.0) (2026-09-13)
+
+
+### Features
+
+* **permission:** show platform templates to platform-team only ([#119](https://github.com/stuttgart-things/sthings-backstage/issues/119)) ([26530ae](https://github.com/stuttgart-things/sthings-backstage/commit/26530ae47ca5f26f0bb8f83e55301f9900c9c1be))
+
 ## [1.5.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.5.0...v1.5.1) (2026-06-10)
 
 
