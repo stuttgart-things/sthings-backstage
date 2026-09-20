@@ -1,3 +1,10 @@
+## [1.6.2](https://github.com/stuttgart-things/sthings-backstage/compare/v1.6.1...v1.6.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **deps:** update backstage monorepo ([#115](https://github.com/stuttgart-things/sthings-backstage/issues/115)) ([931ebd2](https://github.com/stuttgart-things/sthings-backstage/commit/931ebd277e674c8791501262aed05fe38962cbaa))
+
 ## [1.6.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.6.0...v1.6.1) (2026-09-20)
 
 
