@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.6.0...v1.6.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **deps:** update dependency node-gyp to v13 ([#112](https://github.com/stuttgart-things/sthings-backstage/issues/112)) ([77ec83d](https://github.com/stuttgart-things/sthings-backstage/commit/77ec83d0fe6d74efb922cbdb8f611c270956b037))
+
 # [1.6.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.5.1...v1.6.0) (2026-09-13)
 
 
