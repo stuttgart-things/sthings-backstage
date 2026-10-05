@@ -1,3 +1,17 @@
+# [1.7.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.6.3...v1.7.0) (2026-10-05)
+
+
+### Features
+
+* **catalog:** add VM entity provider as first workspace plugin ([#144](https://github.com/stuttgart-things/sthings-backstage/issues/144)) ([f185a5c](https://github.com/stuttgart-things/sthings-backstage/commit/f185a5cf51fdf4d01f9f7e6cae68a9a8a9943b65)), closes [#120](https://github.com/stuttgart-things/sthings-backstage/issues/120)
+
+## [1.6.3](https://github.com/stuttgart-things/sthings-backstage/compare/v1.6.2...v1.6.3) (2026-10-05)
+
+
+### Bug Fixes
+
+* **docker:** pin Node to 24.16.0 to stop better-sqlite3 startup segfault ([#141](https://github.com/stuttgart-things/sthings-backstage/issues/141)) ([8b9950d](https://github.com/stuttgart-things/sthings-backstage/commit/8b9950dad0e83c825b36f4d90a80a298bbcc4043)), closes [#129](https://github.com/stuttgart-things/sthings-backstage/issues/129)
+
 ## [1.6.2](https://github.com/stuttgart-things/sthings-backstage/compare/v1.6.1...v1.6.2) (2026-09-20)
 
 
