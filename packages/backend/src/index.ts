@@ -57,6 +57,12 @@ backend.add(
 // See https://backstage.io/docs/features/software-catalog/configuration#subscribing-to-catalog-errors
 backend.add(import('@backstage/plugin-catalog-backend-module-logs'));
 
+// VM inventories (Proxmox today) mirrored into the catalog. Off unless
+// catalog.providers.sthingsVms is configured. See plugins/catalog-backend-module-sthings-vms.
+backend.add(
+  import('@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms'),
+);
+
 // permission plugin
 backend.add(import('@backstage/plugin-permission-backend'));
 // Templates are visible to platform-team only, unless annotated

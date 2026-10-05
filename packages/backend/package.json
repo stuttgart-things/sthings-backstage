@@ -47,6 +47,7 @@
     "@backstage/plugin-signals-backend": "^0.3.13",
     "@backstage/plugin-techdocs-backend": "^2.1.6",
     "@roadiehq/scaffolder-backend-module-utils": "^4.0.0",
+    "@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms": "workspace:^",
     "app": "link:../app",
     "better-sqlite3": "^12.0.0",
     "fs-extra": "^11.0.0",
