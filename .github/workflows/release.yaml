@@ -7,9 +7,14 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Queue, never cancel: a run cancelled after semantic-release has published
+# the GitHub Release but before promote-image leaves a release tag with no
+# image on GHCR (that is how v1.7.1 ended up without one). With
+# cancel-in-progress: false a running release always finishes; GitHub still
+# drops older *pending* runs, and the next run releases everything merged since.
 concurrency:
   group: release
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write
