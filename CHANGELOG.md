@@ -1,3 +1,11 @@
+## [1.7.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.7.0...v1.7.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* **deps:** update dependency better-sqlite3 to v13 ([#149](https://github.com/stuttgart-things/sthings-backstage/issues/149)) ([8bb8b17](https://github.com/stuttgart-things/sthings-backstage/commit/8bb8b17b80bffe83f63ce23fc9ecc2484073917a))
+* **deps:** update dependency js-yaml to v5 ([#150](https://github.com/stuttgart-things/sthings-backstage/issues/150)) ([d2ff80c](https://github.com/stuttgart-things/sthings-backstage/commit/d2ff80c71387b20ed4db94eb9b074b5db73a936c))
+
 # [1.7.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.6.3...v1.7.0) (2026-10-05)
 
 
