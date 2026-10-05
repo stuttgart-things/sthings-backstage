@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.6.3...v1.7.0) (2026-10-05)
+
+
+### Features
+
+* **catalog:** add VM entity provider as first workspace plugin ([#144](https://github.com/stuttgart-things/sthings-backstage/issues/144)) ([f185a5c](https://github.com/stuttgart-things/sthings-backstage/commit/f185a5cf51fdf4d01f9f7e6cae68a9a8a9943b65)), closes [#120](https://github.com/stuttgart-things/sthings-backstage/issues/120)
+
 ## [1.6.3](https://github.com/stuttgart-things/sthings-backstage/compare/v1.6.2...v1.6.3) (2026-10-05)
 
 
