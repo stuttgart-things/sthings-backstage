@@ -1,3 +1,10 @@
+## [1.7.2](https://github.com/stuttgart-things/sthings-backstage/compare/v1.7.1...v1.7.2) (2026-10-05)
+
+
+### Bug Fixes
+
+* **docker:** move Node pin to 24.21.0 now that better-sqlite3 13 is in ([#154](https://github.com/stuttgart-things/sthings-backstage/issues/154)) ([c903ede](https://github.com/stuttgart-things/sthings-backstage/commit/c903edea9863dec74fc03b40f2cc4233b1fce4d3))
+
 ## [1.7.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.7.0...v1.7.1) (2026-10-05)
 
 
