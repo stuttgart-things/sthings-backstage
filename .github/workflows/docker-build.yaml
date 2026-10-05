@@ -77,6 +77,37 @@ jobs:
             mkdocs --version
           '
 
+      # Loading the modules is not enough: under Node 24.21.0 better-sqlite3
+      # loaded fine but the backend segfaulted ~20s after start (#129, #141).
+      # Start the backend with the shipped app-config.yaml, wait for readiness,
+      # then require it to stay up and ready for another 30s.
+      - name: Smoke test image (backend startup)
+        run: |
+          docker run -d --name smoke --network host \
+            -e DAPR_SERVICE_TOKEN=smoke-test-token \
+            -e APP_BASE_URL=http://localhost:3000 \
+            -e GITHUB_TOKEN=x -e GHE_TOKEN=x -e GHE_URL=ghe.example.com \
+            -e GITHUB_CLIENT_ID=x -e GITHUB_CLIENT_SECRET=x \
+            "ttl.sh/${{ steps.image-name.outputs.name }}:${{ github.sha }}"
+
+          ready() { [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:7007/.backstage/health/v1/readiness)" = 200 ]; }
+          running() { [ "$(docker inspect -f '{{.State.Running}}' smoke)" = true ]; }
+          fail() { echo "::error::$1"; docker logs smoke 2>&1 | tail -50; exit 1; }
+
+          for i in $(seq 1 60); do
+            ready && break
+            running || fail "backend exited before becoming ready"
+            sleep 2
+          done
+          ready || fail "backend not ready after 120s"
+          echo "ready after ~$((i * 2))s, checking it stays up"
+
+          sleep 30
+          running || fail "backend crashed after becoming ready"
+          ready || fail "backend no longer ready 30s after startup"
+          echo "ok: backend started and stayed ready"
+          docker rm -f smoke >/dev/null
+
       - name: Scan image with Trivy
         uses: dagger/dagger-for-github@v8.4.1
         with:
