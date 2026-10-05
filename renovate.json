@@ -16,12 +16,14 @@
       "enabled": false
     },
     {
-      "description": "Stay on React 18 for Backstage compatibility — defer the React 19 major",
+      "description": "Stay on React 18 for Backstage compatibility — defer the React 19 major, and react-router majors that require React 19 (v8 needs react >=19.2.7, #153)",
       "matchPackageNames": [
         "react",
         "react-dom",
         "@types/react",
-        "@types/react-dom"
+        "@types/react-dom",
+        "react-router",
+        "react-router-dom"
       ],
       "matchUpdateTypes": [
         "major"
