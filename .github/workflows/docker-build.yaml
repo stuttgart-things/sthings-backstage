@@ -65,6 +65,18 @@ jobs:
             --progress plain
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
+      # The build passing does not mean the image starts: a missing native
+      # binding (better-sqlite3 is the live database client in app-config.yaml)
+      # only fails at runtime. Load the native modules inside the built image.
+      - name: Smoke test image (native modules)
+        run: |
+          docker run --rm "ttl.sh/${{ steps.image-name.outputs.name }}:${{ github.sha }}" sh -c '
+            set -e
+            node -e "const D=require(\"better-sqlite3\");const d=new D(\":memory:\");d.prepare(\"select 1\").get();d.close();console.log(\"ok: better-sqlite3\")"
+            node -e "const ivm=require(\"isolated-vm\");new ivm.Isolate().dispose();console.log(\"ok: isolated-vm\")"
+            mkdocs --version
+          '
+
       - name: Scan image with Trivy
         uses: dagger/dagger-for-github@v8.4.1
         with:
