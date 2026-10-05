@@ -49,7 +49,7 @@
     "@roadiehq/scaffolder-backend-module-utils": "^4.0.0",
     "@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms": "workspace:^",
     "app": "link:../app",
-    "better-sqlite3": "^12.0.0",
+    "better-sqlite3": "^13.0.0",
     "fs-extra": "^11.0.0",
     "js-yaml": "^4.1.0",
     "node-fetch": "^3.0.0",
