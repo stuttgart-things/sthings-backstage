@@ -1,0 +1,105 @@
+---
+# Publishes a workspace plugin under plugins/ to GitHub Packages (npm,
+# https://npm.pkg.github.com, scope @stuttgart-things). Releases are
+# tag-driven and independent of the app's semantic-release tags (v1.x):
+#
+#   git tag catalog-backend-module-sthings-vms@0.1.0 && git push --tags
+#
+# The tag version must equal the package.json version. Consumers need an
+# .npmrc / .yarnrc.yml entry for the scope plus a token with read:packages,
+# see plugins/README.md.
+name: Publish Plugins
+on:
+  push:
+    tags:
+      - '*@[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      plugin:
+        description: Folder under plugins/ to publish
+        required: true
+        default: catalog-backend-module-sthings-vms
+      dry-run:
+        description: Pack only, do not publish
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    name: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Resolve plugin and version
+        id: plugin
+        run: |
+          if [ "${{ github.event_name }}" = push ]; then
+            dir="${GITHUB_REF_NAME%@*}"
+            tag_version="${GITHUB_REF_NAME##*@}"
+            dry_run=false
+          else
+            dir="${{ inputs.plugin }}"
+            tag_version=""
+            dry_run="${{ inputs.dry-run }}"
+          fi
+          pkg="plugins/$dir/package.json"
+          [ -f "$pkg" ] || { echo "::error::$pkg not found"; exit 1; }
+          version=$(jq -r .version "$pkg")
+          if [ -n "$tag_version" ] && [ "$tag_version" != "$version" ]; then
+            echo "::error::tag version $tag_version != $pkg version $version"
+            exit 1
+          fi
+          echo "dir=plugins/$dir" >> "$GITHUB_OUTPUT"
+          echo "name=$(jq -r .name "$pkg")" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "dry_run=$dry_run" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # dist/index.d.ts is generated from the root tsc output (dist-types).
+      - name: TypeScript compile
+        run: yarn tsc
+
+      - name: Build, test and lint
+        working-directory: ${{ steps.plugin.outputs.dir }}
+        run: |
+          yarn build
+          yarn test --ci
+          yarn lint
+
+      - name: Pack (dry run)
+        if: steps.plugin.outputs.dry_run == 'true'
+        working-directory: ${{ steps.plugin.outputs.dir }}
+        run: yarn pack --dry-run
+
+      - name: Publish to GitHub Packages
+        if: steps.plugin.outputs.dry_run != 'true'
+        working-directory: ${{ steps.plugin.outputs.dir }}
+        env:
+          # Used for publishConfig.registry (npm.pkg.github.com).
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn npm publish --access public
+
+      - name: Summary
+        run: |
+          {
+            echo "## ${{ steps.plugin.outputs.name }}@${{ steps.plugin.outputs.version }}"
+            if [ "${{ steps.plugin.outputs.dry_run }}" = true ]; then
+              echo "Dry run: packed, not published."
+            else
+              echo "Published to https://npm.pkg.github.com"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
