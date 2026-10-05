@@ -1,3 +1,10 @@
+## [1.7.3](https://github.com/stuttgart-things/sthings-backstage/compare/v1.7.2...v1.7.3) (2026-10-05)
+
+
+### Bug Fixes
+
+* **ci:** never cancel a running release ([#156](https://github.com/stuttgart-things/sthings-backstage/issues/156)) ([e7fb06c](https://github.com/stuttgart-things/sthings-backstage/commit/e7fb06c104a0f6039d581fc083e4cd1760cd4504))
+
 ## [1.7.2](https://github.com/stuttgart-things/sthings-backstage/compare/v1.7.1...v1.7.2) (2026-10-05)
 
 
