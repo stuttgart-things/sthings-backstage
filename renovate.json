@@ -37,16 +37,6 @@
         "major"
       ],
       "enabled": false
-    },
-    {
-      "description": "Block Node 24.21.x for the backend image: better-sqlite3 segfaults at startup under it (#129, #141). Other versions go through the docker-build startup smoke test.",
-      "matchDatasources": [
-        "docker"
-      ],
-      "matchPackageNames": [
-        "node"
-      ],
-      "allowedVersions": "!/^24\\.21\\./"
     }
   ]
 }

@@ -19,14 +19,14 @@
 # generator runs in a separate container. If you switch techdocs to
 # generator.runIn: 'local', reinstate mkdocs in the runtime stage.
 
-# Node is pinned to an exact patch in both stages: node:24-bookworm-slim moved
-# from 24.16.0 to 24.21.0 between v1.5.1 and v1.6.0, and under 24.21.0 the
-# backend segfaults at startup inside better-sqlite3 (Statement::~Statement ->
-# "Assertion failed: (env) != nullptr"). Bump only together with a passing
-# docker-build smoke test. See #129.
+# Node is pinned to an exact patch in both stages so it only changes through a
+# Renovate PR that passes the docker-build startup smoke test. The floating
+# node:24-bookworm-slim tag once moved 24.16.0 -> 24.21.0 unnoticed, and with
+# better-sqlite3 12.x the backend then segfaulted at startup (#129, #141).
+# better-sqlite3 13 (N-API) runs fine on 24.21.0.
 
 # ---------- Stage 1: builder (has the native build toolchain) ----------
-FROM node:24.16.0-bookworm-slim AS builder
+FROM node:24.21.0-bookworm-slim AS builder
 
 # Python interpreter for node-gyp
 ENV PYTHON=/usr/bin/python3
@@ -69,7 +69,7 @@ COPY --chown=node:node scripts/rebuild-native.sh ./scripts/rebuild-native.sh
 RUN bash scripts/rebuild-native.sh
 
 # ---------- Stage 2: runtime (no build toolchain) ----------
-FROM node:24.16.0-bookworm-slim
+FROM node:24.21.0-bookworm-slim
 
 # This disables node snapshot for the Scaffolder
 ENV NODE_OPTIONS="--no-node-snapshot"
