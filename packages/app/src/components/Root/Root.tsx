@@ -28,6 +28,8 @@ import SearchIcon from '@material-ui/icons/Search';
 import { MyGroupsSidebarItem } from '@backstage/plugin-org';
 import GroupIcon from '@material-ui/icons/People';
 import { NotificationsSidebarItem } from '@backstage/plugin-notifications';
+import { configApiRef, useApi } from '@backstage/core-plugin-api';
+import { SidebarRagModal } from '@roadiehq/rag-ai';
 
 const useSidebarLogoStyles = makeStyles({
   root: {
@@ -57,6 +59,15 @@ const SidebarLogo = () => {
   );
 };
 
+// RAG-AI assistant (sidebar entry and ctrl+,), only where the backend has
+// the rag-ai plugin loaded (ragAi.enabled / RAG_AI_ENABLED).
+const RagAiSidebarItem = () => {
+  const config = useApi(configApiRef);
+  return config.getOptionalBoolean('ragAi.enabled') ? (
+    <SidebarRagModal title="Ask AI" />
+  ) : null;
+};
+
 export const Root = ({ children }: PropsWithChildren<{}>) => (
   <SidebarPage>
     <Sidebar>
@@ -64,6 +75,7 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
       <SidebarGroup label="Search" icon={<SearchIcon />} to="/search">
         <SidebarSearchModal />
       </SidebarGroup>
+      <RagAiSidebarItem />
       <SidebarDivider />
       <SidebarGroup label="Menu" icon={<MenuIcon />}>
         {/* Global nav, not org-specific */}

@@ -47,6 +47,29 @@ backend:
   database:
     client: better-sqlite3
     connection: ':memory:'
+    plugin:
+      # RAG-AI embeddings live in their own pgvector Postgres (rag-postgres),
+      # so the main database needs no pgvector. Only used when
+      # RAG_AI_ENABLED=true; see README "RAG-AI".
+      rag-ai:
+        client: pg
+        # The database is created by CNPG (owner rag); rag has no CREATEDB.
+        ensureExists: false
+        connection:
+          host: ${RAG_PG_HOST:-}
+          port: ${RAG_PG_PORT:-5432}
+          database: ${RAG_PG_DATABASE:-backstage_rag}
+          user: ${RAG_PG_USER:-rag}
+          password: ${RAG_PG_PASSWORD:-}
+  # RAG-AI is optional: if rag-postgres or the OpenRouter key is missing, the
+  # backend starts without it instead of failing.
+  startup:
+    plugins:
+      rag-ai:
+        onPluginBootFailure: continue
+        modules:
+          openrouter:
+            onPluginModuleBootFailure: continue
   # workingDirectory: /tmp # Use this to configure a working directory for the scaffolder, defaults to the OS temp-dir
 
 integrations:
@@ -158,3 +181,46 @@ kubernetes:
 permission:
   # setting this to `false` will disable permissions
   enabled: true
+
+# Roadie RAG-AI: questions on catalog and TechDocs, see README "RAG-AI".
+# Off unless RAG_AI_ENABLED=true. Chat and embeddings go to an
+# OpenAI-compatible endpoint, OpenRouter by default (free models, like
+# homerun2-ai-pitcher). Block is always present so substitution works
+# everywhere; nothing is loaded while ragAi.enabled is false.
+ragAi:
+  enabled: ${RAG_AI_ENABLED:-false}
+  llm:
+    baseUrl: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+    apiKey: ${OPENROUTER_API_KEY:-}
+    # Comma-separated, most reliable first; OpenRouter falls back to the
+    # next ones (at most 3) when the first is down or rate-limited.
+    models: ${OPENROUTER_MODEL:-nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free}
+    maxTokens: ${LLM_MAX_TOKENS:-4000}
+
+ai:
+  supportedSources: ['catalog', 'tech-docs']
+  prompts:
+    prefix: >-
+      You answer questions about the stuttgart-things platform from the
+      Backstage catalog entities and TechDocs pages given below. Answer in the
+      language of the question. If the documents do not contain the answer,
+      say so; do not make up components, URLs or commands. Documents:
+  embeddings:
+    chunkSize: 1000
+    chunkOverlap: 200
+    # Free OpenRouter models allow 20 requests/minute.
+    concurrencyLimit: ${RAG_EMBEDDINGS_CONCURRENCY:-2}
+    openai:
+      openAiBaseUrl: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      openAiApiKey: ${OPENROUTER_API_KEY:-}
+      # Changing the model changes the vector size: delete and re-create the
+      # embeddings afterwards (README "RAG-AI").
+      modelName: ${OPENROUTER_EMBEDDINGS_MODEL:-nvidia/nemotron-3-embed-1b:free}
+      # Texts per embeddings request. nemotron-3-embed-1b:free takes at most
+      # 256 (Roadie's default 512 is rejected). A literal number on purpose:
+      # Roadie reads this block raw, an env string would break the batching.
+      batchSize: 128
+  storage:
+    pgVector:
+      # Chunks added to each question as context.
+      amount: ${RAG_CONTEXT_CHUNKS:-6}
