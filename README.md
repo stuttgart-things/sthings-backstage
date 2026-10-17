@@ -341,12 +341,19 @@ A run:
    indexes them **per entity**,
 3. removes embeddings of entities that are no longer in the catalog.
 
+Each slice (catalog kind, TechDocs entity) is only re-indexed when its content changed
+since the last successful run, or when it has no embeddings. The content hashes live in
+the table `rag_ai_index_state` next to `embeddings`; the hash includes the embeddings
+model and chunking, so changing them re-indexes everything. A normal night therefore
+costs only the requests for what changed. A full run (first run, model change, or after
+`DELETE FROM rag_ai_index_state;`) costs about one embeddings request per catalog kind
+and per TechDocs entity, plus one per 128 chunks — roughly 30 for stuttgart-things.
+
 Roadie deletes the embeddings of the matched entities before creating new ones. The
 small slices keep a failed embeddings request (e.g. a rate limit) from wiping more than
 one kind or entity; an entity whose docs do not build keeps its old embeddings. Failures
-are logged as warnings and retried on the next run. One run costs about one embeddings
-request per catalog kind and per TechDocs entity (plus one per 128 chunks), so mind the
-free tier of 50 requests/day. A fresh database is filled at the first scheduled run.
+are logged as warnings and retried on the next run. A fresh database is filled at the
+first scheduled run.
 
 To index by hand, use the backend API (needs a Backstage user or service token):
 
@@ -362,8 +369,8 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H 'content-type: application/jso
 ```
 
 Re-running a POST replaces the embeddings of the matched entities. After changing
-`LLM_EMBEDDINGS_MODEL`, run `TRUNCATE embeddings;` in `backstage_rag` and index
-everything again: vectors of different models cannot be compared.
+`LLM_EMBEDDINGS_MODEL`, run `TRUNCATE embeddings;` in `backstage_rag`: vectors of
+different models cannot be compared. The next scheduled run indexes everything again.
 
 ### Switching it off
 

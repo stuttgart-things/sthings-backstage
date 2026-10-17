@@ -12,7 +12,13 @@ import { initializeOpenAiEmbeddings } from '@roadiehq/rag-ai-backend-embeddings-
 import { createDefaultRetrievalPipeline } from '@roadiehq/rag-ai-backend-retrieval-augmenter';
 import { createRoadiePgVectorStore } from '@roadiehq/rag-ai-storage-pgvector';
 import { createChatModel, readLlmOptions } from './llm';
-import { readIndexingOptions, runIndexing } from './indexing';
+import {
+  readIndexFingerprint,
+  readIndexingOptions,
+  runIndexing,
+  TechDocsSection,
+} from './indexing';
+import { createIndexState } from './indexState';
 
 /**
  * Wires the Roadie RAG-AI backend (pluginId `rag-ai`): OpenAI-compatible
@@ -112,30 +118,37 @@ export default createBackendModule({
                   const sync = await fetch(`${base}/sync/${path}`, { headers });
                   const events = await sync.text();
                   if (!sync.ok || events.includes('event: error')) {
-                    return 0;
+                    return [];
                   }
                   const index = await fetch(
                     `${base}/static/docs/${path}/search/search_index.json`,
                     { headers },
                   );
                   if (!index.ok) {
-                    return 0;
+                    return [];
                   }
                   const { docs = [] } = (await index.json()) as {
-                    docs?: { location?: string; text?: string }[];
+                    docs?: Partial<TechDocsSection>[];
                   };
                   // Same sections Roadie indexes.
-                  return docs.filter(d => d.location?.includes('#') && d.text)
-                    .length;
+                  return docs
+                    .filter(d => d.location?.includes('#') && d.text)
+                    .map(({ location, text }) => ({
+                      location: location!,
+                      text: text!,
+                    }));
                 },
                 listIndexed: async () =>
                   (
                     await db.raw(
                       `SELECT DISTINCT metadata->>'source' AS source,
-                         metadata->>'entityRef' AS "entityRef"
+                         metadata->>'entityRef' AS "entityRef",
+                         metadata->>'kind' AS kind
                        FROM embeddings`,
                     )
                   ).rows,
+                state: await createIndexState(db),
+                fingerprint: readIndexFingerprint(config),
               });
             },
           });
