@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.8.0...v1.9.0) (2026-10-17)
+
+
+### Features
+
+* **rag-ai:** provider-neutral LLM_* env names and a data-privacy note ([#170](https://github.com/stuttgart-things/sthings-backstage/issues/170)) ([4a64d2a](https://github.com/stuttgart-things/sthings-backstage/commit/4a64d2a3e6f08d5f4dca60fb473f4f9068bb4fea)), closes [#169](https://github.com/stuttgart-things/sthings-backstage/issues/169)
+
 # [1.8.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.7.3...v1.8.0) (2026-10-17)
 
 
