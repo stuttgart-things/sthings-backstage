@@ -10,6 +10,8 @@ import {
   createApiFactory,
   createApiRef,
   discoveryApiRef,
+  fetchApiRef,
+  identityApiRef,
   oauthRequestApiRef,
   OAuthApi,
   ProfileInfoApi,
@@ -18,6 +20,7 @@ import {
 } from '@backstage/core-plugin-api';
 import { toastApiRef } from '@backstage/frontend-plugin-api';
 import { OAuth2 } from '@backstage/core-app-api';
+import { ragAiApiRef, RoadieRagAiClient } from '@roadiehq/rag-ai';
 
 // Generic OIDC auth API — used to talk to any OIDC IdP configured under
 // auth.providers.oidc in app-config (today: Zitadel for the PR-preview auth
@@ -71,6 +74,22 @@ export const apis: AnyApiFactory[] = [
       },
     }),
   }),
+  // Roadie RAG-AI ("Ask AI"). ragAiPlugin brings this factory itself, but the
+  // legacy createApp() only collects plugin APIs from the route tree, and
+  // SidebarRagModal sits in Root's sidebar -- without this, opening it throws
+  // NotImplementedError for apiRef{plugin.rag-ai.api}. Same factory as the
+  // plugin's; harmless while ragAi.enabled is false (nothing calls it).
+  createApiFactory({
+    api: ragAiApiRef,
+    deps: {
+      configApi: configApiRef,
+      discoveryApi: discoveryApiRef,
+      fetchApi: fetchApiRef,
+      identityApi: identityApiRef,
+    },
+    factory: ({ configApi, discoveryApi, fetchApi, identityApi }) =>
+      new RoadieRagAiClient({ configApi, discoveryApi, fetchApi, identityApi }),
+  }),
   createApiFactory({
     api: oidcAuthApiRef,
     deps: {
@@ -88,7 +107,8 @@ export const apis: AnyApiFactory[] = [
           title: 'OIDC',
           icon: () => null,
         },
-        environment: configApi.getOptionalString('auth.environment') ?? 'development',
+        environment:
+          configApi.getOptionalString('auth.environment') ?? 'development',
         defaultScopes: ['openid', 'profile', 'email'],
       }),
   }),
