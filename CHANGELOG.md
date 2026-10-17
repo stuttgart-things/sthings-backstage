@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.7.3...v1.8.0) (2026-10-17)
+
+
+### Features
+
+* **rag-ai:** add Roadie RAG-AI with OpenRouter and own pgvector database ([#166](https://github.com/stuttgart-things/sthings-backstage/issues/166)) ([e60af59](https://github.com/stuttgart-things/sthings-backstage/commit/e60af59ac26fb14dfb1f3ab92189827a7fbcfe7f)), closes [#165](https://github.com/stuttgart-things/sthings-backstage/issues/165)
+
 ## [1.7.3](https://github.com/stuttgart-things/sthings-backstage/compare/v1.7.2...v1.7.3) (2026-10-05)
 
 
