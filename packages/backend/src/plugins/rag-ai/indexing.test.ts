@@ -5,6 +5,8 @@ import { AugmentationIndexer } from '@roadiehq/rag-ai-node';
 import {
   DEFAULT_INDEX_SCHEDULE,
   IndexingDeps,
+  IndexState,
+  readIndexFingerprint,
   readIndexingOptions,
   runIndexing,
 } from './indexing';
@@ -28,14 +30,40 @@ describe('readIndexingOptions', () => {
   });
 });
 
-const entity = (kind: string, name: string) => ({
-  apiVersion: 'backstage.io/v1alpha1',
-  kind,
-  metadata: { name, namespace: 'default' },
+describe('readIndexFingerprint', () => {
+  it('changes with the embeddings model', () => {
+    const fingerprint = (modelName: string) =>
+      readIndexFingerprint(
+        new ConfigReader({ ai: { embeddings: { openai: { modelName } } } }),
+      );
+    expect(fingerprint('a')).not.toEqual(fingerprint('b'));
+  });
 });
 
-function setup(overrides: Partial<IndexingDeps> = {}) {
-  const createEmbeddings = jest.fn(async () => 3);
+const entity = (kind: string, name: string, etag = '1') => ({
+  apiVersion: 'backstage.io/v1alpha1',
+  kind,
+  metadata: { name, namespace: 'default', etag },
+});
+
+function memoryState(): IndexState & { hashes: Map<string, string> } {
+  const hashes = new Map<string, string>();
+  return {
+    hashes,
+    load: async () => new Map(hashes),
+    save: async (key, hash) => {
+      hashes.set(key, hash);
+    },
+    remove: async key => {
+      hashes.delete(key);
+    },
+  };
+}
+
+function setup() {
+  const createEmbeddings = jest.fn(
+    async (_source: string, _filter: Record<string, any>) => 3,
+  );
   const deleteDocuments = jest.fn(async () => {});
   const indexer = {
     createEmbeddings,
@@ -43,14 +71,22 @@ function setup(overrides: Partial<IndexingDeps> = {}) {
     vectorStore: { deleteDocuments },
   } as unknown as AugmentationIndexer;
 
-  const all = [
+  let all = [
     entity('Component', 'flux'),
     entity('Component', 'broken'),
     entity('System', 'platform'),
   ];
-  const getEntities = jest.fn(async (request?: { filter?: unknown }) => ({
-    items: request?.filter ? all.filter(e => e.kind === 'Component') : all,
-  }));
+  const getEntities = jest.fn(
+    async (request?: { filter?: Record<string, unknown> }) => {
+      const filter = request?.filter;
+      if (filter && 'kind' in filter) {
+        return { items: all.filter(e => e.kind === filter.kind) };
+      }
+      return {
+        items: filter ? all.filter(e => e.kind === 'Component') : all,
+      };
+    },
+  );
   const catalog = {
     getEntityFacets: jest.fn(async () => ({
       facets: { kind: [{ value: 'Component' }, { value: 'System' }] },
@@ -58,6 +94,29 @@ function setup(overrides: Partial<IndexingDeps> = {}) {
     getEntities,
   } as unknown as CatalogApi;
 
+  // What Roadie stored: everything of the last run, plus one orphan.
+  let indexed = [
+    { source: 'tech-docs', entityRef: 'component:default/gone', kind: 'x' },
+  ];
+  createEmbeddings.mockImplementation(async (source, filter) => {
+    const matched = all.filter(
+      e =>
+        e.kind === filter.kind &&
+        (!filter['metadata.name'] ||
+          e.metadata.name === filter['metadata.name']),
+    );
+    for (const e of matched) {
+      indexed.push({
+        source,
+        entityRef: `${e.kind.toLowerCase()}:default/${e.metadata.name}`,
+        kind: e.kind,
+      });
+    }
+    return 3;
+  });
+
+  const docs = new Map([['flux', [{ location: 'index.html#a', text: 'A' }]]]);
+  const state = memoryState();
   const deps: IndexingDeps = {
     logger: {
       info: jest.fn(),
@@ -69,14 +128,24 @@ function setup(overrides: Partial<IndexingDeps> = {}) {
     indexer,
     catalog,
     catalogToken: async () => 'token',
-    buildTechDocs: async ({ name }) => (name === 'broken' ? 0 : 5),
-    listIndexed: async () => [
-      { source: 'catalog', entityRef: 'component:default/flux' },
-      { source: 'tech-docs', entityRef: 'component:default/gone' },
-    ],
-    ...overrides,
+    buildTechDocs: async ({ name }) => docs.get(name) ?? [],
+    listIndexed: async () => [...indexed],
+    state,
+    fingerprint: 'model-a',
   };
-  return { deps, createEmbeddings, deleteDocuments };
+  return {
+    deps,
+    state,
+    docs,
+    createEmbeddings,
+    deleteDocuments,
+    setEntities: (entities: typeof all) => {
+      all = entities;
+    },
+    clearEmbeddings: () => {
+      indexed = [];
+    },
+  };
 }
 
 describe('runIndexing', () => {
@@ -96,7 +165,7 @@ describe('runIndexing', () => {
         },
       ],
     ]);
-    expect(result).toMatchObject({ catalog: 6, techDocs: 3 });
+    expect(result).toMatchObject({ catalog: 6, techDocs: 3, unchanged: [] });
   });
 
   it('keeps the embeddings of entities whose docs do not build', async () => {
@@ -105,13 +174,82 @@ describe('runIndexing', () => {
     expect(result.skipped).toEqual(['component:default/broken']);
   });
 
-  it('carries on after a failed slice', async () => {
+  it('skips unchanged slices on the next run', async () => {
     const { deps, createEmbeddings } = setup();
+    await runIndexing(deps);
+    createEmbeddings.mockClear();
+
+    const result = await runIndexing(deps);
+    expect(createEmbeddings).not.toHaveBeenCalled();
+    expect(result.unchanged).toEqual([
+      'catalog:Component',
+      'catalog:System',
+      'tech-docs:component:default/flux',
+    ]);
+  });
+
+  it('ignores a changed etag', async () => {
+    const { deps, createEmbeddings, setEntities } = setup();
+    await runIndexing(deps);
+    createEmbeddings.mockClear();
+
+    setEntities([
+      entity('Component', 'flux', '2'),
+      entity('Component', 'broken', '2'),
+      entity('System', 'platform', '2'),
+    ]);
+    await runIndexing(deps);
+    expect(createEmbeddings).not.toHaveBeenCalled();
+  });
+
+  it('re-indexes only what changed', async () => {
+    const { deps, createEmbeddings, docs, setEntities } = setup();
+    await runIndexing(deps);
+    createEmbeddings.mockClear();
+
+    docs.set('flux', [{ location: 'index.html#a', text: 'A, edited' }]);
+    setEntities([
+      entity('Component', 'flux'),
+      entity('Component', 'broken'),
+      entity('System', 'platform'),
+      entity('System', 'new'),
+    ]);
+    await runIndexing(deps);
+    expect(createEmbeddings.mock.calls.map(c => c[0])).toEqual([
+      'catalog',
+      'tech-docs',
+    ]);
+    expect(createEmbeddings.mock.calls[0][1]).toEqual({ kind: 'System' });
+  });
+
+  it('re-indexes everything after a model change', async () => {
+    const { deps, createEmbeddings } = setup();
+    await runIndexing(deps);
+    createEmbeddings.mockClear();
+
+    await runIndexing({ ...deps, fingerprint: 'model-b' });
+    expect(createEmbeddings).toHaveBeenCalledTimes(3);
+  });
+
+  it('re-indexes slices without embeddings despite a stored hash', async () => {
+    const { deps, createEmbeddings, clearEmbeddings } = setup();
+    await runIndexing(deps);
+    createEmbeddings.mockClear();
+
+    clearEmbeddings(); // e.g. TRUNCATE embeddings
+    await runIndexing(deps);
+    expect(createEmbeddings).toHaveBeenCalledTimes(3);
+  });
+
+  it('carries on after a failed slice and retries it next time', async () => {
+    const { deps, state, createEmbeddings } = setup();
     createEmbeddings.mockRejectedValueOnce(new Error('429 rate limit'));
     const result = await runIndexing(deps);
 
     expect(result.failed).toEqual(['catalog:Component']);
     expect(result).toMatchObject({ catalog: 3, techDocs: 3 });
+    expect(state.hashes.has('catalog:Component')).toBe(false);
+    expect(state.hashes.has('catalog:System')).toBe(true);
   });
 
   it('removes embeddings of entities gone from the catalog', async () => {
