@@ -287,6 +287,9 @@ ragAi:
     apiKey: ${LLM_API_KEY:-}
     models: ${LLM_MODEL:-nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free}
     maxTokens: ${LLM_MAX_TOKENS:-4000}
+  indexing:
+    enabled: ${RAG_INDEX_ENABLED:-true}
+    schedule: ${RAG_INDEX_SCHEDULE:-0 3 * * *}
 
 ai:
   supportedSources: ["catalog", "tech-docs"]
@@ -321,8 +324,31 @@ Only `ragAi.enabled` reaches the frontend; the key is marked `@visibility secret
 
 ### Indexing
 
-RAG-AI does **not** index on its own. Embeddings are created per source through the
-backend API (needs a Backstage user or service token):
+The `llm` module re-indexes catalog and TechDocs on a schedule (Backstage scheduler,
+`packages/backend/src/plugins/rag-ai/indexing.ts`). It needs no token and, with several
+replicas, runs once per schedule.
+
+| Variable             | Default     | Description                                                       |
+| -------------------- | ----------- | ----------------------------------------------------------------- |
+| `RAG_INDEX_ENABLED`  | `true`      | `false` turns the scheduled indexing off (RAG-AI itself stays on) |
+| `RAG_INDEX_SCHEDULE` | `0 3 * * *` | crontab, pod time zone (usually UTC)                              |
+
+A run:
+
+1. indexes the catalog **per kind**,
+2. builds the TechDocs of each entity with a `backstage.io/techdocs-ref` annotation
+   (`/api/techdocs/sync/...`; built docs are not persisted across pod restarts) and
+   indexes them **per entity**,
+3. removes embeddings of entities that are no longer in the catalog.
+
+Roadie deletes the embeddings of the matched entities before creating new ones. The
+small slices keep a failed embeddings request (e.g. a rate limit) from wiping more than
+one kind or entity; an entity whose docs do not build keeps its old embeddings. Failures
+are logged as warnings and retried on the next run. One run costs about one embeddings
+request per catalog kind and per TechDocs entity (plus one per 128 chunks), so mind the
+free tier of 50 requests/day. A fresh database is filled at the first scheduled run.
+
+To index by hand, use the backend API (needs a Backstage user or service token):
 
 ```bash
 # TechDocs of some components (docs must have been built/published)

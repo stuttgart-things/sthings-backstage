@@ -20,5 +20,12 @@ export interface Config {
       maxTokens?: number | string;
       temperature?: number | string;
     };
+    /** Scheduled re-indexing of catalog and TechDocs. */
+    indexing?: {
+      /** Defaults to true (RAG_INDEX_ENABLED). */
+      enabled?: boolean | string;
+      /** Crontab string in the pod's time zone, defaults to `0 3 * * *` (RAG_INDEX_SCHEDULE). */
+      schedule?: string;
+    };
   };
 }
