@@ -7533,17 +7533,17 @@ __metadata:
   linkType: hard
 
 "@langchain/core@npm:^1.1.0, @langchain/core@npm:^1.2.17":
-  version: 1.2.17
-  resolution: "@langchain/core@npm:1.2.17"
+  version: 1.2.18
+  resolution: "@langchain/core@npm:1.2.18"
   dependencies:
     "@cfworker/json-schema": "npm:^4.0.2"
     "@standard-schema/spec": "npm:^1.1.0"
     js-tiktoken: "npm:^1.0.12"
-    langsmith: "npm:>=0.5.0 <1.0.0"
+    langsmith: "npm:>=0.11.0 <1.0.0"
     mustache: "npm:^4.2.0"
     p-queue: "npm:^6.6.2"
     zod: "npm:^3.25.76 || ^4"
-  checksum: 10c0/ed246ba9e6ab9757c32f4c4c2d7d34010880a4b01ecb7b4fc64c042636bfbbdedafdb3572b8ff5bf38b39c66a5d3a272d052254d83393c5430bf342c2494ec40
+  checksum: 10c0/13a8d853c349b38934b54b710eda0e438c7432bcc2feab2d353eeeffa3a6e8eedd86683f1c2fbf7b8fdae534f3bcb265cebcd30494f8e6072e59fe5310f9c89c
   languageName: node
   linkType: hard
 
@@ -25779,7 +25779,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"langsmith@npm:>=0.5.0 <1.0.0":
+"langsmith@npm:>=0.11.0 <1.0.0":
   version: 0.11.0
   resolution: "langsmith@npm:0.11.0"
   dependencies:
