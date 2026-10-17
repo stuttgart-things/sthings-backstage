@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.9.1...v1.10.0) (2026-10-17)
+
+
+### Features
+
+* **rag-ai:** re-index catalog and TechDocs on a schedule ([#178](https://github.com/stuttgart-things/sthings-backstage/issues/178)) ([1dd66f7](https://github.com/stuttgart-things/sthings-backstage/commit/1dd66f725ddc3d91476a534403c6c83ceb7d6f9d)), closes [#177](https://github.com/stuttgart-things/sthings-backstage/issues/177)
+
 ## [1.9.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.9.0...v1.9.1) (2026-10-17)
 
 
