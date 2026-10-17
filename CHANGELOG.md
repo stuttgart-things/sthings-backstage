@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.9.0...v1.9.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* **rag-ai:** register the RAG-AI API so "Ask AI" opens ([#174](https://github.com/stuttgart-things/sthings-backstage/issues/174)) ([326c829](https://github.com/stuttgart-things/sthings-backstage/commit/326c8291392d2266ed8166b711445cdaaab11f34)), closes [#173](https://github.com/stuttgart-things/sthings-backstage/issues/173)
+
 # [1.9.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.8.0...v1.9.0) (2026-10-17)
 
 
