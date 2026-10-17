@@ -10,7 +10,7 @@ export interface Config {
       /** Defaults to https://openrouter.ai/api/v1 */
       baseUrl?: string;
       /**
-       * API key of the endpoint (OPENROUTER_API_KEY).
+       * API key of the endpoint (LLM_API_KEY).
        * @visibility secret
        */
       apiKey?: string;

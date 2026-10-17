@@ -202,35 +202,58 @@ main Backstage database needs no pgvector. **Off by default**: without
 
 ### Components
 
-| Component      | Location                                                                              | Purpose                                                                                                                               |
-| -------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Backend plugin | `@roadiehq/rag-ai-backend`                                                            | pluginId **`rag-ai`**, routes under `/api/rag-ai`                                                                                     |
-| Backend module | `packages/backend/src/plugins/rag-ai/module.ts`                                       | module `openrouter`: pgvector store, OpenAI-compatible embeddings, default retrieval pipeline, `ChatOpenAI` with OpenRouter fallbacks |
-| Feature loader | `packages/backend/src/plugins/rag-ai/index.ts`                                        | loads plugin and module only when `ragAi.enabled` is true                                                                             |
-| Frontend       | `@roadiehq/rag-ai` → `SidebarRagModal` in `packages/app/src/components/Root/Root.tsx` | "Ask AI" sidebar entry and `ctrl+,`, shown only when `ragAi.enabled` is true                                                          |
+| Component      | Location                                                                              | Purpose                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Backend plugin | `@roadiehq/rag-ai-backend`                                                            | pluginId **`rag-ai`**, routes under `/api/rag-ai`                                                                              |
+| Backend module | `packages/backend/src/plugins/rag-ai/module.ts`                                       | module `llm`: pgvector store, OpenAI-compatible embeddings, default retrieval pipeline, `ChatOpenAI` with OpenRouter fallbacks |
+| Feature loader | `packages/backend/src/plugins/rag-ai/index.ts`                                        | loads plugin and module only when `ragAi.enabled` is true                                                                      |
+| Frontend       | `@roadiehq/rag-ai` → `SidebarRagModal` in `packages/app/src/components/Root/Root.tsx` | "Ask AI" sidebar entry and `ctrl+,`, shown only when `ragAi.enabled` is true                                                   |
 
 ### Environment variables
 
-| Variable                      | Required        | Default                                                                                                    | Meaning                                                                                                                                                                                                                      |
-| ----------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `RAG_AI_ENABLED`              | yes (to enable) | `false`                                                                                                    | `true` loads the backend plugin and shows the sidebar entry                                                                                                                                                                  |
-| `RAG_PG_HOST`                 | yes             | –                                                                                                          | rag-postgres host, e.g. `rag-postgres-rw.<ns>.svc`                                                                                                                                                                           |
-| `RAG_PG_PORT`                 | no              | `5432`                                                                                                     | rag-postgres port                                                                                                                                                                                                            |
-| `RAG_PG_DATABASE`             | no              | `backstage_rag`                                                                                            | database (created by CNPG, not by Backstage)                                                                                                                                                                                 |
-| `RAG_PG_USER`                 | no              | `rag`                                                                                                      | owner of the database (secret `rag-postgres-creds`, key `username`)                                                                                                                                                          |
-| `RAG_PG_PASSWORD`             | yes             | –                                                                                                          | secret `rag-postgres-creds`, key `password`                                                                                                                                                                                  |
-| `OPENROUTER_API_KEY`          | yes             | –                                                                                                          | OpenRouter key, used for chat **and** embeddings (secret)                                                                                                                                                                    |
-| `OPENROUTER_BASE_URL`         | no              | `https://openrouter.ai/api/v1`                                                                             | any OpenAI-compatible endpoint (LiteLLM, vLLM, Ollama `/v1`)                                                                                                                                                                 |
-| `OPENROUTER_MODEL`            | no              | `nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free` | chat models, comma-separated, most reliable first; the first is used, up to 3 more are OpenRouter fallbacks (non-OpenRouter endpoints: first model only). Avoid `openrouter/free`: it can route to tiny or classifier models |
-| `OPENROUTER_EMBEDDINGS_MODEL` | no              | `nvidia/nemotron-3-embed-1b:free`                                                                          | embeddings model (2048 dimensions). Changing it requires re-indexing, see below                                                                                                                                              |
-| `LLM_MAX_TOKENS`              | no              | `4000`                                                                                                     | answer token cap, including a reasoning model's thinking                                                                                                                                                                     |
-| `RAG_EMBEDDINGS_CONCURRENCY`  | no              | `2`                                                                                                        | parallel embeddings requests (free models: 20 requests/minute)                                                                                                                                                               |
-| `RAG_CONTEXT_CHUNKS`          | no              | `6`                                                                                                        | document chunks added to each question                                                                                                                                                                                       |
+| Variable                     | Required        | Default                                                                                                    | Meaning                                                                                                                                                                                                                      |
+| ---------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RAG_AI_ENABLED`             | yes (to enable) | `false`                                                                                                    | `true` loads the backend plugin and shows the sidebar entry                                                                                                                                                                  |
+| `RAG_PG_HOST`                | yes             | –                                                                                                          | rag-postgres host, e.g. `rag-postgres-rw.<ns>.svc`                                                                                                                                                                           |
+| `RAG_PG_PORT`                | no              | `5432`                                                                                                     | rag-postgres port                                                                                                                                                                                                            |
+| `RAG_PG_DATABASE`            | no              | `backstage_rag`                                                                                            | database (created by CNPG, not by Backstage)                                                                                                                                                                                 |
+| `RAG_PG_USER`                | no              | `rag`                                                                                                      | owner of the database (secret `rag-postgres-creds`, key `username`)                                                                                                                                                          |
+| `RAG_PG_PASSWORD`            | yes             | –                                                                                                          | secret `rag-postgres-creds`, key `password`                                                                                                                                                                                  |
+| `LLM_API_KEY`                | yes             | –                                                                                                          | API key of the endpoint, used for chat **and** embeddings (secret). Must not be empty: endpoints without auth (Ollama) take any value, e.g. `ollama`                                                                         |
+| `LLM_BASE_URL`               | no              | `https://openrouter.ai/api/v1`                                                                             | any OpenAI-compatible endpoint (LiteLLM, vLLM, Ollama `/v1`)                                                                                                                                                                 |
+| `LLM_MODEL`                  | no              | `nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free` | chat models, comma-separated, most reliable first; the first is used, up to 3 more are OpenRouter fallbacks (non-OpenRouter endpoints: first model only). Avoid `openrouter/free`: it can route to tiny or classifier models |
+| `LLM_EMBEDDINGS_MODEL`       | no              | `nvidia/nemotron-3-embed-1b:free`                                                                          | embeddings model (2048 dimensions). Changing it requires re-indexing, see below                                                                                                                                              |
+| `LLM_MAX_TOKENS`             | no              | `4000`                                                                                                     | answer token cap, including a reasoning model's thinking                                                                                                                                                                     |
+| `RAG_EMBEDDINGS_CONCURRENCY` | no              | `2`                                                                                                        | parallel embeddings requests (free models: 20 requests/minute)                                                                                                                                                               |
+| `RAG_CONTEXT_CHUNKS`         | no              | `6`                                                                                                        | document chunks added to each question                                                                                                                                                                                       |
 
 Free OpenRouter models allow 20 requests/minute and **50 requests/day** (1,000/day once
 the account bought ≥ 10 credits). A question costs 2 requests (embedding + chat); indexing
-costs one request per 128 chunks. Free-model providers may log prompts, so catalog and
-TechDocs content leaves the cluster.
+costs one request per 128 chunks.
+
+### Data privacy
+
+Every question and every indexing run sends catalog entities and TechDocs pages to
+the LLM endpoint, so this content **leaves the cluster**. With the free OpenRouter
+models it goes to whichever third-party provider serves the model, and free tiers may
+log prompts or use them for training. Fine for public or demo content (e.g. the
+`sthings-dev` catalog); for internal documentation either decide this consciously or
+point `LLM_BASE_URL` at an endpoint you run yourself (see below).
+
+### Switching the provider
+
+Only configuration changes, no code: the chat model and the embeddings both use the
+OpenAI API, which Ollama, vLLM and LiteLLM also serve. Example for Ollama:
+
+```bash
+LLM_BASE_URL=http://ollama.<ns>.svc:11434/v1
+LLM_API_KEY=ollama                 # any non-empty value
+LLM_MODEL=llama3.1:8b              # one model; fallbacks are OpenRouter-only
+LLM_EMBEDDINGS_MODEL=nomic-embed-text
+```
+
+The vector column has no fixed dimension, so no migration is needed, but a new
+embeddings model means `TRUNCATE embeddings;` and indexing everything again.
 
 ### app-config
 
@@ -254,19 +277,19 @@ backend:
       rag-ai:
         onPluginBootFailure: continue
         modules:
-          openrouter:
+          llm:
             onPluginModuleBootFailure: continue
 
 ragAi:
   enabled: ${RAG_AI_ENABLED:-false}
   llm:
-    baseUrl: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
-    apiKey: ${OPENROUTER_API_KEY:-}
-    models: ${OPENROUTER_MODEL:-nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free}
+    baseUrl: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+    apiKey: ${LLM_API_KEY:-}
+    models: ${LLM_MODEL:-nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free}
     maxTokens: ${LLM_MAX_TOKENS:-4000}
 
 ai:
-  supportedSources: ['catalog', 'tech-docs']
+  supportedSources: ["catalog", "tech-docs"]
   prompts:
     prefix: >-
       You answer questions about the stuttgart-things platform ...
@@ -275,9 +298,9 @@ ai:
     chunkOverlap: 200
     concurrencyLimit: ${RAG_EMBEDDINGS_CONCURRENCY:-2}
     openai:
-      openAiBaseUrl: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
-      openAiApiKey: ${OPENROUTER_API_KEY:-}
-      modelName: ${OPENROUTER_EMBEDDINGS_MODEL:-nvidia/nemotron-3-embed-1b:free}
+      openAiBaseUrl: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      openAiApiKey: ${LLM_API_KEY:-}
+      modelName: ${LLM_EMBEDDINGS_MODEL:-nvidia/nemotron-3-embed-1b:free}
       batchSize: 128 # nemotron-3-embed-1b:free takes at most 256
   storage:
     pgVector:
@@ -313,16 +336,15 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H 'content-type: application/jso
 ```
 
 Re-running a POST replaces the embeddings of the matched entities. After changing
-`OPENROUTER_EMBEDDINGS_MODEL`, run `TRUNCATE embeddings;` in `backstage_rag` and index
+`LLM_EMBEDDINGS_MODEL`, run `TRUNCATE embeddings;` in `backstage_rag` and index
 everything again: vectors of different models cannot be compared.
 
 ### Switching it off
 
 Leave `RAG_AI_ENABLED` unset (or `false`): plugin and module are not loaded, the sidebar
 entry is hidden, the `rag-ai` database config is never used. With RAG enabled but
-rag-postgres unreachable or `OPENROUTER_API_KEY` missing, the backend still starts;
+rag-postgres unreachable or `LLM_API_KEY` missing, the backend still starts;
 only `/api/rag-ai` is unavailable and the error is logged.
-
 ## Known Upgrade Constraints
 
 ### React 19

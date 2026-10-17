@@ -21,7 +21,7 @@ import { createChatModel, readLlmOptions } from './llm';
  */
 export default createBackendModule({
   pluginId: 'rag-ai',
-  moduleId: 'openrouter',
+  moduleId: 'llm',
 
   register(env) {
     env.registerInit({
