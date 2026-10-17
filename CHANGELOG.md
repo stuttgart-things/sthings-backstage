@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.10.0...v1.11.0) (2026-10-17)
+
+
+### Features
+
+* **rag-ai:** skip unchanged catalog kinds and TechDocs when re-indexing ([#180](https://github.com/stuttgart-things/sthings-backstage/issues/180)) ([ea132aa](https://github.com/stuttgart-things/sthings-backstage/commit/ea132aaf988a8bf2bbedf3c3954313f492e1cf10)), closes [#179](https://github.com/stuttgart-things/sthings-backstage/issues/179)
+
 # [1.10.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.9.1...v1.10.0) (2026-10-17)
 
 
