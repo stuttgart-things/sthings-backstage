@@ -34,7 +34,7 @@ describe('readLlmOptions', () => {
   it('fails without an API key', () => {
     expect(() =>
       readLlmOptions(new ConfigReader({ ragAi: { llm: { models: 'm' } } })),
-    ).toThrow(/OPENROUTER_API_KEY/);
+    ).toThrow(/LLM_API_KEY/);
   });
 
   it('fails without models', () => {
@@ -42,7 +42,7 @@ describe('readLlmOptions', () => {
       readLlmOptions(
         new ConfigReader({ ragAi: { llm: { apiKey: 'k', models: ' , ' } } }),
       ),
-    ).toThrow(/OPENROUTER_MODEL/);
+    ).toThrow(/LLM_MODEL/);
   });
 });
 

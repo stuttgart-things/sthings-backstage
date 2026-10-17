@@ -4,7 +4,7 @@ import {
 } from '@backstage/backend-plugin-api';
 
 /**
- * Loads the Roadie RAG-AI backend plugin and its OpenRouter module only when
+ * Loads the Roadie RAG-AI backend plugin and its LLM module only when
  * ragAi.enabled is true (RAG_AI_ENABLED). Instances without a RAG database
  * stay unchanged. See README "RAG-AI".
  */

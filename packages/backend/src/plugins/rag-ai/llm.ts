@@ -30,14 +30,12 @@ export function readLlmOptions(config: Config): RagAiLlmOptions {
   const apiKey = llm?.getOptionalString('apiKey');
   if (!apiKey) {
     throw new Error(
-      'ragAi.llm.apiKey is not set (OPENROUTER_API_KEY); RAG-AI stays off',
+      'ragAi.llm.apiKey is not set (LLM_API_KEY); RAG-AI stays off',
     );
   }
   const models = parseModels(llm?.getOptionalString('models'));
   if (models.length === 0) {
-    throw new Error(
-      'ragAi.llm.models is empty (OPENROUTER_MODEL); RAG-AI stays off',
-    );
+    throw new Error('ragAi.llm.models is empty (LLM_MODEL); RAG-AI stays off');
   }
   return {
     baseUrl: llm?.getOptionalString('baseUrl') || DEFAULT_BASE_URL,
