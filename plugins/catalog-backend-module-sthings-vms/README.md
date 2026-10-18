@@ -55,6 +55,8 @@ catalog:
         tokenId: ${PROXMOX_TOKEN_ID} # e.g. backstage@pve!catalog
         tokenSecret: ${PROXMOX_TOKEN_SECRET}
         system: labul
+        # caCert: |                           # optional, see below
+        #   -----BEGIN CERTIFICATE-----
         # owner: team-infrastructure          # default
         # lifecycle: production               # default
         # schedule:                           # default: every 10 min, 2 min timeout
@@ -64,6 +66,16 @@ catalog:
 
 The Proxmox token only needs the `PVEAuditor` role. TLS uses the Node trust
 store. For a private CA, set `NODE_EXTRA_CA_CERTS`.
+
+Proxmox's default node certificate is signed by a per-cluster CA that only
+exists on the host (`/etc/pve/pve-root-ca.pem`). Without host access, pin the
+node certificate itself via `caCert`; that endpoint then trusts only this PEM:
+
+```bash
+openssl s_client -connect ul-pve01.labul.sva.de:8006 </dev/null | openssl x509
+```
+
+A pinned certificate has to be updated when Proxmox renews it.
 
 ## Install
 

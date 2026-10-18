@@ -49,6 +49,7 @@ export default createBackendModule({
             pool: c.getString('pool'),
             tokenId: c.getString('tokenId'),
             tokenSecret: c.getString('tokenSecret'),
+            caCert: c.getOptionalString('caCert'),
             logger,
           });
           const provider = new SthingsVmEntityProvider(

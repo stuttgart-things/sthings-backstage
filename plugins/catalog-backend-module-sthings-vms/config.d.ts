@@ -20,6 +20,12 @@ export interface Config {
           tokenId: string;
           /** @visibility secret */
           tokenSecret: string;
+          /**
+           * PEM to trust for this endpoint instead of the Node trust store.
+           * Can be the server's own self-signed certificate (pinning), e.g.
+           * Proxmox's default node certificate when its CA is not at hand.
+           */
+          caCert?: string;
           /** System entity the VMs belong to, e.g. `labul`. */
           system: string;
           /** Owner entity ref. Defaults to `team-infrastructure`. */
