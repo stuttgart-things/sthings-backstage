@@ -1,4 +1,8 @@
-import { ProxmoxVmSource } from './proxmox';
+import fs from 'node:fs';
+import https from 'node:https';
+import { AddressInfo } from 'node:net';
+import path from 'node:path';
+import { pinnedFetch, ProxmoxVmSource } from './proxmox';
 
 const logger = {
   debug: jest.fn(),
@@ -142,5 +146,53 @@ describe('ProxmoxVmSource', () => {
   it('fails when the inventory call fails', async () => {
     const fetchImpl = jest.fn(async () => json(null, 401));
     await expect(source(fetchImpl).listVms()).rejects.toThrow(/401/);
+  });
+
+  it('names the cause when the request itself fails', async () => {
+    const fetchImpl = jest.fn(async () => {
+      throw new TypeError('fetch failed', {
+        cause: { code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' },
+      });
+    });
+    await expect(source(fetchImpl).listVms()).rejects.toThrow(
+      /fetch failed \(UNABLE_TO_VERIFY_LEAF_SIGNATURE\)/,
+    );
+  });
+});
+
+describe('pinnedFetch', () => {
+  // Leaf signed by a CA the client never sees, like Proxmox's default node
+  // certificate (its CA only lives on the host).
+  const fixtures = path.join(__dirname, '__fixtures__');
+  const cert = fs.readFileSync(path.join(fixtures, 'leaf.pem'), 'utf8');
+  const key = fs.readFileSync(path.join(fixtures, 'leaf.key'), 'utf8');
+  let server: https.Server;
+  let url: string;
+
+  beforeAll(async () => {
+    server = https.createServer({ cert, key }, (req, res) => {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ data: req.headers.authorization }));
+    });
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+    url = `https://localhost:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(() => new Promise<void>(resolve => server.close(() => resolve())));
+
+  it('trusts a pinned self-signed leaf certificate', async () => {
+    const res = await pinnedFetch(cert)(`${url}/api2/json/version`, {
+      headers: { Authorization: 'PVEAPIToken=x=y' },
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ data: 'PVEAPIToken=x=y' });
+  });
+
+  it('rejects the server without the pinned certificate', async () => {
+    const other = fs.readFileSync(path.join(fixtures, 'other.pem'), 'utf8');
+    await expect(pinnedFetch(other)(url)).rejects.toMatchObject({
+      message: 'fetch failed',
+      cause: expect.anything(),
+    });
   });
 });

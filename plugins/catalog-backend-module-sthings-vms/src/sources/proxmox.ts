@@ -1,4 +1,5 @@
 import { LoggerService } from '@backstage/backend-plugin-api';
+import https from 'node:https';
 import { VmRecord, VmSource } from '../types';
 
 export const PROXMOX_ANNOTATION_PREFIX = 'proxmox.stuttgart-things.com';
@@ -8,6 +9,11 @@ export interface ProxmoxSourceOptions {
   pool: string;
   tokenId: string;
   tokenSecret: string;
+  /**
+   * PEM to trust for this endpoint only, instead of the Node trust store.
+   * May be the server's own (self-signed) certificate.
+   */
+  caCert?: string;
   logger: LoggerService;
   fetch?: typeof fetch;
 }
@@ -33,8 +39,7 @@ interface GuestInterface {
 
 /**
  * Lists the VMs of one Proxmox pool via the cluster API. A read-only token
- * (PVEAuditor) is enough. TLS uses the Node trust store; for a private CA set
- * NODE_EXTRA_CA_CERTS.
+ * (PVEAuditor) is enough. TLS uses the Node trust store, or `caCert` if set.
  */
 export class ProxmoxVmSource implements VmSource {
   private readonly baseUrl: string;
@@ -42,7 +47,8 @@ export class ProxmoxVmSource implements VmSource {
 
   constructor(private readonly options: ProxmoxSourceOptions) {
     this.baseUrl = options.endpoint.replace(/\/+$/, '');
-    this.fetchImpl = options.fetch ?? fetch;
+    this.fetchImpl =
+      options.fetch ?? (options.caCert ? pinnedFetch(options.caCert) : fetch);
   }
 
   async listVms(): Promise<VmRecord[]> {
@@ -106,11 +112,22 @@ export class ProxmoxVmSource implements VmSource {
   }
 
   private async get<T>(path: string): Promise<T> {
-    const res = await this.fetchImpl(`${this.baseUrl}${path}`, {
-      headers: {
-        Authorization: `PVEAPIToken=${this.options.tokenId}=${this.options.tokenSecret}`,
-      },
-    });
+    let res: Response;
+    try {
+      res = await this.fetchImpl(`${this.baseUrl}${path}`, {
+        headers: {
+          Authorization: `PVEAPIToken=${this.options.tokenId}=${this.options.tokenSecret}`,
+        },
+      });
+    } catch (e) {
+      // fetch hides the real reason (TLS, DNS, ...) in `cause`.
+      const cause = (e as { cause?: { code?: string; message?: string } })
+        .cause;
+      const reason = cause?.code ?? cause?.message;
+      throw new Error(
+        `Proxmox GET ${path} failed: ${(e as Error).message}${reason ? ` (${reason})` : ''}`,
+      );
+    }
     if (!res.ok) {
       throw new Error(
         `Proxmox GET ${path} failed: ${res.status} ${res.statusText}`,
@@ -119,4 +136,40 @@ export class ProxmoxVmSource implements VmSource {
     const body = (await res.json()) as { data: T };
     return body.data;
   }
+}
+
+/**
+ * A fetch that trusts only `ca`. allowPartialTrustChain lets a non-CA leaf
+ * (e.g. Proxmox's default self-signed node certificate) be the trust anchor.
+ */
+export function pinnedFetch(ca: string): typeof fetch {
+  const agent = new https.Agent({ ca, allowPartialTrustChain: true });
+  return ((input: string | URL, init?: RequestInit) =>
+    new Promise<Response>((resolve, reject) => {
+      const req = https.request(
+        String(input),
+        {
+          method: init?.method ?? 'GET',
+          headers: init?.headers as Record<string, string>,
+          agent,
+        },
+        res => {
+          const chunks: Buffer[] = [];
+          res.on('data', chunk => chunks.push(chunk));
+          res.on('end', () =>
+            resolve(
+              new Response(Buffer.concat(chunks), {
+                status: res.statusCode,
+                statusText: res.statusMessage,
+              }),
+            ),
+          );
+          res.on('error', reject);
+        },
+      );
+      req.on('error', err =>
+        reject(new TypeError('fetch failed', { cause: err })),
+      );
+      req.end();
+    })) as typeof fetch;
 }
