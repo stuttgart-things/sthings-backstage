@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.11.0...v1.12.0) (2026-10-18)
+
+
+### Features
+
+* **sthings-vms:** pin the Proxmox certificate with caCert ([#181](https://github.com/stuttgart-things/sthings-backstage/issues/181)) ([d015b65](https://github.com/stuttgart-things/sthings-backstage/commit/d015b651117fea7ce4438edaf03b86cf9eaa328c))
+
 # [1.11.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.10.0...v1.11.0) (2026-10-17)
 
 
