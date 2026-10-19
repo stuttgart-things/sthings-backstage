@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import { LoggerService } from '@backstage/backend-plugin-api';
-import { CATALOG_FILTER_EXISTS, CatalogApi } from '@backstage/catalog-client';
+import { CatalogApi } from '@backstage/catalog-client';
 import { Config } from '@backstage/config';
 import { Entity, stringifyEntityRef } from '@backstage/catalog-model';
 import {
@@ -11,8 +11,7 @@ import {
 
 export const DEFAULT_INDEX_SCHEDULE = '0 3 * * *';
 
-const TECHDOCS_REF_ANNOTATION =
-  'metadata.annotations.backstage.io/techdocs-ref';
+const TECHDOCS_REF_ANNOTATION = 'backstage.io/techdocs-ref';
 
 export type RagAiIndexingOptions = {
   enabled: boolean;
@@ -78,8 +77,8 @@ export type EntityName = { kind: string; namespace: string; name: string };
 export type IndexingResult = {
   catalog: number;
   techDocs: number;
-  /** Slices whose content did not change since the last run. */
-  unchanged: string[];
+  /** Catalog entities and TechDocs whose content did not change. */
+  unchanged: number;
   skipped: string[];
   failed: string[];
   removed: string[];
@@ -88,55 +87,86 @@ export type IndexingResult = {
 /**
  * Re-creates the RAG-AI embeddings of the catalog and of all TechDocs.
  *
- * Every embeddings request counts against the provider's rate limit, so a
- * slice (catalog kind, TechDocs entity) is only re-indexed when its content
- * hash differs from the last successful run or it has no embeddings.
+ * Every embeddings request counts against the provider's rate limit, so
+ * only what changed since the last successful run is re-indexed: each
+ * catalog entity and each TechDocs entity has a content hash, and an entity
+ * is re-indexed when the hash differs or it has no embeddings.
  *
  * Roadie's createEmbeddings deletes the matched embeddings before it creates
  * new ones, so a failed embeddings call (e.g. a rate limit) loses them until
- * the next run. The small slices keep that loss small, and an entity whose
- * docs do not build keeps its old embeddings. Embeddings of entities gone
- * from the catalog are removed.
+ * the next run. All changed catalog entities go into one call (that is the
+ * cheapest: one request per 128 chunks), TechDocs one entity at a time, and
+ * an entity whose docs do not build keeps its old embeddings. Embeddings of
+ * entities gone from the catalog are removed.
  */
 export async function runIndexing(deps: IndexingDeps): Promise<IndexingResult> {
   const { logger, catalog } = deps;
   const result: IndexingResult = {
     catalog: 0,
     techDocs: 0,
-    unchanged: [],
+    unchanged: 0,
     skipped: [],
     failed: [],
     removed: [],
   };
   const hashes = await deps.state.load();
   const indexed = await deps.listIndexed();
-  const run = createSliceRunner(deps, hashes, result);
+  const isIndexed = (source: string, entityRef: string) =>
+    indexed.some(e => e.source === source && e.entityRef === entityRef);
+  const hashOf = (content: unknown) =>
+    createHash('sha256')
+      .update(deps.fingerprint)
+      .update(JSON.stringify(content))
+      .digest('hex');
+  // State keys of this run; all others belong to entities gone from the
+  // catalog (or to an older key format) and are dropped at the end.
+  const seen = new Set<string>();
 
-  const { facets } = await catalog.getEntityFacets(
-    { facets: ['kind'] },
+  const { items: entities } = await catalog.getEntities(
+    {},
     { token: await deps.catalogToken() },
   );
-  for (const { value: kind } of facets.kind ?? []) {
-    const hasEmbeddings = indexed.some(
-      e => e.source === 'catalog' && e.kind === kind,
-    );
-    await run('catalog', kind, { kind }, hasEmbeddings, async () => {
-      const { items } = await catalog.getEntities(
-        { filter: { kind } },
-        { token: await deps.catalogToken() },
+
+  // Catalog: every changed entity in one createEmbeddings call.
+  const changed: Entity[] = [];
+  const pending = new Map<string, string>();
+  for (const entity of entities) {
+    const ref = stringifyEntityRef(entity);
+    const key = `catalog:${ref}`;
+    const hash = hashOf(withoutEtag(entity));
+    seen.add(key);
+    if (isIndexed('catalog', ref) && hashes.get(key) === hash) {
+      result.unchanged += 1;
+    } else {
+      changed.push(entity);
+      pending.set(key, hash);
+    }
+  }
+  if (changed.length > 0) {
+    try {
+      result.catalog = await deps.indexer.createEmbeddings(
+        'catalog',
+        catalogFilter(changed, entities),
       );
-      return items.map(withoutEtag).sort(byRef);
-    });
+      for (const [key, hash] of pending) {
+        await deps.state.save(key, hash);
+      }
+    } catch (e) {
+      logger.warn(
+        `RAG-AI indexing: catalog (${changed.length} entities) failed: ${e}`,
+      );
+      result.failed.push('catalog');
+      // Their embeddings may be gone: re-index them next time.
+      for (const key of pending.keys()) {
+        await deps.state.remove(key).catch(() => {});
+      }
+    }
   }
 
-  const { items: withDocs } = await catalog.getEntities(
-    {
-      filter: { [TECHDOCS_REF_ANNOTATION]: CATALOG_FILTER_EXISTS },
-      fields: ['kind', 'metadata.namespace', 'metadata.name'],
-    },
-    { token: await deps.catalogToken() },
+  // TechDocs: one entity at a time; each needs its docs built first.
+  const withDocs = entities.filter(
+    e => e.metadata.annotations?.[TECHDOCS_REF_ANNOTATION],
   );
-  // One entity at a time: free models allow 20 requests/minute.
   for (const entity of withDocs) {
     const name: EntityName = {
       kind: entity.kind,
@@ -144,32 +174,51 @@ export async function runIndexing(deps: IndexingDeps): Promise<IndexingResult> {
       name: entity.metadata.name,
     };
     const ref = stringifyEntityRef(name);
-    const hasEmbeddings = indexed.some(
-      e => e.source === 'tech-docs' && e.entityRef === ref,
-    );
-    const filter = {
-      kind: name.kind,
-      'metadata.namespace': name.namespace,
-      'metadata.name': name.name,
-    };
-    await run('tech-docs', ref, filter, hasEmbeddings, async () => {
+    const key = `tech-docs:${ref}`;
+    seen.add(key);
+    try {
       const sections = await deps.buildTechDocs(name);
       if (sections.length === 0) {
         logger.warn(
           `RAG-AI indexing: no TechDocs for ${ref}, keeping its old embeddings`,
         );
         result.skipped.push(ref);
-        return undefined;
+        continue;
       }
-      return sections;
-    });
+      const hash = hashOf(sections);
+      if (isIndexed('tech-docs', ref) && hashes.get(key) === hash) {
+        result.unchanged += 1;
+        continue;
+      }
+      result.techDocs += await deps.indexer.createEmbeddings('tech-docs', {
+        kind: name.kind,
+        'metadata.namespace': name.namespace,
+        'metadata.name': name.name,
+      });
+      await deps.state.save(key, hash);
+    } catch (e) {
+      logger.warn(`RAG-AI indexing: TechDocs of ${ref} failed: ${e}`);
+      result.failed.push(`tech-docs:${ref}`);
+      await deps.state.remove(key).catch(() => {});
+    }
   }
 
-  result.removed = await removeOrphans(deps, indexed);
+  // An empty answer more likely means a catalog problem than an empty
+  // catalog; deleting everything would be the wrong reaction.
+  if (entities.length === 0) {
+    logger.warn('RAG-AI indexing: catalog is empty, removing nothing');
+  } else {
+    result.removed = await removeOrphans(deps, indexed, entities);
+    for (const key of hashes.keys()) {
+      if (!seen.has(key)) {
+        await deps.state.remove(key);
+      }
+    }
+  }
 
   logger.info(
     `RAG-AI indexing done: ${result.catalog} catalog and ${result.techDocs} TechDocs embeddings, ` +
-      `unchanged ${result.unchanged.length}, skipped ${result.skipped.length}, ` +
+      `unchanged ${result.unchanged}, skipped ${result.skipped.length}, ` +
       `failed ${result.failed.length}, ` +
       `removed ${result.removed.length} entities no longer in the catalog`,
   );
@@ -177,80 +226,56 @@ export async function runIndexing(deps: IndexingDeps): Promise<IndexingResult> {
 }
 
 /**
- * Returns a function that re-indexes one slice if its content changed.
- * `read` returns the content the hash is built from, or undefined to leave
- * the slice as it is.
+ * Entity filter matching exactly the changed entities, one clause per kind
+ * and namespace. A group whose entities all changed (e.g. on the first run)
+ * is matched by kind and namespace alone, which keeps the catalog query
+ * short.
  */
-function createSliceRunner(
-  deps: IndexingDeps,
-  hashes: Map<string, string>,
-  result: IndexingResult,
-) {
-  return async (
-    source: EmbeddingsSource,
-    id: string,
-    filter: EntityFilterShape,
-    hasEmbeddings: boolean,
-    read: () => Promise<unknown | undefined>,
-  ) => {
-    const key = `${source}:${id}`;
-    try {
-      const content = await read();
-      if (content === undefined) {
-        return;
-      }
-      const hash = createHash('sha256')
-        .update(deps.fingerprint)
-        .update(JSON.stringify(content))
-        .digest('hex');
-      if (hasEmbeddings && hashes.get(key) === hash) {
-        result.unchanged.push(key);
-        return;
-      }
-      const count = await deps.indexer.createEmbeddings(source, filter);
-      if (source === 'catalog') {
-        result.catalog += count;
-      } else {
-        result.techDocs += count;
-      }
-      await deps.state.save(key, hash);
-    } catch (e) {
-      deps.logger.warn(`RAG-AI indexing: ${key} failed: ${e}`);
-      result.failed.push(key);
-      // Its embeddings may be gone: re-index it next time.
-      await deps.state.remove(key).catch(() => {});
+export function catalogFilter(
+  changed: Entity[],
+  all: Entity[],
+): EntityFilterShape {
+  const group = (e: Entity) =>
+    JSON.stringify([e.kind, e.metadata.namespace ?? 'default']);
+  const sizes = new Map<string, number>();
+  for (const e of all) {
+    sizes.set(group(e), (sizes.get(group(e)) ?? 0) + 1);
+  }
+  const names = new Map<string, string[]>();
+  for (const e of changed) {
+    names.set(group(e), [...(names.get(group(e)) ?? []), e.metadata.name]);
+  }
+  return [...names].map(([key, groupNames]) => {
+    const [kind, namespace] = JSON.parse(key) as [string, string];
+    const clause: Record<string, string | string[]> = {
+      kind,
+      'metadata.namespace': namespace,
+    };
+    if (groupNames.length !== sizes.get(key)) {
+      clause['metadata.name'] = groupNames;
     }
-  };
+    return clause;
+  });
 }
 
 /** Deletes embeddings whose entity is no longer in the catalog. */
 async function removeOrphans(
   deps: IndexingDeps,
   indexed: { source: string; entityRef: string }[],
+  entities: Entity[],
 ): Promise<string[]> {
-  const { items } = await deps.catalog.getEntities(
-    { fields: ['kind', 'metadata.namespace', 'metadata.name'] },
-    { token: await deps.catalogToken() },
-  );
-  // An empty answer more likely means a catalog problem than an empty
-  // catalog; deleting everything would be the wrong reaction.
-  if (items.length === 0) {
-    deps.logger.warn('RAG-AI indexing: catalog is empty, removing nothing');
-    return [];
-  }
-  const existing = new Set(items.map(e => stringifyEntityRef(e)));
+  const existing = new Set(entities.map(e => stringifyEntityRef(e)));
   const removed: string[] = [];
-  const seen = new Set<string>();
+  const done = new Set<string>();
   for (const { source, entityRef } of indexed) {
     const key = `${source}:${entityRef}`;
-    if (!entityRef || existing.has(entityRef) || seen.has(key)) {
+    if (!entityRef || existing.has(entityRef) || done.has(key)) {
       continue;
     }
-    seen.add(key);
+    done.add(key);
     await deps.indexer.vectorStore.deleteDocuments({
       filter: { source: source as EmbeddingsSource, entityRef },
     });
-    await deps.state.remove(key);
     removed.push(key);
   }
   return removed;
@@ -260,8 +285,4 @@ async function removeOrphans(
 function withoutEtag(entity: Entity): Entity {
   const { etag, ...metadata } = entity.metadata;
   return { ...entity, metadata };
-}
-
-function byRef(a: Entity, b: Entity): number {
-  return stringifyEntityRef(a).localeCompare(stringifyEntityRef(b));
 }

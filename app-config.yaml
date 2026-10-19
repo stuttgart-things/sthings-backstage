@@ -197,7 +197,7 @@ ragAi:
     models: ${LLM_MODEL:-nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free}
     maxTokens: ${LLM_MAX_TOKENS:-4000}
   # Re-creates the embeddings of catalog and TechDocs (README "Indexing").
-  # Only kinds and TechDocs whose content changed since the last run cost
+  # Only entities and TechDocs whose content changed since the last run cost
   # embeddings requests.
   indexing:
     enabled: ${RAG_INDEX_ENABLED:-true}

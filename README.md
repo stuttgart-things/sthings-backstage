@@ -335,25 +335,25 @@ replicas, runs once per schedule.
 
 A run:
 
-1. indexes the catalog **per kind**,
+1. indexes the catalog entities that changed, **all in one call**,
 2. builds the TechDocs of each entity with a `backstage.io/techdocs-ref` annotation
    (`/api/techdocs/sync/...`; built docs are not persisted across pod restarts) and
-   indexes them **per entity**,
+   indexes the changed ones **per entity**,
 3. removes embeddings of entities that are no longer in the catalog.
 
-Each slice (catalog kind, TechDocs entity) is only re-indexed when its content changed
-since the last successful run, or when it has no embeddings. The content hashes live in
-the table `rag_ai_index_state` next to `embeddings`; the hash includes the embeddings
-model and chunking, so changing them re-indexes everything. A normal night therefore
-costs only the requests for what changed. A full run (first run, model change, or after
-`DELETE FROM rag_ai_index_state;`) costs about one embeddings request per catalog kind
-and per TechDocs entity, plus one per 128 chunks — roughly 30 for stuttgart-things.
+Each catalog entity and each TechDocs entity is only re-indexed when its content
+changed since the last successful run (catalog `etag` ignored), or when it has no
+embeddings. The content hashes live in the table `rag_ai_index_state` next to
+`embeddings`; the hash includes the embeddings model and chunking, so changing them
+re-indexes everything. A night without changes costs no embeddings request; one changed
+entity (e.g. a VM whose status changed) costs about one. A full run (first run, model
+change, or after `DELETE FROM rag_ai_index_state;`) costs one request per 128 catalog
+chunks plus about one per TechDocs entity.
 
-Roadie deletes the embeddings of the matched entities before creating new ones. The
-small slices keep a failed embeddings request (e.g. a rate limit) from wiping more than
-one kind or entity; an entity whose docs do not build keeps its old embeddings. Failures
-are logged as warnings and retried on the next run. A fresh database is filled at the
-first scheduled run.
+Roadie deletes the embeddings of the matched entities before creating new ones, so a
+failed embeddings request (e.g. a rate limit) loses the changed catalog entities or one
+TechDocs entity until the next run, which retries them. An entity whose docs do not
+build keeps its old embeddings. A fresh database is filled at the first scheduled run.
 
 To index by hand, use the backend API (needs a Backstage user or service token):
 
