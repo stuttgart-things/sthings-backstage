@@ -171,8 +171,20 @@ describe('pinnedFetch', () => {
 
   beforeAll(async () => {
     server = https.createServer({ cert, key }, (req, res) => {
-      res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ data: req.headers.authorization }));
+      let body = '';
+      req.on('data', chunk => (body += chunk));
+      req.on('end', () => {
+        res.writeHead(200, {
+          'content-type': 'application/json',
+          'x-echo-method': req.method ?? '',
+        });
+        res.end(
+          JSON.stringify({
+            data: req.headers.authorization,
+            body: body || undefined,
+          }),
+        );
+      });
     });
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
     url = `https://localhost:${(server.address() as AddressInfo).port}`;
@@ -186,6 +198,15 @@ describe('pinnedFetch', () => {
     });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ data: 'PVEAPIToken=x=y' });
+  });
+
+  it('sends the request body and returns the response headers', async () => {
+    const res = await pinnedFetch(cert)(`${url}/login`, {
+      method: 'POST',
+      body: '{"userName":"u"}',
+    });
+    expect(res.headers.get('x-echo-method')).toBe('POST');
+    expect(await res.json()).toEqual({ body: '{"userName":"u"}' });
   });
 
   it('rejects the server without the pinned certificate', async () => {

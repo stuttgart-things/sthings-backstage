@@ -8,7 +8,7 @@ and a new one shows up without anybody writing a `catalog-info.yaml`
 | Source          | Status      |
 | --------------- | ----------- |
 | Proxmox (LabUL) | implemented |
-| vSphere (LabDA) | planned     |
+| vSphere (LabDA) | implemented |
 | Harvester       | planned     |
 
 ## Entities
@@ -77,6 +77,36 @@ openssl s_client -connect ul-pve01.labul.sva.de:8006 </dev/null | openssl x509
 
 A pinned certificate has to be updated when Proxmox renews it.
 
+### vSphere
+
+```yaml
+catalog:
+  providers:
+    sthingsVms:
+      vsphere-labda:
+        type: vsphere
+        endpoint: https://10.100.135.50
+        folder: NetApp-HCI-Datacenter/vm/stuttgart-things # inventory path, subfolders included
+        username: ${VSPHERE_USERNAME}
+        password: ${VSPHERE_PASSWORD}
+        system: labda
+        # apiRelease: 8.0.1.0                 # default
+        # caCert: |                           # optional, same as for Proxmox
+```
+
+Uses the VI/JSON API (`/sdk/vim25/<release>/...`, vCenter 8.0 U1 and later)
+rather than the Automation REST API, because `/api/vcenter/vm` does not return
+templates kept in folders. One session per run: login, a recursive container
+view over the folder, the property collector, logout. The `Read-only` role on
+the folder is enough.
+
+Entities are named `<vm>-vsphere-vm` and carry
+`vsphere.stuttgart-things.com/{moid,host,folder,datastore,ipv4}`, like the
+hand-maintained files in stuttgart-things `catalog/vms/labda/`. The folder
+annotation starts at the configured folder (`stuttgart-things/infra`), the IP
+is the guest's primary IPv4 (VMware Tools), the datastore the VM's first one.
+vSphere tags are not read.
+
 ## Install
 
 In this repo it is a workspace package and already added in
@@ -94,4 +124,4 @@ backend.add(
 - Owner from Proxmox tags (`se-<kürzel>` → user/group) and the optional Git
   intent file per VM from the #3048 design comment. Today every VM gets the
   configured `owner`.
-- vSphere and Harvester sources.
+- Harvester source. vSphere tags.

@@ -7,6 +7,8 @@ import {
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node';
 import { SthingsVmEntityProvider } from './provider';
 import { ProxmoxVmSource } from './sources/proxmox';
+import { VsphereVmSource } from './sources/vsphere';
+import { VmSource } from './types';
 
 const CONFIG_KEY = 'catalog.providers.sthingsVms';
 
@@ -38,20 +40,32 @@ export default createBackendModule({
         for (const providerId of providersConfig.keys()) {
           const c = providersConfig.getConfig(providerId);
           const type = c.getString('type');
-          if (type !== 'proxmox') {
+          let source: VmSource;
+          if (type === 'proxmox') {
+            source = new ProxmoxVmSource({
+              endpoint: c.getString('endpoint'),
+              pool: c.getString('pool'),
+              tokenId: c.getString('tokenId'),
+              tokenSecret: c.getString('tokenSecret'),
+              caCert: c.getOptionalString('caCert'),
+              logger,
+            });
+          } else if (type === 'vsphere') {
+            source = new VsphereVmSource({
+              endpoint: c.getString('endpoint'),
+              folder: c.getString('folder'),
+              username: c.getString('username'),
+              password: c.getString('password'),
+              apiRelease: c.getOptionalString('apiRelease'),
+              caCert: c.getOptionalString('caCert'),
+              logger,
+            });
+          } else {
             throw new Error(
-              `${CONFIG_KEY}.${providerId}: type '${type}' is not supported yet (only 'proxmox')`,
+              `${CONFIG_KEY}.${providerId}: type '${type}' is not supported (proxmox, vsphere)`,
             );
           }
 
-          const source = new ProxmoxVmSource({
-            endpoint: c.getString('endpoint'),
-            pool: c.getString('pool'),
-            tokenId: c.getString('tokenId'),
-            tokenSecret: c.getString('tokenSecret'),
-            caCert: c.getOptionalString('caCert'),
-            logger,
-          });
           const provider = new SthingsVmEntityProvider(
             source,
             {
