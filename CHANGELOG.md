@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.12.0...v1.13.0) (2026-10-19)
+
+
+### Features
+
+* **rag-ai:** hash catalog entities individually, re-index only changed ones ([#183](https://github.com/stuttgart-things/sthings-backstage/issues/183)) ([c22f35d](https://github.com/stuttgart-things/sthings-backstage/commit/c22f35d30c58313768d600a84eb5f1537fe52033)), closes [#180](https://github.com/stuttgart-things/sthings-backstage/issues/180) [#180](https://github.com/stuttgart-things/sthings-backstage/issues/180) [#182](https://github.com/stuttgart-things/sthings-backstage/issues/182)
+
 # [1.12.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.11.0...v1.12.0) (2026-10-18)
 
 
