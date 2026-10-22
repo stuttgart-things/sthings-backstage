@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.14.0...v1.15.0) (2026-10-22)
+
+
+### Features
+
+* **sthings-vms:** vSphere source for the VM entity provider ([#184](https://github.com/stuttgart-things/sthings-backstage/issues/184)) ([5e3dab2](https://github.com/stuttgart-things/sthings-backstage/commit/5e3dab27a19d156aec1c7d85f0954a246227c768))
+
 # [1.14.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.13.0...v1.14.0) (2026-10-22)
 
 
