@@ -8,9 +8,9 @@ import {
   modelExtensionPoint,
   retrievalPipelineExtensionPoint,
 } from '@roadiehq/rag-ai-node';
-import { initializeOpenAiEmbeddings } from '@roadiehq/rag-ai-backend-embeddings-openai';
 import { createDefaultRetrievalPipeline } from '@roadiehq/rag-ai-backend-retrieval-augmenter';
 import { createRoadiePgVectorStore } from '@roadiehq/rag-ai-storage-pgvector';
+import { SthingsAugmentationIndexer } from './augmenter';
 import { createChatModel, readLlmOptions } from './llm';
 import {
   readIndexFingerprint,
@@ -22,9 +22,9 @@ import { createIndexState } from './indexState';
 
 /**
  * Wires the Roadie RAG-AI backend (pluginId `rag-ai`): OpenAI-compatible
- * embeddings and chat model (OpenRouter by default), pgvector storage in the
- * plugin's own database (backend.database.plugin.rag-ai) and Roadie's default
- * retrieval pipeline. Loaded only when ragAi.enabled is true, see index.ts.
+ * embeddings of reduced catalog entities (augmenter.ts) and chat model
+ * (OpenRouter by default), pgvector storage in the plugin's own database
+ * (backend.database.plugin.rag-ai) and Roadie's default retrieval pipeline. Loaded only when ragAi.enabled is true, see index.ts.
  * Re-indexes catalog and TechDocs on ragAi.indexing.schedule (indexing.ts).
  */
 export default createBackendModule({
@@ -64,7 +64,7 @@ export default createBackendModule({
         });
 
         const catalogApi = new CatalogClient({ discoveryApi: discovery });
-        const augmentationIndexer = await initializeOpenAiEmbeddings({
+        const augmentationIndexer = new SthingsAugmentationIndexer({
           logger,
           auth,
           vectorStore,

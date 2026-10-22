@@ -8,6 +8,7 @@ import {
   EmbeddingsSource,
   EntityFilterShape,
 } from '@roadiehq/rag-ai-node';
+import { embeddingEntity } from './augmenter';
 
 export const DEFAULT_INDEX_SCHEDULE = '0 3 * * *';
 
@@ -89,8 +90,9 @@ export type IndexingResult = {
  *
  * Every embeddings request counts against the provider's rate limit, so
  * only what changed since the last successful run is re-indexed: each
- * catalog entity and each TechDocs entity has a content hash, and an entity
- * is re-indexed when the hash differs or it has no embeddings.
+ * catalog entity (in the reduced form that is embedded, see embeddingEntity)
+ * and each TechDocs entity has a content hash, and an entity is re-indexed
+ * when the hash differs or it has no embeddings.
  *
  * Roadie's createEmbeddings deletes the matched embeddings before it creates
  * new ones, so a failed embeddings call (e.g. a rate limit) loses them until
@@ -133,7 +135,7 @@ export async function runIndexing(deps: IndexingDeps): Promise<IndexingResult> {
   for (const entity of entities) {
     const ref = stringifyEntityRef(entity);
     const key = `catalog:${ref}`;
-    const hash = hashOf(withoutEtag(entity));
+    const hash = hashOf(embeddingEntity(entity));
     seen.add(key);
     if (isIndexed('catalog', ref) && hashes.get(key) === hash) {
       result.unchanged += 1;
@@ -279,10 +281,4 @@ async function removeOrphans(
     removed.push(key);
   }
   return removed;
-}
-
-/** The etag changes on every catalog refresh, the content may not. */
-function withoutEtag(entity: Entity): Entity {
-  const { etag, ...metadata } = entity.metadata;
-  return { ...entity, metadata };
 }

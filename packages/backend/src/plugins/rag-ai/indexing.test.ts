@@ -51,6 +51,7 @@ type TestEntity = {
     annotations?: Record<string, string>;
   };
   spec?: Record<string, unknown>;
+  relations?: { type: string; targetRef: string }[];
 };
 
 const entity = (
@@ -210,6 +211,21 @@ describe('runIndexing', () => {
       initialEntities().map(e => ({
         ...e,
         metadata: { ...e.metadata, etag: '2' },
+      })),
+    );
+    await runIndexing(deps);
+    expect(createEmbeddings).not.toHaveBeenCalled();
+  });
+
+  it('ignores changed relations', async () => {
+    const { deps, createEmbeddings, setEntities } = setup();
+    await runIndexing(deps);
+    createEmbeddings.mockClear();
+
+    setEntities(
+      initialEntities().map(e => ({
+        ...e,
+        relations: [{ type: 'hasPart', targetRef: 'resource:default/vm-2' }],
       })),
     );
     await runIndexing(deps);
