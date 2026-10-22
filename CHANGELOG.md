@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.13.0...v1.14.0) (2026-10-22)
+
+
+### Features
+
+* **rag-ai:** embed a reduced catalog entity (no relations, status, template steps) ([#189](https://github.com/stuttgart-things/sthings-backstage/issues/189)) ([878ae14](https://github.com/stuttgart-things/sthings-backstage/commit/878ae141c91c43a304820174616d8adab48bdb11)), closes [#188](https://github.com/stuttgart-things/sthings-backstage/issues/188)
+
 # [1.13.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.12.0...v1.13.0) (2026-10-19)
 
 
