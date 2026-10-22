@@ -8,6 +8,7 @@ export { default } from './module';
 export { SthingsVmEntityProvider, excludeMatcher } from './provider';
 export type { ProviderOptions } from './provider';
 export { ProxmoxVmSource } from './sources/proxmox';
+export { HarvesterVmSource } from './sources/harvester';
 export { vmToEntity } from './entity';
 export type { EntityDefaults } from './entity';
 export type { VmRecord, VmSource } from './types';
