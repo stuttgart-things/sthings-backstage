@@ -39,10 +39,10 @@ export interface Config {
            */
           password?: string;
           /**
-           * vsphere: VI/JSON API release in the URL path. Defaults to `8.0.1.0`,
-           * the first one (vCenter 8.0 U1).
+           * vsphere: vim25 API version sent in SOAPAction. Defaults to
+           * `7.0.3.0`; vCenter 8 answers it as well.
            */
-          apiRelease?: string;
+          apiVersion?: string;
           /**
            * PEM to trust for this endpoint instead of the Node trust store.
            * Can be the server's own self-signed certificate (pinning), e.g.

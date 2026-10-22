@@ -90,15 +90,16 @@ catalog:
         username: ${VSPHERE_USERNAME}
         password: ${VSPHERE_PASSWORD}
         system: labda
-        # apiRelease: 8.0.1.0                 # default
+        # apiVersion: 7.0.3.0                 # default, SOAPAction urn:vim25/<version>
         # caCert: |                           # optional, same as for Proxmox
 ```
 
-Uses the VI/JSON API (`/sdk/vim25/<release>/...`, vCenter 8.0 U1 and later)
-rather than the Automation REST API, because `/api/vcenter/vm` does not return
-templates kept in folders. One session per run: login, a recursive container
-view over the folder, the property collector, logout. The `Read-only` role on
-the folder is enough.
+Uses the vSphere Web Services API (SOAP, `/sdk`, vim25) rather than the
+Automation REST API, because `/api/vcenter/vm` does not return templates kept
+in folders. Not the newer VI/JSON flavour of the same API either: that needs
+vCenter 8.0 U1, and LabDA runs 7.0.3. One session per run: login, a
+recursive container view over the folder, the property collector, logout.
+The `Read-only` role on the folder is enough.
 
 Entities are named `<vm>-vsphere-vm` and carry
 `vsphere.stuttgart-things.com/{moid,host,folder,datastore,ipv4}`, like the

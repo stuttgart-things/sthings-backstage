@@ -1,11 +1,15 @@
 import { LoggerService } from '@backstage/backend-plugin-api';
+import { XMLParser } from 'fast-xml-parser';
 import { VmRecord, VmSource } from '../types';
 import { pinnedFetch } from './proxmox';
 
 export const VSPHERE_ANNOTATION_PREFIX = 'vsphere.stuttgart-things.com';
 
-/** First VI/JSON release; vCenter 8.0 U1 and later serve it. */
-export const DEFAULT_VSPHERE_API_RELEASE = '8.0.1.0';
+/**
+ * vim25 version sent in SOAPAction. 7.0.3.0 is what LabDA's vCenter serves
+ * and newer vCenters still answer it.
+ */
+export const DEFAULT_VSPHERE_API_VERSION = '7.0.3.0';
 
 export interface VsphereSourceOptions {
   /** vCenter base URL, e.g. https://10.100.135.50 */
@@ -17,8 +21,8 @@ export interface VsphereSourceOptions {
   folder: string;
   username: string;
   password: string;
-  /** VI/JSON API release in the URL path. */
-  apiRelease?: string;
+  /** vim25 API version for SOAPAction. */
+  apiVersion?: string;
   /** PEM to trust for this endpoint instead of the Node trust store. */
   caCert?: string;
   logger: LoggerService;
@@ -30,22 +34,16 @@ interface MoRef {
   value: string;
 }
 
-interface ObjectContent {
-  obj: MoRef;
-  propSet?: { name: string; val: unknown }[];
-}
-
-interface RetrieveResult {
-  objects?: ObjectContent[];
-  token?: string;
-}
-
 interface ServiceContent {
-  about: { instanceUuid: string };
+  instanceUuid: string;
   propertyCollector: MoRef;
   searchIndex: MoRef;
+  sessionManager: MoRef;
   viewManager: MoRef;
 }
+
+type Props = Record<string, unknown>;
+type XmlNode = Record<string, any>;
 
 const VM_PROPERTIES = [
   'name',
@@ -65,55 +63,140 @@ const POWER_STATES: Record<string, string> = {
   suspended: 'suspended',
 };
 
+const SOAP_ENVELOPE_OPEN =
+  '<?xml version="1.0" encoding="UTF-8"?>' +
+  '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"' +
+  ' xmlns:xsd="http://www.w3.org/2001/XMLSchema"' +
+  ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">';
+
+const xmlParser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: '@_',
+  parseTagValue: false,
+  parseAttributeValue: false,
+  isArray: name =>
+    name === 'objects' ||
+    name === 'propSet' ||
+    name === 'ManagedObjectReference',
+});
+
 /**
- * Lists the VMs and templates under one vCenter folder via the VI/JSON API
- * (vCenter 8.0 U1+). Unlike the Automation REST API (/api/vcenter/vm), it also
- * returns templates kept in folders. A read-only user is enough.
+ * One vim25 SOAP session: every call carries the session cookie that vCenter
+ * set on an earlier response.
+ */
+class SoapSession {
+  private cookie?: string;
+
+  constructor(
+    private readonly post: (init: RequestInit) => Promise<Response>,
+    private readonly apiVersion: string,
+  ) {}
+
+  /** Calls `method` and returns its `returnval`, or undefined if it has none. */
+  async call(method: string, body: string): Promise<any> {
+    let res: Response;
+    try {
+      res = await this.post({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml; charset=utf-8',
+          SOAPAction: `"urn:vim25/${this.apiVersion}"`,
+          ...(this.cookie && { Cookie: this.cookie }),
+        },
+        body: `${SOAP_ENVELOPE_OPEN}<soapenv:Body><${method} xmlns="urn:vim25">${body}</${method}></soapenv:Body></soapenv:Envelope>`,
+      });
+    } catch (e) {
+      // fetch hides the real reason (TLS, DNS, ...) in `cause`.
+      const cause = (e as { cause?: { code?: string; message?: string } })
+        .cause;
+      const reason = cause?.code ?? cause?.message;
+      throw new Error(
+        `vSphere ${method} failed: ${(e as Error).message}${reason ? ` (${reason})` : ''}`,
+      );
+    }
+
+    const session = sessionCookie(res.headers);
+    if (session) this.cookie = session;
+
+    const xml = await res.text();
+    const soapBody = envelopeBody(xml);
+    const fault = soapBody && child(soapBody, 'Fault');
+    if (fault) {
+      throw new Error(
+        `vSphere ${method} failed: ${text(fault.faultstring) || 'SOAP fault'}`,
+      );
+    }
+    if (!res.ok || !soapBody) {
+      throw new Error(
+        `vSphere ${method} failed: ${res.status} ${res.statusText}`,
+      );
+    }
+    return soapBody[`${method}Response`]?.returnval;
+  }
+}
+
+/**
+ * Lists the VMs and templates under one vCenter folder via the vSphere Web
+ * Services API (SOAP, vim25). Unlike the Automation REST API
+ * (/api/vcenter/vm), it also returns templates kept in folders; unlike the
+ * VI/JSON API, it is served by vCenter 7 as well. A read-only user is enough.
  */
 export class VsphereVmSource implements VmSource {
   private readonly baseUrl: string;
-  private readonly apiBase: string;
   private readonly fetchImpl: typeof fetch;
 
   constructor(private readonly options: VsphereSourceOptions) {
     this.baseUrl = options.endpoint.replace(/\/+$/, '');
-    this.apiBase = `${this.baseUrl}/sdk/vim25/${
-      options.apiRelease ?? DEFAULT_VSPHERE_API_RELEASE
-    }`;
     this.fetchImpl =
       options.fetch ?? (options.caCert ? pinnedFetch(options.caCert) : fetch);
   }
 
   async listVms(): Promise<VmRecord[]> {
-    const session = await this.login();
+    const session = new SoapSession(
+      init => this.fetchImpl(`${this.baseUrl}/sdk`, init),
+      this.options.apiVersion ?? DEFAULT_VSPHERE_API_VERSION,
+    );
+    const content = serviceContent(
+      await session.call(
+        'RetrieveServiceContent',
+        moRefXml('_this', {
+          type: 'ServiceInstance',
+          value: 'ServiceInstance',
+        }),
+      ),
+    );
+    await session.call(
+      'Login',
+      moRefXml('_this', content.sessionManager) +
+        el('userName', this.options.username) +
+        el('password', this.options.password),
+    );
     try {
-      return await this.listWithSession(session);
+      return await this.listWithSession(session, content);
     } finally {
-      await this.call(session, 'SessionManager/SessionManager/Logout').catch(
-        e =>
+      await session
+        .call('Logout', moRefXml('_this', content.sessionManager))
+        .catch(e =>
           this.options.logger.debug(
             `vSphere logout failed: ${(e as Error).message}`,
           ),
-      );
+        );
     }
   }
 
-  private async listWithSession(session: string): Promise<VmRecord[]> {
-    const content = await this.call<ServiceContent>(
-      session,
-      'ServiceInstance/ServiceInstance/content',
-      undefined,
-      'GET',
+  private async listWithSession(
+    session: SoapSession,
+    content: ServiceContent,
+  ): Promise<VmRecord[]> {
+    const found = await session.call(
+      'FindByInventoryPath',
+      moRefXml('_this', content.searchIndex) +
+        el('inventoryPath', this.options.folder),
     );
-    const root = await this.call<MoRef | undefined>(
-      session,
-      `SearchIndex/${content.searchIndex.value}/FindByInventoryPath`,
-      { inventoryPath: this.options.folder },
-    );
-    if (!root) {
+    if (!found) {
       throw new Error(`vSphere folder '${this.options.folder}' not found`);
     }
-
+    const root = toMoRef(found);
     const vms = await this.retrieveView(
       session,
       content,
@@ -168,175 +251,187 @@ export class VsphereVmSource implements VmSource {
         ipv4,
         tags: [],
         annotations,
-        url: `${this.baseUrl}/ui/app/vm;nav=v/urn:vmomi:VirtualMachine:${vm.obj.value}:${content.about.instanceUuid}/summary`,
+        url: `${this.baseUrl}/ui/app/vm;nav=v/urn:vmomi:VirtualMachine:${vm.obj.value}:${content.instanceUuid}/summary`,
       };
     });
   }
 
   /** All objects of `type` below `root` (recursive), with the given properties. */
   private async retrieveView(
-    session: string,
+    session: SoapSession,
     content: ServiceContent,
     root: MoRef,
     type: string,
     pathSet: string[],
-  ): Promise<{ obj: MoRef; props: Record<string, unknown> }[]> {
-    const view = await this.call<MoRef>(
-      session,
-      `ViewManager/${content.viewManager.value}/CreateContainerView`,
-      { container: moRef(root), type: [type], recursive: true },
+  ): Promise<{ obj: MoRef; props: Props }[]> {
+    const view = toMoRef(
+      await session.call(
+        'CreateContainerView',
+        moRefXml('_this', content.viewManager) +
+          moRefXml('container', root) +
+          el('type', type) +
+          el('recursive', 'true'),
+      ),
     );
     try {
-      return await this.retrieve(session, content, {
-        _typeName: 'PropertyFilterSpec',
-        propSet: [{ _typeName: 'PropertySpec', type, pathSet }],
-        objectSet: [
-          {
-            _typeName: 'ObjectSpec',
-            obj: moRef(view),
-            skip: true,
-            selectSet: [
-              {
-                _typeName: 'TraversalSpec',
-                name: 'traverseView',
-                type: 'ContainerView',
-                path: 'view',
-                skip: false,
-              },
-            ],
-          },
-        ],
-      });
-    } finally {
-      await this.call(session, `ContainerView/${view.value}/DestroyView`).catch(
-        () => undefined,
+      return await this.retrieve(
+        session,
+        content,
+        wrap(
+          'propSet',
+          el('type', type) + pathSet.map(p => el('pathSet', p)).join(''),
+        ) +
+          wrap(
+            'objectSet',
+            `${moRefXml('obj', view)}${el('skip', 'true')}` +
+              `<selectSet xsi:type="TraversalSpec">${el('name', 'traverseView')}` +
+              `${el('type', 'ContainerView')}${el('path', 'view')}` +
+              `${el('skip', 'false')}</selectSet>`,
+          ),
       );
+    } finally {
+      await session
+        .call('DestroyView', moRefXml('_this', view))
+        .catch(() => undefined);
     }
   }
 
   /** Names of hosts and datastores, keyed by moid. */
   private async names(
-    session: string,
+    session: SoapSession,
     content: ServiceContent,
     refs: MoRef[],
   ): Promise<Map<string, string>> {
     if (refs.length === 0) return new Map();
     const types = [...new Set(refs.map(r => r.type))];
-    const objects = await this.retrieve(session, content, {
-      _typeName: 'PropertyFilterSpec',
-      propSet: types.map(type => ({
-        _typeName: 'PropertySpec',
-        type,
-        pathSet: ['name'],
-      })),
-      objectSet: refs.map(ref => ({
-        _typeName: 'ObjectSpec',
-        obj: moRef(ref),
-      })),
-    });
+    const objects = await this.retrieve(
+      session,
+      content,
+      types
+        .map(type => wrap('propSet', el('type', type) + el('pathSet', 'name')))
+        .join('') +
+        refs.map(ref => wrap('objectSet', moRefXml('obj', ref))).join(''),
+    );
     return new Map(objects.map(o => [o.obj.value, o.props.name as string]));
   }
 
+  /** RetrievePropertiesEx for one PropertyFilterSpec, following the paging token. */
   private async retrieve(
-    session: string,
+    session: SoapSession,
     content: ServiceContent,
-    specSet: unknown,
-  ): Promise<{ obj: MoRef; props: Record<string, unknown> }[]> {
-    const pc = content.propertyCollector.value;
-    const out: { obj: MoRef; props: Record<string, unknown> }[] = [];
-    let result = await this.call<RetrieveResult | undefined>(
-      session,
-      `PropertyCollector/${pc}/RetrievePropertiesEx`,
-      { specSet: [specSet], options: { _typeName: 'RetrieveOptions' } },
+    filterSpec: string,
+  ): Promise<{ obj: MoRef; props: Props }[]> {
+    const pc = moRefXml('_this', content.propertyCollector);
+    const out: { obj: MoRef; props: Props }[] = [];
+    let result: XmlNode | undefined = await session.call(
+      'RetrievePropertiesEx',
+      `${pc}${wrap('specSet', filterSpec)}<options></options>`,
     );
     for (;;) {
-      for (const o of result?.objects ?? []) {
-        const props: Record<string, unknown> = {};
-        for (const p of o.propSet ?? []) props[p.name] = unwrap(p.val);
-        out.push({ obj: o.obj, props });
+      for (const o of (result?.objects ?? []) as XmlNode[]) {
+        const props: Props = {};
+        for (const p of (o.propSet ?? []) as XmlNode[]) {
+          props[text(p.name)] = fromXml(p.val);
+        }
+        out.push({ obj: toMoRef(o.obj), props });
       }
-      if (!result?.token) return out;
-      result = await this.call<RetrieveResult | undefined>(
-        session,
-        `PropertyCollector/${pc}/ContinueRetrievePropertiesEx`,
-        { token: result.token },
+      const token = result?.token;
+      if (!token) return out;
+      result = await session.call(
+        'ContinueRetrievePropertiesEx',
+        pc + el('token', text(token)),
       );
     }
-  }
-
-  private async login(): Promise<string> {
-    const res = await this.request('SessionManager/SessionManager/Login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userName: this.options.username,
-        password: this.options.password,
-      }),
-    });
-    const session = res.headers.get('vmware-api-session-id');
-    if (!session) {
-      throw new Error('vSphere login returned no vmware-api-session-id');
-    }
-    return session;
-  }
-
-  private async call<T>(
-    session: string,
-    path: string,
-    body?: unknown,
-    method: 'GET' | 'POST' = 'POST',
-  ): Promise<T> {
-    const res = await this.request(path, {
-      method,
-      headers: {
-        'vmware-api-session-id': session,
-        ...(body !== undefined && { 'Content-Type': 'application/json' }),
-      },
-      ...(body !== undefined && { body: JSON.stringify(body) }),
-    });
-    // Methods without a result (Logout, DestroyView, a FindBy* miss) answer
-    // 204 or an empty body.
-    const text = await res.text();
-    return (text ? JSON.parse(text) : undefined) as T;
-  }
-
-  private async request(path: string, init: RequestInit): Promise<Response> {
-    let res: Response;
-    try {
-      res = await this.fetchImpl(`${this.apiBase}/${path}`, init);
-    } catch (e) {
-      // fetch hides the real reason (TLS, DNS, ...) in `cause`.
-      const cause = (e as { cause?: { code?: string; message?: string } })
-        .cause;
-      const reason = cause?.code ?? cause?.message;
-      throw new Error(
-        `vSphere ${path} failed: ${(e as Error).message}${reason ? ` (${reason})` : ''}`,
-      );
-    }
-    if (!res.ok) {
-      throw new Error(
-        `vSphere ${path} failed: ${res.status} ${res.statusText}`,
-      );
-    }
-    return res;
   }
 }
 
-/** VI/JSON wraps `xsd:anyType` values as `{_typeName, _value}`. */
-function unwrap(val: unknown): unknown {
-  if (val && typeof val === 'object' && '_value' in val) {
-    return (val as { _value: unknown })._value;
-  }
-  return val;
+/** `vmware_soap_session="..."` from Set-Cookie, ready for a Cookie header. */
+function sessionCookie(headers: Headers): string | undefined {
+  const cookies =
+    typeof headers.getSetCookie === 'function'
+      ? headers.getSetCookie()
+      : [headers.get('set-cookie') ?? ''];
+  return cookies
+    .map(c => c.split(';')[0].trim())
+    .find(c => c.startsWith('vmware_soap_session='));
 }
 
-/** A MoRef as VI/JSON expects it in a request body. */
-function moRef(ref: MoRef) {
+function envelopeBody(xml: string): XmlNode | undefined {
+  if (!xml) return undefined;
+  const envelope = child(xmlParser.parse(xml), 'Envelope');
+  return envelope && child(envelope, 'Body');
+}
+
+/** Child element by local name, whatever namespace prefix it carries. */
+function child(node: XmlNode, localName: string): XmlNode | undefined {
+  const key = Object.keys(node).find(
+    k => k === localName || k.endsWith(`:${localName}`),
+  );
+  return key === undefined ? undefined : node[key];
+}
+
+function text(node: unknown): string {
+  if (node === undefined || node === null) return '';
+  if (typeof node === 'object') return String((node as XmlNode)['#text'] ?? '');
+  return String(node);
+}
+
+function toMoRef(node: XmlNode | string): MoRef {
+  return { type: (node as XmlNode)['@_type'] ?? '', value: text(node) };
+}
+
+/** A property value, typed by its xsi:type. */
+function fromXml(val: unknown): unknown {
+  if (val === undefined || val === null || typeof val !== 'object') return val;
+  const node = val as XmlNode;
+  const type = String(node['@_xsi:type'] ?? '').replace(/^xsd:/, '');
+  switch (type) {
+    case 'ManagedObjectReference':
+      return toMoRef(node);
+    case 'ArrayOfManagedObjectReference':
+      return ((node.ManagedObjectReference ?? []) as XmlNode[]).map(toMoRef);
+    case 'boolean':
+      return text(node) === 'true';
+    case 'int':
+    case 'long':
+    case 'short':
+      return Number(text(node));
+    default:
+      return text(node);
+  }
+}
+
+function serviceContent(node: XmlNode): ServiceContent {
   return {
-    _typeName: 'ManagedObjectReference',
-    type: ref.type,
-    value: ref.value,
+    instanceUuid: text(node.about?.instanceUuid),
+    propertyCollector: toMoRef(node.propertyCollector),
+    searchIndex: toMoRef(node.searchIndex),
+    sessionManager: toMoRef(node.sessionManager),
+    viewManager: toMoRef(node.viewManager),
   };
+}
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/** `<name>value</name>` with the value escaped. */
+function el(name: string, value: string): string {
+  return `<${name}>${escapeXml(value)}</${name}>`;
+}
+
+/** `<name>xml</name>` around already-built elements. */
+function wrap(name: string, xml: string): string {
+  return `<${name}>${xml}</${name}>`;
+}
+
+function moRefXml(name: string, ref: MoRef): string {
+  return `<${name} type="${escapeXml(ref.type)}">${escapeXml(ref.value)}</${name}>`;
 }
 
 /**

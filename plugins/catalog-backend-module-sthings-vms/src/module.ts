@@ -56,7 +56,7 @@ export default createBackendModule({
               folder: c.getString('folder'),
               username: c.getString('username'),
               password: c.getString('password'),
-              apiRelease: c.getOptionalString('apiRelease'),
+              apiVersion: c.getOptionalString('apiVersion'),
               caCert: c.getOptionalString('caCert'),
               logger,
             });
