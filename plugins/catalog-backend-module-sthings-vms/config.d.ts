@@ -10,16 +10,39 @@ export interface Config {
        */
       sthingsVms?: {
         [providerId: string]: {
-          /** Inventory backend. Only `proxmox` is implemented so far. */
-          type: 'proxmox';
-          /** Proxmox API base URL, e.g. https://ul-pve01.labul.sva.de:8006 */
+          /** Inventory backend. */
+          type: 'proxmox' | 'vsphere';
+          /**
+           * API base URL: Proxmox, e.g. https://ul-pve01.labul.sva.de:8006, or
+           * vCenter, e.g. https://10.100.135.50
+           */
           endpoint: string;
-          /** Only VMs in this Proxmox pool are ours. */
-          pool: string;
-          /** API token id, e.g. `backstage@pve!catalog` (PVEAuditor is enough). */
-          tokenId: string;
-          /** @visibility secret */
-          tokenSecret: string;
+          /** proxmox: only VMs in this Proxmox pool are ours. */
+          pool?: string;
+          /** proxmox: API token id, e.g. `backstage@pve!catalog` (PVEAuditor is enough). */
+          tokenId?: string;
+          /**
+           * proxmox: API token secret.
+           * @visibility secret
+           */
+          tokenSecret?: string;
+          /**
+           * vsphere: inventory path of the VM folder, subfolders included, e.g.
+           * `NetApp-HCI-Datacenter/vm/stuttgart-things`.
+           */
+          folder?: string;
+          /** vsphere: vCenter user; the Read-only role on the folder is enough. */
+          username?: string;
+          /**
+           * vsphere: password of `username`.
+           * @visibility secret
+           */
+          password?: string;
+          /**
+           * vsphere: vim25 API version sent in SOAPAction. Defaults to
+           * `7.0.3.0`; vCenter 8 answers it as well.
+           */
+          apiVersion?: string;
           /**
            * PEM to trust for this endpoint instead of the Node trust store.
            * Can be the server's own self-signed certificate (pinning), e.g.

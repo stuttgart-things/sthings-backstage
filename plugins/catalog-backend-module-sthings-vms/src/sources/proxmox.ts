@@ -161,6 +161,13 @@ export function pinnedFetch(ca: string): typeof fetch {
               new Response(Buffer.concat(chunks), {
                 status: res.statusCode,
                 statusText: res.statusMessage,
+                headers: Object.entries(res.headers).flatMap(([k, v]) =>
+                  v === undefined
+                    ? []
+                    : (Array.isArray(v) ? v : [v]).map(
+                        x => [k, x] as [string, string],
+                      ),
+                ),
               }),
             ),
           );
@@ -170,6 +177,6 @@ export function pinnedFetch(ca: string): typeof fetch {
       req.on('error', err =>
         reject(new TypeError('fetch failed', { cause: err })),
       );
-      req.end();
+      req.end(typeof init?.body === 'string' ? init.body : undefined);
     })) as typeof fetch;
 }
