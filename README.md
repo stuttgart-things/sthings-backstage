@@ -341,12 +341,19 @@ A run:
    indexes the changed ones **per entity**,
 3. removes embeddings of entities that are no longer in the catalog.
 
-Each catalog entity and each TechDocs entity is only re-indexed when its content
-changed since the last successful run (catalog `etag` ignored), or when it has no
+Catalog entities are embedded in a reduced form (`augmenter.ts`, subclass of Roadie's
+`DefaultVectorAugmentationIndexer`): without `uid`/`etag`, the computed `relations` and
+`status`, the VM status annotation `vm.stuttgart-things.com/status` and, for
+Templates, `spec.steps`. That leaves out what costs chunks without helping to answer
+questions, and a new VM no longer re-indexes its System and owner Group (membership
+stays in each entity's `spec`).
+
+Each catalog entity and each TechDocs entity is only re-indexed when its content (for
+the catalog: the reduced form) changed since the last successful run, or when it has no
 embeddings. The content hashes live in the table `rag_ai_index_state` next to
 `embeddings`; the hash includes the embeddings model and chunking, so changing them
 re-indexes everything. A night without changes costs no embeddings request; one changed
-entity (e.g. a VM whose status changed) costs about one. A full run (first run, model
+entity (e.g. an edited template) costs about one. A full run (first run, model
 change, or after `DELETE FROM rag_ai_index_state;`) costs one request per 128 catalog
 chunks plus about one per TechDocs entity.
 
