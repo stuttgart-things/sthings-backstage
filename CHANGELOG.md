@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.15.0...v1.16.0) (2026-10-22)
+
+
+### Features
+
+* **sthings-vms:** exclude -- leave VMs out by name ([#190](https://github.com/stuttgart-things/sthings-backstage/issues/190)) ([1d370b3](https://github.com/stuttgart-things/sthings-backstage/commit/1d370b368c2e01137c3e5ac38da7917e5a9533f8))
+
 # [1.15.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.14.0...v1.15.0) (2026-10-22)
 
 
