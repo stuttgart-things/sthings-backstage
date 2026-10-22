@@ -75,6 +75,7 @@ export default createBackendModule({
               lifecycle: c.getOptionalString('lifecycle') ?? 'production',
             },
             logger,
+            { exclude: c.getOptionalStringArray('exclude') },
           );
           catalog.addEntityProvider(provider);
 

@@ -49,6 +49,13 @@ export interface Config {
            * Proxmox's default node certificate when its CA is not at hand.
            */
           caCert?: string;
+          /**
+           * VM names (as the source reports them) to leave out, e.g.
+           * `ubuntu26-base-*`. `*` matches any run of characters. For VMs whose
+           * entity is written elsewhere -- a catalog-info.yaml from a Scaffolder
+           * template -- and for templates nobody can delete.
+           */
+          exclude?: string[];
           /** System entity the VMs belong to, e.g. `labul`. */
           system: string;
           /** Owner entity ref. Defaults to `team-infrastructure`. */

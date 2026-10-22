@@ -5,7 +5,8 @@
  * @packageDocumentation
  */
 export { default } from './module';
-export { SthingsVmEntityProvider } from './provider';
+export { SthingsVmEntityProvider, excludeMatcher } from './provider';
+export type { ProviderOptions } from './provider';
 export { ProxmoxVmSource } from './sources/proxmox';
 export { vmToEntity } from './entity';
 export type { EntityDefaults } from './entity';

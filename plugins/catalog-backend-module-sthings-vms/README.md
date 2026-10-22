@@ -108,6 +108,31 @@ annotation starts at the configured folder (`stuttgart-things/infra`), the IP
 is the guest's primary IPv4 (VMware Tools), the datastore the VM's first one.
 vSphere tags are not read.
 
+### Leaving VMs out
+
+```yaml
+vsphere-labda:
+  # ...
+  exclude:
+    - machinery # entity comes from terraform/vsphere/labda/machinery/catalog-info.yaml
+    - sthings-u24 # old template, cannot be deleted in vCenter
+    - ubuntu26-base-* # `*` matches any run of characters
+```
+
+Names as the source reports them (`machinery`), not entity names
+(`machinery-vsphere-vm`). Two uses:
+
+- **A VM whose entity is written elsewhere.** The Scaffolder template
+  `create-terraform-vm` writes a `catalog-info.yaml` with the same entity name,
+  and its tags (`baseos`, `dev`) are what `request-vm-deletion` filters on.
+  Without the exclude, the catalog logs a conflict per VM and keeps the file
+  version anyway.
+- **Templates or VMs nobody wants listed**, e.g. old templates that can no
+  longer be deleted.
+
+An excluded VM is simply not part of the provider's full mutation: an entity
+the provider created for it before is removed on the next run.
+
 ## Install
 
 In this repo it is a workspace package and already added in
