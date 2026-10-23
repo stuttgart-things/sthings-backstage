@@ -128,6 +128,7 @@ describe('HarvesterVmSource', () => {
           'harvester.stuttgart-things.com/uid': 'uid-homerun2-dev',
           'harvester.stuttgart-things.com/node': 'harvester-1',
           'harvester.stuttgart-things.com/ipv4': '10.31.103.21',
+          'harvester.stuttgart-things.com/creator': 'terraform',
         },
         url: 'https://harvester.sthings.lab/dashboard/harvester/c/local/kubevirt.io.virtualmachine/vms/homerun2-dev',
       },
@@ -174,7 +175,174 @@ describe('HarvesterVmSource', () => {
     expect(api.calls.map(c => new URL(c.url).pathname)).toEqual([
       '/apis/kubevirt.io/v1/namespaces/vms/virtualmachines',
       '/apis/kubevirt.io/v1/namespaces/vms/virtualmachineinstances',
+      '/api/v1/namespaces/vms/persistentvolumeclaims',
     ]);
+  });
+
+  it('reads OS, network, MAC, disks, image and the rest of the details', async () => {
+    const api = fakeApi({
+      '/apis/kubevirt.io/v1/virtualmachines': [
+        {
+          items: [
+            {
+              ...vm('default', 'homerun2-dev', {
+                creationTimestamp: '2026-10-01T08:00:00Z',
+                labels: { 'harvesterhci.io/creator': 'harvester' },
+                annotations: { description: 'homerun2-dev singlenode rke2' },
+              }),
+              spec: {
+                runStrategy: 'RerunOnFailure',
+                template: {
+                  spec: {
+                    networks: [
+                      {
+                        name: 'default',
+                        multus: { networkName: 'default/vms' },
+                      },
+                    ],
+                    volumes: [
+                      {
+                        name: 'disk-0',
+                        persistentVolumeClaim: {
+                          claimName: 'homerun2-dev-disk-0',
+                        },
+                      },
+                      { name: 'cloudinitdisk' },
+                    ],
+                    domain: { cpu: { cores: 4 }, memory: { guest: '8Gi' } },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      ],
+      '/apis/kubevirt.io/v1/virtualmachineinstances': [
+        {
+          items: [
+            {
+              metadata: { name: 'homerun2-dev', namespace: 'default' },
+              status: {
+                nodeName: 'harvester',
+                guestOSInfo: { prettyName: 'Ubuntu 26.04.1 LTS' },
+                interfaces: [
+                  // pod interfaces of the guest's Kubernetes come first
+                  { mac: 'aa:aa:aa:aa:aa:aa', ipAddress: '10.42.0.119' },
+                  {
+                    name: 'default',
+                    mac: 'ba:b3:3e:ea:51:f3',
+                    ipAddress: '192.168.10.117',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      '/api/v1/persistentvolumeclaims': [
+        {
+          items: [
+            {
+              metadata: {
+                name: 'homerun2-dev-disk-0',
+                namespace: 'default',
+                annotations: {
+                  'harvesterhci.io/imageId': 'default/sthings-u26',
+                },
+              },
+              spec: { resources: { requests: { storage: '50Gi' } } },
+            },
+          ],
+        },
+      ],
+    });
+    const source = new HarvesterVmSource({
+      endpoint: 'https://h:6443',
+      token: 't',
+      logger: logger as any,
+      fetch: api.impl,
+    });
+
+    const [hr] = await source.listVms();
+
+    expect(hr.os).toBe('Ubuntu 26.04.1 LTS');
+    expect(hr.description).toBe('homerun2-dev singlenode rke2');
+    expect(hr.annotations).toEqual({
+      'harvester.stuttgart-things.com/namespace': 'default',
+      'harvester.stuttgart-things.com/uid': 'uid-homerun2-dev',
+      'harvester.stuttgart-things.com/node': 'harvester',
+      // the VM network's, not the pod interface the guest reports first
+      'harvester.stuttgart-things.com/ipv4': '192.168.10.117',
+      'harvester.stuttgart-things.com/network': 'default/vms',
+      'harvester.stuttgart-things.com/mac': 'ba:b3:3e:ea:51:f3',
+      'harvester.stuttgart-things.com/disks': 'disk-0 50Gi',
+      'harvester.stuttgart-things.com/image': 'sthings-u26',
+      'harvester.stuttgart-things.com/creator': 'harvester',
+      'harvester.stuttgart-things.com/run-strategy': 'RerunOnFailure',
+      'harvester.stuttgart-things.com/created': '2026-10-01T08:00:00Z',
+    });
+  });
+
+  it('takes disks from volumeClaimTemplates when PVCs are forbidden', async () => {
+    const warn = jest.fn();
+    const pool = {
+      ...vm('default', 'app-dev-hv-pool1-x', {
+        labels: {
+          'guestcluster.harvesterhci.io/name': 'app-dev-hv',
+          'harvesterhci.io/creator': 'docker-machine-driver-harvester',
+        },
+        annotations: {
+          'harvesterhci.io/volumeClaimTemplates': JSON.stringify([
+            {
+              metadata: {
+                name: 'app-dev-hv-pool1-x-disk-0',
+                annotations: {
+                  'harvesterhci.io/imageId': 'default/sthings-u26-26.928.0903',
+                },
+              },
+              spec: { resources: { requests: { storage: '64Gi' } } },
+            },
+          ]),
+        },
+      }),
+    };
+    pool.spec.template.spec = {
+      ...pool.spec.template.spec,
+      volumes: [
+        { name: 'cloudinitdisk' },
+        {
+          name: 'disk-0',
+          persistentVolumeClaim: { claimName: 'app-dev-hv-pool1-x-disk-0' },
+        },
+      ],
+    } as any;
+    const impl = (async (url: string) => {
+      const path = new URL(url).pathname;
+      if (path === '/api/v1/persistentvolumeclaims') return json({}, 403);
+      if (path === '/apis/kubevirt.io/v1/virtualmachines') {
+        return json({ items: [pool] });
+      }
+      return json({ items: [] });
+    }) as unknown as typeof fetch;
+    const source = new HarvesterVmSource({
+      endpoint: 'https://h:6443',
+      token: 't',
+      logger: { ...logger, warn } as any,
+      fetch: impl,
+    });
+
+    const [vm1] = await source.listVms();
+    await source.listVms();
+
+    expect(vm1.annotations).toMatchObject({
+      'harvester.stuttgart-things.com/disks': 'disk-0 64Gi',
+      'harvester.stuttgart-things.com/image': 'sthings-u26-26.928.0903',
+      'harvester.stuttgart-things.com/guest-cluster': 'app-dev-hv',
+      'harvester.stuttgart-things.com/creator':
+        'docker-machine-driver-harvester',
+    });
+    // warned once, not on every refresh
+    expect(warn).toHaveBeenCalledTimes(1);
   });
 
   it('prefixes the namespace when a name exists twice', async () => {

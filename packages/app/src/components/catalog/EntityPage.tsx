@@ -22,6 +22,7 @@ import {
   EntityProcessingErrorsPanel,
   isComponentType,
   isKind,
+  isResourceType,
   hasCatalogProcessingErrors,
   isOrphan,
   hasRelationWarnings,
@@ -40,6 +41,7 @@ import {
   EntityCatalogGraphCard,
 } from '@backstage/plugin-catalog-graph';
 import {
+  Entity,
   RELATION_API_CONSUMED_BY,
   RELATION_API_PROVIDED_BY,
   RELATION_CONSUMES_API,
@@ -51,6 +53,7 @@ import {
 } from '@backstage/catalog-model';
 
 import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
+import { VmDetailsCard } from './VmDetailsCard';
 import { ReportIssue } from '@backstage/plugin-techdocs-module-addons-contrib';
 
 import {
@@ -243,6 +246,35 @@ const defaultEntityPage = (
   </EntityLayout>
 );
 
+/**
+ * VMs from the sthings-vms provider: their details instead of docs and
+ * subcomponents, which a VM has neither of.
+ */
+const isVm = (entity: Entity) =>
+  isResourceType('vm')(entity) || isResourceType('vm-template')(entity);
+
+const vmPage = (
+  <EntityLayout>
+    <EntityLayout.Route path="/" title="Overview">
+      <Grid container spacing={3} alignItems="stretch">
+        {entityWarningContent}
+        <Grid item md={6} xs={12}>
+          <EntityAboutCard />
+        </Grid>
+        <Grid item md={6} xs={12}>
+          <VmDetailsCard />
+        </Grid>
+        <Grid item md={6} xs={12}>
+          <EntityCatalogGraphCard height={400} />
+        </Grid>
+        <Grid item md={6} xs={12}>
+          <EntityLinksCard />
+        </Grid>
+      </Grid>
+    </EntityLayout.Route>
+  </EntityLayout>
+);
+
 const componentPage = (
   <EntitySwitch>
     <EntitySwitch.Case if={isComponentType('service')}>
@@ -403,6 +435,7 @@ export const entityPage = (
     <EntitySwitch.Case if={isKind('user')} children={userPage} />
     <EntitySwitch.Case if={isKind('system')} children={systemPage} />
     <EntitySwitch.Case if={isKind('domain')} children={domainPage} />
+    <EntitySwitch.Case if={isVm} children={vmPage} />
 
     <EntitySwitch.Case>{defaultEntityPage}</EntitySwitch.Case>
   </EntitySwitch>

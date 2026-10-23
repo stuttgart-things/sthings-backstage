@@ -12,6 +12,10 @@ export interface VmRecord {
   cpus?: number;
   memoryMiB?: number;
   ipv4?: string;
+  /** Guest OS as the guest reports it, e.g. `Ubuntu 26.04 LTS`. */
+  os?: string;
+  /** Free text the source keeps for the VM; leads the entity description. */
+  description?: string;
   /** Source tags, unsanitized. */
   tags: string[];
   /** Source-specific annotations, already namespaced. */
