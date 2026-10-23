@@ -1,4 +1,10 @@
-import { toEntityName, toTag, vmToEntity } from './entity';
+import {
+  formatMiB,
+  vmDescription,
+  toEntityName,
+  toTag,
+  vmToEntity,
+} from './entity';
 import { VmRecord } from './types';
 
 const defaults = {
@@ -99,4 +105,38 @@ describe('sanitizers', () => {
     expect(toTag('k8s:prod')).toBe('k8s:prod');
     expect(toTag('___')).toBe('');
   });
+});
+
+describe('vmDescription', () => {
+  it('puts the source description first, then OS, size, IP and status', () => {
+    expect(
+      vmDescription({
+        ...homerun2,
+        os: 'Ubuntu 26.04 LTS',
+        description: 'homerun2 test cluster ',
+      }),
+    ).toBe(
+      'homerun2 test cluster -- Ubuntu 26.04 LTS · 4 vCPU · 8 GiB · 10.31.102.114 · running',
+    );
+  });
+
+  it('leaves out what the source does not know', () => {
+    const bare = {
+      name: 'x',
+      cloud: 'harvester',
+      template: false,
+      tags: [],
+      annotations: {},
+    };
+    expect(vmDescription(bare)).toBe('');
+    expect(vmToEntity(bare, defaults).metadata.description).toBeUndefined();
+  });
+});
+
+describe('formatMiB', () => {
+  it.each([
+    [512, '512 MiB'],
+    [1536, '1.5 GiB'],
+    [16384, '16 GiB'],
+  ])('%d -> %s', (mib, out) => expect(formatMiB(mib)).toBe(out));
 });

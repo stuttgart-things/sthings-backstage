@@ -53,6 +53,9 @@ export function vmToEntity(vm: VmRecord, defaults: EntityDefaults): Entity {
   if (vm.memoryMiB !== undefined) {
     annotations[`${VM_ANNOTATION_PREFIX}/memory-mib`] = String(vm.memoryMiB);
   }
+  if (vm.os) annotations[`${VM_ANNOTATION_PREFIX}/os`] = vm.os;
+
+  const description = vmDescription(vm);
 
   const tags = [
     ...new Set(
@@ -73,6 +76,7 @@ export function vmToEntity(vm: VmRecord, defaults: EntityDefaults): Entity {
     metadata: {
       name: toEntityName(`${vm.name}-${vm.cloud}-vm`),
       title: vm.name,
+      ...(description && { description }),
       annotations,
       tags,
       ...(vm.url && {
@@ -88,6 +92,30 @@ export function vmToEntity(vm: VmRecord, defaults: EntityDefaults): Entity {
       system: defaults.system,
     },
   };
+}
+
+/**
+ * One line for the About card, which shows no annotations: the source's own
+ * description, then OS, size, IP and status.
+ * `homerun2 rke2 -- Ubuntu 26.04 LTS · 4 vCPU · 8 GiB · 10.31.103.21 · running`
+ */
+export function vmDescription(vm: VmRecord): string {
+  const facts = [
+    vm.os,
+    vm.cpus !== undefined ? `${vm.cpus} vCPU` : undefined,
+    vm.memoryMiB !== undefined ? formatMiB(vm.memoryMiB) : undefined,
+    vm.ipv4,
+    vm.status,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  return [vm.description?.trim(), facts].filter(Boolean).join(' -- ');
+}
+
+/** 8192 -> `8 GiB`, 1536 -> `1.5 GiB`, 512 -> `512 MiB`. */
+export function formatMiB(mib: number): string {
+  if (mib < 1024) return `${mib} MiB`;
+  return `${Math.round((mib / 1024) * 10) / 10} GiB`;
 }
 
 function capitalize(value: string): string {

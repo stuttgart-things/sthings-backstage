@@ -22,6 +22,8 @@ kind: Resource
 metadata:
   name: homerun2-test1-proxmox-vm # <vm>-<cloud>-vm
   title: homerun2-test1
+  # for the About card: the source's description, OS, size, IP, status
+  description: 4 vCPU · 8 GiB · 10.31.102.114 · running
   annotations:
     proxmox.stuttgart-things.com/vmid: '254'
     proxmox.stuttgart-things.com/node: ul-pve11
@@ -39,6 +41,11 @@ spec:
   owner: team-infrastructure
   system: labul
 ```
+
+The app shows Resources of type `vm`/`vm-template` on their own entity page
+with a **VM** card (`packages/app/src/components/catalog/VmDetailsCard.tsx`)
+that lists these annotations: `vm.stuttgart-things.com/*` first, then the
+source's own.
 
 ## Configuration
 
@@ -125,8 +132,10 @@ catalog:
 ```
 
 Reads `kubevirt.io/v1` VirtualMachines and their VirtualMachineInstances from
-the Kubernetes API of the Harvester cluster. A ServiceAccount token with
-get/list on both is enough:
+the Kubernetes API of the Harvester cluster, and the PersistentVolumeClaims for
+disk sizes and images. A ServiceAccount token with get/list on these is enough;
+without the PVCs, disks come only from `harvesterhci.io/volumeClaimTemplates`
+(VMs of Rancher node pools), with one warning:
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -137,16 +146,26 @@ rules:
   - apiGroups: [kubevirt.io]
     resources: [virtualmachines, virtualmachineinstances]
     verbs: [get, list]
+  - apiGroups: ['']
+    resources: [persistentvolumeclaims]
+    verbs: [get, list]
 ```
 
 The API's certificate is signed by the cluster CA (RKE2), so `caCert` is
 usually that CA: `certificate-authority-data` from a kubeconfig, base64-decoded.
 
 Entities are named `<vm>-harvester-vm` and carry
-`harvester.stuttgart-things.com/{namespace,uid,node,ipv4}`. Status comes from
+`harvester.stuttgart-things.com/{namespace,uid,node,ipv4}`, plus where known
+`network` and `mac` (the VM's first network), `disks` (`disk-0 50Gi, ...`),
+`image` (Harvester image of the disks), `guest-cluster` (Rancher guest cluster
+of a node-pool VM), `creator`, `run-strategy` and `created`. The guest OS goes
+to `vm.stuttgart-things.com/os`, the VM's `field.cattle.io/description` or
+`description` annotation to the start of the entity description. Status comes from
 `printableStatus` (`Running` → `running`, `Stopped` → `stopped`, others
 lowercased), CPUs are cores × sockets × threads, memory is `memory.guest` or
-the memory limit/request. The IP needs the qemu guest agent in the VM. Harvester
+the memory limit/request. The IP and OS need the qemu guest agent in the VM;
+the IP is that of the VM's first network, so pod IPs of a guest that is a
+Kubernetes node do not win. Harvester
 tags (labels `tag.harvesterhci.io/<tag>`) become entity tags. VM images are not
 VMs and are not listed. A name that exists in two namespaces becomes
 `<namespace>-<vm>` for both, with a warning.
