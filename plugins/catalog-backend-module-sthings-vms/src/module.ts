@@ -6,6 +6,7 @@ import {
 } from '@backstage/backend-plugin-api';
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node';
 import { SthingsVmEntityProvider } from './provider';
+import { HarvesterVmSource } from './sources/harvester';
 import { ProxmoxVmSource } from './sources/proxmox';
 import { VsphereVmSource } from './sources/vsphere';
 import { VmSource } from './types';
@@ -60,9 +61,18 @@ export default createBackendModule({
               caCert: c.getOptionalString('caCert'),
               logger,
             });
+          } else if (type === 'harvester') {
+            source = new HarvesterVmSource({
+              endpoint: c.getString('endpoint'),
+              token: c.getString('token'),
+              namespaces: c.getOptionalStringArray('namespaces'),
+              uiUrl: c.getOptionalString('uiUrl'),
+              caCert: c.getOptionalString('caCert'),
+              logger,
+            });
           } else {
             throw new Error(
-              `${CONFIG_KEY}.${providerId}: type '${type}' is not supported (proxmox, vsphere)`,
+              `${CONFIG_KEY}.${providerId}: type '${type}' is not supported (proxmox, vsphere, harvester)`,
             );
           }
 

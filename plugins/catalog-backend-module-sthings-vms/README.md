@@ -9,7 +9,7 @@ and a new one shows up without anybody writing a `catalog-info.yaml`
 | --------------- | ----------- |
 | Proxmox (LabUL) | implemented |
 | vSphere (LabDA) | implemented |
-| Harvester       | planned     |
+| Harvester       | implemented |
 
 ## Entities
 
@@ -108,6 +108,49 @@ annotation starts at the configured folder (`stuttgart-things/infra`), the IP
 is the guest's primary IPv4 (VMware Tools), the datastore the VM's first one.
 vSphere tags are not read.
 
+### Harvester
+
+```yaml
+catalog:
+  providers:
+    sthingsVms:
+      harvester-sthings:
+        type: harvester
+        endpoint: https://harvester.sthings.lab:6443 # Kubernetes API, not the Rancher proxy
+        token: ${HARVESTER_TOKEN}
+        system: harvester
+        # namespaces: [vms]                    # default: every namespace
+        # uiUrl: https://harvester.sthings.lab # link to the VM in the Harvester UI
+        # caCert: |                            # the cluster CA, see below
+```
+
+Reads `kubevirt.io/v1` VirtualMachines and their VirtualMachineInstances from
+the Kubernetes API of the Harvester cluster. A ServiceAccount token with
+get/list on both is enough:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: backstage-vm-reader
+rules:
+  - apiGroups: [kubevirt.io]
+    resources: [virtualmachines, virtualmachineinstances]
+    verbs: [get, list]
+```
+
+The API's certificate is signed by the cluster CA (RKE2), so `caCert` is
+usually that CA: `certificate-authority-data` from a kubeconfig, base64-decoded.
+
+Entities are named `<vm>-harvester-vm` and carry
+`harvester.stuttgart-things.com/{namespace,uid,node,ipv4}`. Status comes from
+`printableStatus` (`Running` → `running`, `Stopped` → `stopped`, others
+lowercased), CPUs are cores × sockets × threads, memory is `memory.guest` or
+the memory limit/request. The IP needs the qemu guest agent in the VM. Harvester
+tags (labels `tag.harvesterhci.io/<tag>`) become entity tags. VM images are not
+VMs and are not listed. A name that exists in two namespaces becomes
+`<namespace>-<vm>` for both, with a warning.
+
 ### Leaving VMs out
 
 ```yaml
@@ -150,4 +193,4 @@ backend.add(
 - Owner from Proxmox tags (`se-<kürzel>` → user/group) and the optional Git
   intent file per VM from the #3048 design comment. Today every VM gets the
   configured `owner`.
-- Harvester source. vSphere tags.
+- vSphere tags. Harvester VM templates and images.

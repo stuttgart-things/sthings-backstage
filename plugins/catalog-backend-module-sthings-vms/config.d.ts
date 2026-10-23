@@ -11,10 +11,11 @@ export interface Config {
       sthingsVms?: {
         [providerId: string]: {
           /** Inventory backend. */
-          type: 'proxmox' | 'vsphere';
+          type: 'proxmox' | 'vsphere' | 'harvester';
           /**
-           * API base URL: Proxmox, e.g. https://ul-pve01.labul.sva.de:8006, or
-           * vCenter, e.g. https://10.100.135.50
+           * API base URL: Proxmox, e.g. https://ul-pve01.labul.sva.de:8006,
+           * vCenter, e.g. https://10.100.135.50, or the Kubernetes API of a
+           * Harvester cluster, e.g. https://harvester.sthings.lab:6443
            */
           endpoint: string;
           /** proxmox: only VMs in this Proxmox pool are ours. */
@@ -43,6 +44,16 @@ export interface Config {
            * `7.0.3.0`; vCenter 8 answers it as well.
            */
           apiVersion?: string;
+          /**
+           * harvester: bearer token of a ServiceAccount that may get/list
+           * kubevirt.io virtualmachines and virtualmachineinstances.
+           * @visibility secret
+           */
+          token?: string;
+          /** harvester: only these namespaces; unset means every namespace. */
+          namespaces?: string[];
+          /** harvester: UI base URL for the entity link, e.g. https://harvester.sthings.lab */
+          uiUrl?: string;
           /**
            * PEM to trust for this endpoint instead of the Node trust store.
            * Can be the server's own self-signed certificate (pinning), e.g.
