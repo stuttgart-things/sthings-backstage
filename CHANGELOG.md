@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.16.0...v1.17.0) (2026-10-23)
+
+
+### Features
+
+* **sthings-vms:** Harvester source for the VM entity provider ([#191](https://github.com/stuttgart-things/sthings-backstage/issues/191)) ([424017e](https://github.com/stuttgart-things/sthings-backstage/commit/424017e6d84ff7c304387da5715e9404a12f160b))
+
 # [1.16.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.15.0...v1.16.0) (2026-10-22)
 
 
