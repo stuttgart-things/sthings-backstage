@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.17.0...v1.18.0) (2026-10-23)
+
+
+### Features
+
+* **sthings-vms:** VM details -- OS, network, disks, image -- and a VM entity page ([#192](https://github.com/stuttgart-things/sthings-backstage/issues/192)) ([662a441](https://github.com/stuttgart-things/sthings-backstage/commit/662a441ab29c7d132d6a8da8cd792f2601837443))
+
 # [1.17.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.16.0...v1.17.0) (2026-10-23)
 
 
