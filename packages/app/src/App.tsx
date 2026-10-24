@@ -28,7 +28,7 @@ import {
     ClaimMachineryParametersFieldExtension,
     ClaimMachineryPickerFieldExtension,
     ClaimMachineryMultiClaimFieldExtension,
-    RegistryClaimPickerFieldExtension,
+    MachineryClaimPickerFieldExtension,
     TemplateCard,
 } from './scaffolder';
 
@@ -168,7 +168,7 @@ const routes = (
         <ClaimMachineryPickerFieldExtension />
         <ClaimMachineryParametersFieldExtension />
         <ClaimMachineryMultiClaimFieldExtension />
-        <RegistryClaimPickerFieldExtension />
+        <MachineryClaimPickerFieldExtension />
       </ScaffolderFieldExtensions>
     </Route>
     <Route path="/api-docs" element={<ApiExplorerPage />} />

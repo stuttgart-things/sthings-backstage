@@ -27,13 +27,13 @@ export const ClaimMachineryMultiClaimFieldExtension = scaffolderPlugin.provide(
   }),
 );
 
-// Registry Claim Picker field extension (claim-registry plugin)
-import { RegistryClaimPickerExtension } from './RegistryClaimPickerExtension';
+// Machinery Claim Picker: ordered XRs from the live inventory (stuttgart-things/machinery)
+import { MachineryClaimPickerExtension } from './MachineryClaimPickerExtension';
 
-export const RegistryClaimPickerFieldExtension = scaffolderPlugin.provide(
+export const MachineryClaimPickerFieldExtension = scaffolderPlugin.provide(
   createScaffolderFieldExtension({
-    name: 'RegistryClaimPicker',
-    component: RegistryClaimPickerExtension,
+    name: 'MachineryClaimPicker',
+    component: MachineryClaimPickerExtension,
   }),
 );
 
@@ -45,5 +45,5 @@ export {
   ClaimMachineryPickerExtension,
   ClaimMachineryParametersExtension,
   ClaimMachineryMultiClaimExtension,
-  RegistryClaimPickerExtension,
+  MachineryClaimPickerExtension,
 };
