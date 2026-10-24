@@ -79,7 +79,7 @@ See the [docs](docs/) folder for detailed documentation:
 - [GitHub Scaffolder Module](docs/github-scaffolder-module.md) - Extended GitHub actions for templates
 - [Scaffolding](docs/scaffolding.md) - Project templates and structure
 - [Claim Machinery Plugin](docs/claim-machinery-plugin.md) - Installation and configuration guide
-- [Claim Registry Plugin](docs/claim-registry-plugin.md) - Claim browsing and deletion via GitHub PRs
+- [Machinery Claim Picker](docs/machinery-claim-picker.md) - Pick ordered XRs from the live inventory (stuttgart-things/machinery)
 - [YAML Utils Module](docs/yaml-utils-module.md) - Scaffolder action for parsing YAML files
 - [GitHub Actions Plugin](docs/github-actions-plugin.md) - CI/CD workflow visibility on entity pages
 
@@ -116,36 +116,9 @@ proxy:
 
 For complete installation and usage details, see the [Claim Machinery Plugin documentation](docs/claim-machinery-plugin.md).
 
-## Claim Registry Plugin
+## Machinery Claim Picker
 
-This instance includes the `backstage-claim-registry-plugin` which provides a scaffolder field extension for browsing claims from the Machinery Registry API and a backend action for deleting claims via GitHub pull requests.
-
-### Components
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| Backend Action | `packages/backend/src/plugins/scaffolder-claim-registry/` | `claim-registry:delete` scaffolder action |
-| Field Extension | `packages/app/src/scaffolder/` | `RegistryClaimPicker` UI component |
-
-### Configuration
-
-```yaml
-# app-config.yaml
-proxy:
-  endpoints:
-    '/machinery-registry':
-      target: ${CLAIM_MACHINERY_API_URL}
-      changeOrigin: true
-```
-
-### Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `CLAIM_MACHINERY_API_URL` | URL of the Machinery Registry API |
-| `GITHUB_TOKEN` | GitHub PAT for creating deletion PRs |
-
-For complete installation and usage details, see the [Claim Registry Plugin documentation](docs/claim-registry-plugin.md).
+Scaffolder field `MachineryClaimPicker` (`packages/app/src/scaffolder/MachineryClaimPickerExtension.tsx`): picks an ordered XR from the live inventory that [stuttgart-things/machinery](https://github.com/stuttgart-things/machinery) watches, through the `/machinery` proxy (`MACHINERY_URL`). Replaces the Registry Claim Picker and its `claim-registry:delete` action; machinery-registry-api is archived. Details: [docs/machinery-claim-picker.md](docs/machinery-claim-picker.md).
 
 ## YAML Utils Module
 

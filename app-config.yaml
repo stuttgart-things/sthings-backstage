@@ -95,12 +95,12 @@ proxy:
         '^/api/proxy/claim-machinery': ''
       allowedHeaders: ['*']
       credentials: 'dangerously-allow-unauthenticated'
-    '/machinery-registry':
-      target: ${CLAIM_MACHINERY_REGISTRY_URL:-https://claim-api.dev-infra-pre.sthings-vsphere.labul.sva.de}
+    '/machinery':
+      target: ${MACHINERY_URL:-https://machinery.machinery.4sthings.tiab.ssc.sva.de}
       changeOrigin: true
       secure: false
       pathRewrite:
-        '^/api/proxy/machinery-registry': ''
+        '^/api/proxy/machinery': ''
       allowedHeaders: ['*']
       credentials: 'dangerously-allow-unauthenticated'
 
