@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.18.0...v1.19.0) (2026-10-24)
+
+
+### Features
+
+* MachineryClaimPicker on machinery's live inventory, drop registry picker ([#193](https://github.com/stuttgart-things/sthings-backstage/issues/193)) ([9199f39](https://github.com/stuttgart-things/sthings-backstage/commit/9199f39524f6cf7bfadbb4578136b339a2b6b25e))
+
 # [1.18.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.17.0...v1.18.0) (2026-10-23)
 
 
