@@ -29,7 +29,7 @@ interface MachineryResource {
   annotations?: Record<string, string>;
 }
 
-/** What the field stores: everything a deletion step needs, as JSON. */
+/** What the field stores: everything a deletion step needs. */
 export interface PickedClaim {
   kind: string;
   apiVersion: string;
@@ -62,8 +62,12 @@ const keyOf = (r: { kind: string; namespace?: string; name: string }) =>
  *
  * Only XRs carrying stuttgart-things.com/source-path are offered: those are
  * the claims ordered into git (machinery-xrs), not the objects their
- * compositions create. The stored value is a JSON string of PickedClaim, so a
- * deletion template can remove the file at sourcePath and then the object.
+ * compositions create. The stored value is a PickedClaim, so a deletion
+ * template can remove the file at sourcePath and then the object.
+ *
+ * With `type: object` the field stores the object itself; the review page
+ * then shows one row per key. With `type: string` it stores the same object
+ * as a JSON string, for templates that still decode it with $eval.
  */
 export const MachineryClaimPickerExtension = ({
   onChange,
@@ -73,8 +77,9 @@ export const MachineryClaimPickerExtension = ({
   idSchema,
   schema,
   uiSchema,
-}: FieldExtensionComponentProps<string>) => {
+}: FieldExtensionComponentProps<PickedClaim | string>) => {
   const config = useApi(configApiRef);
+  const asObject = schema.type === 'object';
   const options = (uiSchema?.['ui:options'] ?? {}) as PickerOptions;
   const [items, setItems] = useState<MachineryResource[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,6 +121,7 @@ export const MachineryClaimPickerExtension = ({
 
   const picked: PickedClaim | null = (() => {
     if (!formData) return null;
+    if (typeof formData === 'object') return formData;
     try {
       return JSON.parse(formData) as PickedClaim;
     } catch {
@@ -128,7 +134,7 @@ export const MachineryClaimPickerExtension = ({
     const key = event.target.value as string;
     const r = items.find(i => keyOf(i) === key);
     if (!r) {
-      onChange('');
+      onChange(asObject ? undefined : '');
       return;
     }
     const value: PickedClaim = {
@@ -139,7 +145,7 @@ export const MachineryClaimPickerExtension = ({
       sourcePath: r.annotations?.[SOURCE_PATH] ?? '',
       managementCluster: r.annotations?.[MANAGEMENT_CLUSTER] ?? '',
     };
-    onChange(JSON.stringify(value));
+    onChange(asObject ? value : JSON.stringify(value));
   };
 
   if (loading) {

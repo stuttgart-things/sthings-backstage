@@ -29,7 +29,7 @@ proxy:
 ```yaml
 claim:
   title: Claim
-  type: string
+  type: object
   ui:field: MachineryClaimPicker
   ui:options:
     # optional; default: every kind machinery watches
@@ -39,8 +39,25 @@ claim:
 
 ## Value
 
-A JSON string; decode it in the consuming template, e.g. with
-`roadiehq:utils:jsonata` (`$eval(claim)`):
+With `type: object` the field stores the object below, and steps read it
+directly (`${{ parameters.claim.name }}`). The review page shows one row per
+key; give the keys titles, or hide one, under `properties`:
+
+```yaml
+claim:
+  type: object
+  ui:field: MachineryClaimPicker
+  properties:
+    kind: { title: Kind, type: string }
+    name: { title: Name, type: string }
+    apiVersion:
+      type: string
+      ui:backstage: { review: { show: false } }
+```
+
+With `type: string` it stores the same object as a JSON string instead;
+decode it with `roadiehq:utils:jsonata` (`$eval(claim)`). The review page then
+shows the raw JSON.
 
 ```json
 {
