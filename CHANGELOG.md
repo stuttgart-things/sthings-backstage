@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.19.0...v1.20.0) (2026-10-25)
+
+
+### Features
+
+* **MachineryClaimPicker:** store an object for type: object ([#194](https://github.com/stuttgart-things/sthings-backstage/issues/194)) ([95b76b2](https://github.com/stuttgart-things/sthings-backstage/commit/95b76b2f86755149854cf0344bed4064aa515cd8))
+
 # [1.19.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.18.0...v1.19.0) (2026-10-24)
 
 
