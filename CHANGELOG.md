@@ -1,3 +1,10 @@
+## [1.20.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.20.0...v1.20.1) (2026-10-31)
+
+
+### Bug Fixes
+
+* **machinery-claim-picker:** an empty object is nothing picked ([#196](https://github.com/stuttgart-things/sthings-backstage/issues/196)) ([3afbaf1](https://github.com/stuttgart-things/sthings-backstage/commit/3afbaf19f3286dfdce5f99ef9054a1db6b018099))
+
 # [1.20.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.19.0...v1.20.0) (2026-10-25)
 
 
