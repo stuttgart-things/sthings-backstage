@@ -121,12 +121,19 @@ export const MachineryClaimPickerExtension = ({
 
   const picked: PickedClaim | null = (() => {
     if (!formData) return null;
-    if (typeof formData === 'object') return formData;
-    try {
-      return JSON.parse(formData) as PickedClaim;
-    } catch {
-      return null;
+    let v: PickedClaim | null = null;
+    if (typeof formData === 'object') {
+      v = formData;
+    } else {
+      try {
+        v = JSON.parse(formData) as PickedClaim;
+      } catch {
+        return null;
+      }
     }
+    // With `type: object` the form starts the field as {} -- nothing picked
+    // yet, not a claim (it rendered as "undefined//undefined").
+    return v?.kind && v?.name ? v : null;
   })();
   const selected = picked ? items.find(r => keyOf(r) === keyOf(picked)) : undefined;
 
@@ -171,7 +178,7 @@ export const MachineryClaimPickerExtension = ({
   const label = schema.title || 'Claim';
 
   return (
-    <FormControl fullWidth required={required} error={rawErrors?.length > 0 && !formData}>
+    <FormControl fullWidth required={required} error={rawErrors?.length > 0 && !picked}>
       <InputLabel id={idSchema?.$id}>{label}</InputLabel>
       <Select
         labelId={idSchema?.$id}
@@ -195,7 +202,7 @@ export const MachineryClaimPickerExtension = ({
       {items.length === 0 && (
         <FormHelperText>No ordered claims found for this selection</FormHelperText>
       )}
-      {rawErrors?.length > 0 && !formData && (
+      {rawErrors?.length > 0 && !picked && (
         <FormHelperText error>This field is required</FormHelperText>
       )}
 
