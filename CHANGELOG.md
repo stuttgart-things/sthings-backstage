@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.20.1...v1.21.0) (2026-11-01)
+
+
+### Features
+
+* **scaffolder:** worker-step templates in their own group, last ([#197](https://github.com/stuttgart-things/sthings-backstage/issues/197)) ([3224e2f](https://github.com/stuttgart-things/sthings-backstage/commit/3224e2f509bfc3efc7b8b344e124911c094017b7))
+
 ## [1.20.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.20.0...v1.20.1) (2026-10-31)
 
 
