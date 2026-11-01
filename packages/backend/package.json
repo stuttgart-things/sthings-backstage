@@ -40,6 +40,7 @@
     "@backstage/plugin-scaffolder-backend": "^3.2.0",
     "@backstage/plugin-scaffolder-backend-module-github": "^0.10.0",
     "@backstage/plugin-scaffolder-backend-module-notifications": "^0.1.20",
+    "@backstage/plugin-scaffolder-common": "^2.3.0",
     "@backstage/plugin-scaffolder-node": "^0.13.0",
     "@backstage/plugin-search-backend": "^2.1.0",
     "@backstage/plugin-search-backend-module-catalog": "^0.3.13",

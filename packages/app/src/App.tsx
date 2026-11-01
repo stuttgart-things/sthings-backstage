@@ -114,8 +114,10 @@ const app = createApp({
       const configApi = useApi(configApiRef);
       const oidcEnabled =
         configApi.getOptionalBoolean('app.auth.oidcEnabled') ?? false;
+      const guestEnabled =
+        configApi.getOptionalBoolean('app.auth.guestEnabled') ?? true;
       const providers: Array<'guest' | SignInProviderConfig> = [
-        'guest',
+        ...(guestEnabled ? ['guest' as const] : []),
         {
           id: 'github-auth-provider',
           title: 'GitHub',

@@ -36,7 +36,14 @@ backend.add(import('@backstage/plugin-techdocs-backend'));
 // auth plugin
 backend.add(import('@backstage/plugin-auth-backend'));
 // See https://backstage.io/docs/backend-system/building-backends/migrating#the-auth-plugin
-backend.add(import('@backstage/plugin-auth-backend-module-guest-provider'));
+// Guest sign-in -- on by default for local development, switched off in
+// production with AUTH_GUEST_ENABLED=false. Guest counts as a developer in the
+// permission policy, so leaving it on lets anyone run developer templates
+// without a login. The SignInPage reads app.auth.guestEnabled from the same
+// env var.
+if (process.env.AUTH_GUEST_ENABLED !== 'false') {
+  backend.add(import('@backstage/plugin-auth-backend-module-guest-provider'));
+}
 backend.add(import('@backstage/plugin-auth-backend-module-github-provider'));
 // OIDC (Zitadel) provider — opt-in via AUTH_OIDC_ENABLED=true to keep
 // GitHub-only environments fully unchanged. When enabled, the provider
@@ -63,9 +70,10 @@ backend.add(
 
 // permission plugin
 backend.add(import('@backstage/plugin-permission-backend'));
-// Templates are visible to platform-team only, unless annotated
-// backstage.stuttgart-things.com/audience: developers. Everything else stays
-// allowed. See docs/permissions.md.
+// Separates platform-team from developers: templates are platform-only unless
+// annotated backstage.stuttgart-things.com/audience: developers; developers see
+// only their own tasks and cannot import/unregister entities, edit templates or
+// use the kubernetes proxy. See docs/permissions.md.
 backend.add(import('./plugins/permission-template-audience'));
 
 // search plugin

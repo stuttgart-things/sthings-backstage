@@ -8,6 +8,10 @@ import {
   catalogEntityReadPermission,
 } from '@backstage/plugin-catalog-common/alpha';
 import {
+  taskCancelPermission,
+  taskReadPermission,
+} from '@backstage/plugin-scaffolder-common/alpha';
+import {
   AUDIENCE_ANNOTATION,
   AUDIENCE_DEVELOPERS,
   TemplateAudiencePolicy,
@@ -86,21 +90,104 @@ describe('TemplateAudiencePolicy', () => {
     ).toEqual(developerOnlyTemplates);
   });
 
+  describe('platform-only permissions', () => {
+    const names = [
+      'catalog.entity.create',
+      'catalog.entity.delete',
+      'catalog.location.create',
+      'catalog.location.delete',
+      'scaffolder.template.management',
+      'kubernetes.proxy',
+    ];
+
+    it.each(names)('denies %s to developers and guest', async name => {
+      const permission = createPermission({ name, attributes: {} });
+      for (const user of [
+        userOwning('user:default/dev', 'group:default/guests'),
+        userOwning('user:development/guest'),
+        undefined,
+      ]) {
+        expect(await policy.handle({ permission }, user)).toEqual({
+          result: AuthorizeResult.DENY,
+        });
+      }
+    });
+
+    it.each(names)('allows %s to platform-team', async name => {
+      const permission = createPermission({ name, attributes: {} });
+      expect(
+        await policy.handle(
+          { permission },
+          userOwning('user:default/p', 'group:default/platform-team'),
+        ),
+      ).toEqual({ result: AuthorizeResult.ALLOW });
+    });
+
+    it('denies the typed catalog delete permission too', async () => {
+      expect(
+        await policy.handle(
+          { permission: catalogEntityDeletePermission },
+          userOwning('user:default/dev'),
+        ),
+      ).toEqual({ result: AuthorizeResult.DENY });
+    });
+  });
+
+  describe('scaffolder tasks', () => {
+    it.each([taskReadPermission, taskCancelPermission])(
+      'limits $name to own tasks for developers',
+      async permission => {
+        expect(
+          await policy.handle(
+            { permission },
+            userOwning('user:default/dev', 'group:default/guests'),
+          ),
+        ).toEqual({
+          result: AuthorizeResult.CONDITIONAL,
+          pluginId: 'scaffolder',
+          resourceType: 'scaffolder-task',
+          conditions: {
+            rule: 'IS_TASK_OWNER',
+            resourceType: 'scaffolder-task',
+            params: { createdBy: ['user:default/dev'] },
+          },
+        });
+      },
+    );
+
+    it('denies tasks to a caller without a user ref', async () => {
+      expect(
+        await policy.handle({ permission: taskReadPermission }, undefined),
+      ).toEqual({ result: AuthorizeResult.DENY });
+    });
+
+    it('lets platform-team read and cancel every task', async () => {
+      const platform = userOwning(
+        'user:default/p',
+        'group:default/platform-team',
+      );
+      for (const permission of [taskReadPermission, taskCancelPermission]) {
+        expect(await policy.handle({ permission }, platform)).toEqual({
+          result: AuthorizeResult.ALLOW,
+        });
+      }
+    });
+  });
+
   it('leaves every other permission allowed, as under allow-all', async () => {
     const dev = userOwning('user:default/dev');
-    expect(
-      await policy.handle({ permission: catalogEntityDeletePermission }, dev),
-    ).toEqual({ result: AuthorizeResult.ALLOW });
-    expect(
-      await policy.handle(
-        {
-          permission: createPermission({
-            name: 'scaffolder.task.create',
-            attributes: { action: 'create' },
-          }),
-        },
-        dev,
-      ),
-    ).toEqual({ result: AuthorizeResult.ALLOW });
+    for (const name of [
+      'scaffolder.task.create',
+      'scaffolder.action.execute',
+      'catalog.entity.refresh',
+      'kubernetes.resources.read',
+    ]) {
+      expect(
+        await policy.handle(
+          { permission: createPermission({ name, attributes: {} }) },
+          dev,
+        ),
+      ).toEqual({ result: AuthorizeResult.ALLOW });
+    }
   });
 });

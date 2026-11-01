@@ -7,6 +7,9 @@ app:
   # GitHub stays always-on so existing flows are unaffected.
   auth:
     oidcEnabled: ${AUTH_OIDC_ENABLED:-false}
+    # Shows the guest button. The backend loads the guest provider unless
+    # AUTH_GUEST_ENABLED=false; set it to false in production (docs/permissions.md).
+    guestEnabled: ${AUTH_GUEST_ENABLED:-true}
 
 organization:
   name: ${ORGANIZATION_NAME:-sthings}
