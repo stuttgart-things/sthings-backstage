@@ -40,6 +40,9 @@ export const MachineryClaimPickerFieldExtension = scaffolderPlugin.provide(
 // Custom template card (clickable body + prominent CTA)
 export { TemplateCard } from './TemplateCard';
 
+// Template groups on /create: worker steps last
+export { templateGroups } from './templateGroups';
+
 // Also export the raw components if needed
 export {
   ClaimMachineryPickerExtension,
