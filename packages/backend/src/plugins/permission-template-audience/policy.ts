@@ -13,6 +13,14 @@ import {
   catalogConditions,
   createCatalogConditionalDecision,
 } from '@backstage/plugin-catalog-backend/alpha';
+import {
+  taskCancelPermission,
+  taskReadPermission,
+} from '@backstage/plugin-scaffolder-common/alpha';
+import {
+  createScaffolderTaskConditionalDecision,
+  scaffolderTaskConditions,
+} from '@backstage/plugin-scaffolder-backend/alpha';
 
 /**
  * A Template carrying this annotation with value {@link AUDIENCE_DEVELOPERS} is
@@ -29,13 +37,41 @@ export const AUDIENCE_DEVELOPERS = 'developers';
 export const DEFAULT_PLATFORM_GROUPS = ['group:default/platform-team'];
 
 /**
- * Restricts which scaffolder templates a user can see -- and therefore run.
+ * Permissions only the platform groups hold. Matched by name, so the policy
+ * needs no dependency on every plugin that defines one.
  *
- * Only `catalog.entity.read` is decided here. That one permission covers both
- * halves: the Create page lists templates through the catalog, and the
- * scaffolder loads the template for a task with the CALLER's credentials, so a
- * template a user cannot read is "not found" when they try to start it.
- * Everything else stays allowed, as it was under the allow-all policy.
+ * - catalog.entity.create / catalog.location.create: registering entities,
+ *   the catalog-import page included. Note that the scaffolder's
+ *   catalog:register action runs with the caller's credentials, so a
+ *   developer template must not use it.
+ * - catalog.entity.delete / catalog.location.delete: unregistering.
+ * - scaffolder.template.management: the template editor and dry-run
+ *   (/create/edit).
+ * - kubernetes.proxy: raw requests to the clusters through Backstage.
+ */
+export const PLATFORM_ONLY_PERMISSIONS = new Set([
+  'catalog.entity.create',
+  'catalog.entity.delete',
+  'catalog.location.create',
+  'catalog.location.delete',
+  'scaffolder.template.management',
+  'kubernetes.proxy',
+]);
+
+/**
+ * Separates platform users from developers.
+ *
+ * Platform groups may do everything. Everyone else -- developers, guest, a
+ * user without ownership refs -- gets:
+ *
+ * - `catalog.entity.read`: every entity except Templates without the audience
+ *   annotation. The Create page lists templates through the catalog, and the
+ *   scaffolder loads the template for a task with the CALLER's credentials, so
+ *   a template a user cannot read is "not found" when they try to start it.
+ * - `scaffolder.task.read` / `scaffolder.task.cancel`: only tasks they
+ *   started themselves.
+ * - {@link PLATFORM_ONLY_PERMISSIONS}: denied.
+ * - everything else: allowed, as under the allow-all policy.
  *
  * Service principals never reach this policy. The permission client decides
  * them on the spot from their access restrictions, so the Dapr worker's static
@@ -52,24 +88,42 @@ export class TemplateAudiencePolicy implements PermissionPolicy {
     request: PolicyQuery,
     user?: PolicyQueryUser,
   ): Promise<PolicyDecision> {
-    if (!isPermission(request.permission, catalogEntityReadPermission)) {
-      return { result: AuthorizeResult.ALLOW };
-    }
-
     const ownership = user?.info.ownershipEntityRefs ?? [];
     if (ownership.some(ref => this.platformGroups.has(normalize(ref)))) {
       return { result: AuthorizeResult.ALLOW };
     }
 
-    return createCatalogConditionalDecision(request.permission, {
-      anyOf: [
-        { not: catalogConditions.isEntityKind({ kinds: ['Template'] }) },
-        catalogConditions.hasAnnotation({
-          annotation: AUDIENCE_ANNOTATION,
-          value: AUDIENCE_DEVELOPERS,
-        }),
-      ],
-    });
+    if (PLATFORM_ONLY_PERMISSIONS.has(request.permission.name)) {
+      return { result: AuthorizeResult.DENY };
+    }
+
+    if (isPermission(request.permission, catalogEntityReadPermission)) {
+      return createCatalogConditionalDecision(request.permission, {
+        anyOf: [
+          { not: catalogConditions.isEntityKind({ kinds: ['Template'] }) },
+          catalogConditions.hasAnnotation({
+            annotation: AUDIENCE_ANNOTATION,
+            value: AUDIENCE_DEVELOPERS,
+          }),
+        ],
+      });
+    }
+
+    if (
+      isPermission(request.permission, taskReadPermission) ||
+      isPermission(request.permission, taskCancelPermission)
+    ) {
+      const userRef = user?.info.userEntityRef;
+      if (!userRef) {
+        return { result: AuthorizeResult.DENY };
+      }
+      return createScaffolderTaskConditionalDecision(
+        request.permission,
+        scaffolderTaskConditions.isTaskOwner({ createdBy: [userRef] }),
+      );
+    }
+
+    return { result: AuthorizeResult.ALLOW };
   }
 }
 

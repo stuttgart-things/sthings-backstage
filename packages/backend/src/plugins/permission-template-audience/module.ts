@@ -27,7 +27,9 @@ export default createBackendModule({
         logger.info(
           `Templates are visible to ${platformGroups.join(', ')}; everyone ` +
             `else sees only templates annotated ` +
-            `${AUDIENCE_ANNOTATION}: ${AUDIENCE_DEVELOPERS}`,
+            `${AUDIENCE_ANNOTATION}: ${AUDIENCE_DEVELOPERS}, their own ` +
+            `tasks, and no catalog import/unregister, template editor or ` +
+            `kubernetes proxy`,
         );
         policy.setPolicy(new TemplateAudiencePolicy(platformGroups));
       },
