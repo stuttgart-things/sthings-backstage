@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.21.0...v1.22.0) (2026-11-01)
+
+
+### Features
+
+* **permissions:** separate platform users from developers, make guest switchable ([#202](https://github.com/stuttgart-things/sthings-backstage/issues/202)) ([9141587](https://github.com/stuttgart-things/sthings-backstage/commit/914158721e0e2a554ff862d139839cd6ae31ba8c)), closes [#199](https://github.com/stuttgart-things/sthings-backstage/issues/199) [#198](https://github.com/stuttgart-things/sthings-backstage/issues/198)
+
 # [1.21.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.20.1...v1.21.0) (2026-11-01)
 
 
