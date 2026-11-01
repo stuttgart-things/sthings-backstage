@@ -30,6 +30,7 @@ import {
     ClaimMachineryMultiClaimFieldExtension,
     MachineryClaimPickerFieldExtension,
     TemplateCard,
+    templateGroups,
 } from './scaffolder';
 
 import { createApp } from '@backstage/app-defaults';
@@ -161,6 +162,7 @@ const routes = (
       element={
         <ScaffolderPage
           components={{ TemplateCardComponent: TemplateCard }}
+          groups={templateGroups}
         />
       }
     >
