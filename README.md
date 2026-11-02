@@ -76,10 +76,13 @@ See the [docs](docs/) folder for detailed documentation:
 
 - [Configuration](docs/configuration.md) - Environment variables and secrets
 - [GitHub Integration](docs/github-integration.md) - OAuth and API setup
+- [Zitadel Sign-in](docs/zitadel.md) - OIDC login; Zitadel roles (`backstage-platform`, `backstage-developer`, `backstage-beta-<track>`, `backstage-team-<team>`) to Backstage groups
+- [Permissions](docs/permissions.md) - What platform, developers and beta testers may do; template audience and beta tracks
 - [GitHub Scaffolder Module](docs/github-scaffolder-module.md) - Extended GitHub actions for templates
 - [Scaffolding](docs/scaffolding.md) - Project templates and structure
 - [Claim Machinery Plugin](docs/claim-machinery-plugin.md) - Installation and configuration guide
 - [Machinery Claim Picker](docs/machinery-claim-picker.md) - Pick ordered XRs from the live inventory (stuttgart-things/machinery)
+- [Order Owner Picker](docs/order-owner-picker.md) - "Ordered for": the user or one of their groups, the owner of the order in the catalog
 - [YAML Utils Module](docs/yaml-utils-module.md) - Scaffolder action for parsing YAML files
 - [GitHub Actions Plugin](docs/github-actions-plugin.md) - CI/CD workflow visibility on entity pages
 
