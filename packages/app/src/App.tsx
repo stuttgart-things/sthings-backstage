@@ -1,19 +1,20 @@
 import { apiDocsPlugin, ApiExplorerPage } from '@backstage/plugin-api-docs';
+import { CatalogEntityPage, catalogPlugin } from '@backstage/plugin-catalog';
 import {
-    CatalogEntityPage,
-    catalogPlugin,
-} from '@backstage/plugin-catalog';
-import {
-    CatalogImportPage,
-    catalogImportPlugin,
+  CatalogImportPage,
+  catalogImportPlugin,
 } from '@backstage/plugin-catalog-import';
 import { orgPlugin } from '@backstage/plugin-org';
-import { ScaffolderFieldExtensions, ScaffolderPage, scaffolderPlugin } from '@backstage/plugin-scaffolder';
+import {
+  ScaffolderFieldExtensions,
+  ScaffolderPage,
+  scaffolderPlugin,
+} from '@backstage/plugin-scaffolder';
 import { SearchPage } from '@backstage/plugin-search';
 import {
-    TechDocsIndexPage,
-    techdocsPlugin,
-    TechDocsReaderPage,
+  TechDocsIndexPage,
+  techdocsPlugin,
+  TechDocsReaderPage,
 } from '@backstage/plugin-techdocs';
 import { ReportIssue } from '@backstage/plugin-techdocs-module-addons-contrib';
 import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
@@ -25,23 +26,27 @@ import { CustomCatalogPage } from './components/catalog/CustomCatalogPage';
 import { Root } from './components/Root';
 import { searchPage } from './components/search/SearchPage';
 import {
-    ClaimMachineryParametersFieldExtension,
-    ClaimMachineryPickerFieldExtension,
-    ClaimMachineryMultiClaimFieldExtension,
-    MachineryClaimPickerFieldExtension,
-    TemplateCard,
-    templateGroups,
+  ClaimMachineryParametersFieldExtension,
+  ClaimMachineryPickerFieldExtension,
+  ClaimMachineryMultiClaimFieldExtension,
+  MachineryClaimPickerFieldExtension,
+  TemplateCard,
+  templateGroups,
 } from './scaffolder';
 
 import { createApp } from '@backstage/app-defaults';
 import { AppRouter, FlatRoutes } from '@backstage/core-app-api';
 import {
-    AlertDisplay,
-    OAuthRequestDialog,
-    SignInPage,
-    SignInProviderConfig,
+  AlertDisplay,
+  OAuthRequestDialog,
+  SignInPage,
+  SignInProviderConfig,
 } from '@backstage/core-components';
-import { githubAuthApiRef, useApi, configApiRef } from '@backstage/core-plugin-api';
+import {
+  githubAuthApiRef,
+  useApi,
+  configApiRef,
+} from '@backstage/core-plugin-api';
 import { oidcAuthApiRef } from './apis';
 import { UnifiedThemeProvider } from '@backstage/theme';
 import LightIcon from '@material-ui/icons/WbSunny';
@@ -49,6 +54,8 @@ import DarkIcon from '@material-ui/icons/Brightness2';
 import { sthingsLightTheme, sthingsDarkTheme } from './theme';
 import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
 import { CatalogGraphPage } from '@backstage/plugin-catalog-graph';
+import { devToolsAdministerPermission } from '@backstage/plugin-devtools-common';
+import { PlatformDevToolsPage } from './components/devtools/DevToolsPage';
 import { NotificationsPage } from '@backstage/plugin-notifications';
 import { RequirePermission } from '@backstage/plugin-permission-react';
 import { SignalsDisplay } from '@backstage/plugin-signals';
@@ -190,6 +197,14 @@ const routes = (
     <Route path="/settings" element={<UserSettingsPage />} />
     <Route path="/catalog-graph" element={<CatalogGraphPage />} />
     <Route path="/notifications" element={<NotificationsPage />} />
+    <Route
+      path="/devtools/*"
+      element={
+        <RequirePermission permission={devToolsAdministerPermission}>
+          <PlatformDevToolsPage />
+        </RequirePermission>
+      }
+    />
   </FlatRoutes>
 );
 

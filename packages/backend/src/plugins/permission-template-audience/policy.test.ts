@@ -53,7 +53,10 @@ describe('TemplateAudiencePolicy', () => {
   it('lets platform-team read every entity', async () => {
     const decision = await policy.handle(
       read,
-      userOwning('user:default/patrick-hermann-sva', 'group:default/platform-team'),
+      userOwning(
+        'user:default/patrick-hermann-sva',
+        'group:default/platform-team',
+      ),
     );
     expect(decision).toEqual({ result: AuthorizeResult.ALLOW });
   });
@@ -61,7 +64,10 @@ describe('TemplateAudiencePolicy', () => {
   it('matches the platform group case-insensitively', async () => {
     const decision = await new TemplateAudiencePolicy([
       'group:default/Platform-Team',
-    ]).handle(read, userOwning('user:default/x', 'group:default/platform-team'));
+    ]).handle(
+      read,
+      userOwning('user:default/x', 'group:default/platform-team'),
+    );
     expect(decision).toEqual({ result: AuthorizeResult.ALLOW });
   });
 
@@ -77,16 +83,26 @@ describe('TemplateAudiencePolicy', () => {
     expect(
       await policy.handle(read, userOwning('user:development/guest')),
     ).toEqual(developerOnlyTemplates);
-    expect(await policy.handle(read, undefined)).toEqual(developerOnlyTemplates);
+    expect(await policy.handle(read, undefined)).toEqual(
+      developerOnlyTemplates,
+    );
   });
 
   it('honours configured platform groups instead of the default', async () => {
-    const custom = new TemplateAudiencePolicy(['group:default/team-infrastructure']);
+    const custom = new TemplateAudiencePolicy([
+      'group:default/team-infrastructure',
+    ]);
     expect(
-      await custom.handle(read, userOwning('user:default/a', 'group:default/team-infrastructure')),
+      await custom.handle(
+        read,
+        userOwning('user:default/a', 'group:default/team-infrastructure'),
+      ),
     ).toEqual({ result: AuthorizeResult.ALLOW });
     expect(
-      await custom.handle(read, userOwning('user:default/b', 'group:default/platform-team')),
+      await custom.handle(
+        read,
+        userOwning('user:default/b', 'group:default/platform-team'),
+      ),
     ).toEqual(developerOnlyTemplates);
   });
 
@@ -98,6 +114,11 @@ describe('TemplateAudiencePolicy', () => {
       'catalog.location.delete',
       'scaffolder.template.management',
       'kubernetes.proxy',
+      'devtools.administer',
+      'devtools.config',
+      'devtools.scheduler.trigger',
+      'catalog.entities.unprocessed.read',
+      'catalog.entities.unprocessed.delete',
     ];
 
     it.each(names)('denies %s to developers and guest', async name => {

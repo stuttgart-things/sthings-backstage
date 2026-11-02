@@ -59,6 +59,19 @@ export const PLATFORM_ONLY_PERMISSIONS = new Set([
 ]);
 
 /**
+ * Permission name prefixes only the platform groups hold: whole admin plugins.
+ *
+ * - devtools.*: DevTools (config, versions, external dependencies, scheduled
+ *   tasks and triggering them).
+ * - catalog.entities.unprocessed.*: the unprocessed-entities view and
+ *   deleting entries from it.
+ */
+export const PLATFORM_ONLY_PREFIXES = [
+  'devtools.',
+  'catalog.entities.unprocessed.',
+];
+
+/**
  * Separates platform users from developers.
  *
  * Platform groups may do everything. Everyone else -- developers, guest, a
@@ -70,7 +83,7 @@ export const PLATFORM_ONLY_PERMISSIONS = new Set([
  *   a template a user cannot read is "not found" when they try to start it.
  * - `scaffolder.task.read` / `scaffolder.task.cancel`: only tasks they
  *   started themselves.
- * - {@link PLATFORM_ONLY_PERMISSIONS}: denied.
+ * - {@link PLATFORM_ONLY_PERMISSIONS} and {@link PLATFORM_ONLY_PREFIXES}: denied.
  * - everything else: allowed, as under the allow-all policy.
  *
  * Service principals never reach this policy. The permission client decides
@@ -93,7 +106,11 @@ export class TemplateAudiencePolicy implements PermissionPolicy {
       return { result: AuthorizeResult.ALLOW };
     }
 
-    if (PLATFORM_ONLY_PERMISSIONS.has(request.permission.name)) {
+    const name = request.permission.name;
+    if (
+      PLATFORM_ONLY_PERMISSIONS.has(name) ||
+      PLATFORM_ONLY_PREFIXES.some(prefix => name.startsWith(prefix))
+    ) {
       return { result: AuthorizeResult.DENY };
     }
 
