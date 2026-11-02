@@ -12,13 +12,16 @@ import {
   Typography,
 } from '@material-ui/core';
 import { ChangeEvent, useEffect, useState } from 'react';
-import { useApi, configApiRef } from '@backstage/core-plugin-api';
+import { useApi, configApiRef, identityApiRef } from '@backstage/core-plugin-api';
 
 const SOURCE_PATH = 'stuttgart-things.com/source-path';
 const MANAGEMENT_CLUSTER = 'stuttgart-things.com/management-cluster';
+/** Who the claim was ordered for / by (create-vm writes both). */
+const OWNER = 'stuttgart-things.com/owner';
+const REQUESTED_BY = 'stuttgart-things.com/requested-by';
 
 /** One XR as machinery's GET /api/v1/resources returns it. */
-interface MachineryResource {
+export interface MachineryResource {
   kind: string;
   apiVersion: string;
   name: string;
@@ -46,6 +49,14 @@ interface PickerOptions {
   excludeKinds?: string[] | string;
   /** Proxy endpoint name under /api/proxy. Default: "machinery". */
   proxyPath?: string;
+  /**
+   * Offer only claims the user ordered or that belong to one of their groups
+   * (stuttgart-things.com/owner or requested-by in their ownership refs). For
+   * developer templates: "my orders", not everybody's. A convenience, not
+   * access control -- deleting or resizing stays a pull request a platform
+   * engineer merges.
+   */
+  ownedOnly?: boolean;
 }
 
 const asList = (v?: string[] | string): string[] =>
@@ -55,6 +66,24 @@ const asList = (v?: string[] | string): string[] =>
 
 const keyOf = (r: { kind: string; namespace?: string; name: string }) =>
   `${r.kind}/${r.namespace ?? ''}/${r.name}`;
+
+/** `biff` -> `user:default/biff`; refs compare case-insensitively. */
+const asRef = (v?: string) => {
+  const t = (v ?? '').trim().toLowerCase();
+  if (!t) return '';
+  return t.includes(':') ? t : `user:default/${t}`;
+};
+
+/**
+ * Whether the signed-in user may pick this claim with `ownedOnly`: its owner
+ * (a user or a group) or its requester is one of the user's ownership refs.
+ */
+export const ownedBy = (r: MachineryResource, ownershipRefs: string[]) => {
+  const refs = new Set(ownershipRefs.map(asRef));
+  const owner = asRef(r.annotations?.[OWNER]);
+  const requester = asRef(r.annotations?.[REQUESTED_BY]);
+  return (!!owner && refs.has(owner)) || (!!requester && refs.has(requester));
+};
 
 /**
  * MachineryClaimPicker — picks an ordered XR from the live inventory that
@@ -79,6 +108,7 @@ export const MachineryClaimPickerExtension = ({
   uiSchema,
 }: FieldExtensionComponentProps<PickedClaim | string>) => {
   const config = useApi(configApiRef);
+  const identityApi = useApi(identityApiRef);
   const asObject = schema.type === 'object';
   const options = (uiSchema?.['ui:options'] ?? {}) as PickerOptions;
   const [items, setItems] = useState<MachineryResource[]>([]);
@@ -104,9 +134,12 @@ export const MachineryClaimPickerExtension = ({
         }
         const data = await response.json();
         const excluded = new Set(asList(options.excludeKinds));
-        setItems(
-          ((data.items ?? []) as MachineryResource[]).filter(r => !excluded.has(r.kind)),
-        );
+        let offered = ((data.items ?? []) as MachineryResource[]).filter(r => !excluded.has(r.kind));
+        if (options.ownedOnly) {
+          const { ownershipEntityRefs } = await identityApi.getBackstageIdentity();
+          offered = offered.filter(r => ownedBy(r, ownershipEntityRefs));
+        }
+        setItems(offered);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load resources');
@@ -200,7 +233,11 @@ export const MachineryClaimPickerExtension = ({
 
       {schema.description && <FormHelperText>{schema.description}</FormHelperText>}
       {items.length === 0 && (
-        <FormHelperText>No ordered claims found for this selection</FormHelperText>
+        <FormHelperText>
+          {options.ownedOnly
+            ? 'You have no orders here yet -- only VMs ordered by you or for one of your groups are offered'
+            : 'No ordered claims found for this selection'}
+        </FormHelperText>
       )}
       {rawErrors?.length > 0 && !picked && (
         <FormHelperText error>This field is required</FormHelperText>
