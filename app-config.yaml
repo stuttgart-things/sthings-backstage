@@ -146,10 +146,14 @@ auth:
         prompt: auto
         signIn:
           resolvers:
-            # Match on email first (works for federated users with no GitHub
-            # entity), fall back to username for legacy entities.
-            - resolver: emailMatchingUserEntityProfileEmail
-            - resolver: usernameMatchingUserEntityName
+            # Zitadel project roles -> Backstage groups (docs/zitadel.md).
+            # Deployments mount their own config; this block only applies
+            # locally -- the instances need it in flux backstage-app-config.
+            - resolver: zitadelProjectRoles
+              roleGroups:
+                backstage-platform: group:default/platform-team
+                backstage-developer: group:default/guests
+              dangerouslyAllowSignInWithoutUserInCatalog: true
 
 scaffolder:
   # see https://backstage.io/docs/features/software-templates/configuration for software template options
