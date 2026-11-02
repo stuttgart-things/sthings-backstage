@@ -14,6 +14,7 @@ import {
 import {
   AUDIENCE_ANNOTATION,
   AUDIENCE_DEVELOPERS,
+  BETA_TRACK_ANNOTATION,
   TemplateAudiencePolicy,
 } from './policy';
 
@@ -86,6 +87,71 @@ describe('TemplateAudiencePolicy', () => {
     expect(await policy.handle(read, undefined)).toEqual(
       developerOnlyTemplates,
     );
+  });
+
+  describe('beta tracks', () => {
+    const notTemplate = developerOnlyTemplates.conditions.anyOf[0];
+    const developerRule = developerOnlyTemplates.conditions.anyOf[1];
+    const track = (value: string) => ({
+      rule: 'HAS_ANNOTATION',
+      resourceType: 'catalog-entity',
+      params: { annotation: BETA_TRACK_ANNOTATION, value },
+    });
+    const allowing = (...rules: object[]) => ({
+      ...developerOnlyTemplates,
+      conditions: { anyOf: [notTemplate, ...rules] },
+    });
+
+    it('shows a tester with only the track role just the track (doc)', async () => {
+      expect(
+        await policy.handle(
+          read,
+          userOwning('user:default/doc', 'group:default/beta-vm-machinery'),
+        ),
+      ).toEqual(allowing(track('vm-machinery')));
+    });
+
+    it('does not count a team group as a developer group (biff)', async () => {
+      expect(
+        await policy.handle(
+          read,
+          userOwning(
+            'user:default/biff',
+            'group:default/beta-vm-machinery',
+            'group:default/hill-valley',
+          ),
+        ),
+      ).toEqual(allowing(track('vm-machinery')));
+    });
+
+    it('gives a developer who also tests both', async () => {
+      expect(
+        await policy.handle(
+          read,
+          userOwning(
+            'user:default/mcfly',
+            'group:default/guests',
+            'group:default/Beta-VM-Machinery',
+          ),
+        ),
+      ).toEqual(allowing(developerRule, track('vm-machinery')));
+    });
+
+    it('honours configured developer groups', async () => {
+      const custom = new TemplateAudiencePolicy(undefined, [
+        'group:default/devs',
+      ]);
+      expect(
+        await custom.handle(
+          read,
+          userOwning(
+            'user:default/x',
+            'group:default/devs',
+            'group:default/beta-a',
+          ),
+        ),
+      ).toEqual(allowing(developerRule, track('a')));
+    });
   });
 
   it('honours configured platform groups instead of the default', async () => {

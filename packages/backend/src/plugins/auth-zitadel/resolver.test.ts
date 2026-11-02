@@ -4,6 +4,7 @@ import { AuthResolverContext } from '@backstage/plugin-auth-node';
 import {
   claimSetsOf,
   extractZitadelRoles,
+  groupForRole,
   signInWithZitadelRoles,
   usernameFromClaims,
   zitadelProjectRolesResolver,
@@ -180,6 +181,30 @@ describe('signInWithZitadelRoles', () => {
     });
   });
 
+  it('maps beta-track and team roles by prefix (doc, biff)', async () => {
+    const { ctx, issueToken } = context();
+    const biff = {
+      preferred_username: 'biff',
+      'urn:zitadel:iam:org:project:roles': roleClaim(
+        'backstage-beta-vm-machinery',
+        'backstage-team-hill-valley',
+      ),
+    };
+    await signInWithZitadelRoles([biff], ctx, {
+      dangerouslyAllowSignInWithoutUserInCatalog: true,
+    });
+    expect(issueToken).toHaveBeenCalledWith({
+      claims: {
+        sub: 'user:default/biff',
+        ent: [
+          'user:default/biff',
+          'group:default/beta-vm-machinery',
+          'group:default/hill-valley',
+        ],
+      },
+    });
+  });
+
   it('rejects a user without a mapped role, before the catalog lookup', async () => {
     const { ctx } = context(userEntity('sthings'));
     await expect(
@@ -274,5 +299,35 @@ describe('zitadelProjectRolesResolver (factory)', () => {
     expect(() =>
       zitadelProjectRolesResolver({ requireRole: 'yes' } as any),
     ).toThrow();
+  });
+});
+
+describe('groupForRole', () => {
+  it('prefers the explicit role groups', () => {
+    expect(groupForRole('backstage-platform')).toBe(
+      'group:default/platform-team',
+    );
+    expect(
+      groupForRole('backstage-beta-x', {
+        'backstage-beta-x': 'group:default/special',
+      }),
+    ).toBe('group:default/special');
+  });
+
+  it('maps backstage-beta-<track> and backstage-team-<team>', () => {
+    expect(groupForRole('backstage-beta-vm-machinery')).toBe(
+      'group:default/beta-vm-machinery',
+    );
+    expect(groupForRole('backstage-team-Hill-Valley')).toBe(
+      'group:default/hill-valley',
+    );
+  });
+
+  it('grants nothing for unknown, empty or invalid names', () => {
+    expect(groupForRole('some-other-role')).toBeUndefined();
+    expect(groupForRole('backstage-beta-')).toBeUndefined();
+    expect(groupForRole('backstage-team-')).toBeUndefined();
+    expect(groupForRole('backstage-team-a b')).toBeUndefined();
+    expect(groupForRole('backstage-team--x')).toBeUndefined();
   });
 });

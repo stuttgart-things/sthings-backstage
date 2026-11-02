@@ -37,6 +37,21 @@ export const AUDIENCE_DEVELOPERS = 'developers';
 export const DEFAULT_PLATFORM_GROUPS = ['group:default/platform-team'];
 
 /**
+ * Beta tracks: a Template annotated `beta-track: <track>` is also visible to
+ * the members of `group:default/beta-<track>` (Zitadel role
+ * `backstage-beta-<track>`). A track is one workflow under test -- e.g.
+ * vm-machinery: order, resize and delete a VM on machinery.
+ *
+ * A beta tester sees the general developer templates only when they also hold
+ * a developer group, so a test user with just the track role sees exactly
+ * the track.
+ */
+export const BETA_TRACK_ANNOTATION =
+  'backstage.stuttgart-things.com/beta-track';
+export const BETA_GROUP_PREFIX = 'group:default/beta-';
+export const DEFAULT_DEVELOPER_GROUPS = ['group:default/guests'];
+
+/**
  * Permissions only the platform groups hold. Matched by name, so the policy
  * needs no dependency on every plugin that defines one.
  *
@@ -78,7 +93,8 @@ export const PLATFORM_ONLY_PREFIXES = [
  * user without ownership refs -- gets:
  *
  * - `catalog.entity.read`: every entity except Templates without the audience
- *   annotation. The Create page lists templates through the catalog, and the
+ *   annotation -- plus the Templates of their beta tracks; a beta tester
+ *   without a developer group sees only those (see BETA_TRACK_ANNOTATION). The Create page lists templates through the catalog, and the
  *   scaffolder loads the template for a task with the CALLER's credentials, so
  *   a template a user cannot read is "not found" when they try to start it.
  * - `scaffolder.task.read` / `scaffolder.task.cancel`: only tasks they
@@ -92,9 +108,14 @@ export const PLATFORM_ONLY_PREFIXES = [
  */
 export class TemplateAudiencePolicy implements PermissionPolicy {
   private readonly platformGroups: Set<string>;
+  private readonly developerGroups: Set<string>;
 
-  constructor(platformGroups: string[] = DEFAULT_PLATFORM_GROUPS) {
+  constructor(
+    platformGroups: string[] = DEFAULT_PLATFORM_GROUPS,
+    developerGroups: string[] = DEFAULT_DEVELOPER_GROUPS,
+  ) {
     this.platformGroups = new Set(platformGroups.map(normalize));
+    this.developerGroups = new Set(developerGroups.map(normalize));
   }
 
   async handle(
@@ -115,13 +136,30 @@ export class TemplateAudiencePolicy implements PermissionPolicy {
     }
 
     if (isPermission(request.permission, catalogEntityReadPermission)) {
+      const refs = ownership.map(normalize);
+      const tracks = refs
+        .filter(ref => ref.startsWith(BETA_GROUP_PREFIX))
+        .map(ref => ref.slice(BETA_GROUP_PREFIX.length))
+        .filter(Boolean);
+      const seesDeveloperTemplates =
+        tracks.length === 0 || refs.some(ref => this.developerGroups.has(ref));
       return createCatalogConditionalDecision(request.permission, {
         anyOf: [
           { not: catalogConditions.isEntityKind({ kinds: ['Template'] }) },
-          catalogConditions.hasAnnotation({
-            annotation: AUDIENCE_ANNOTATION,
-            value: AUDIENCE_DEVELOPERS,
-          }),
+          ...(seesDeveloperTemplates
+            ? [
+                catalogConditions.hasAnnotation({
+                  annotation: AUDIENCE_ANNOTATION,
+                  value: AUDIENCE_DEVELOPERS,
+                }),
+              ]
+            : []),
+          ...tracks.map(track =>
+            catalogConditions.hasAnnotation({
+              annotation: BETA_TRACK_ANNOTATION,
+              value: track,
+            }),
+          ),
         ],
       });
     }

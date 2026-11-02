@@ -15,6 +15,8 @@ in `org.yaml`.
 |---|---|---|
 | `backstage-platform` | `group:default/platform-team` | everything |
 | `backstage-developer` | `group:default/guests` | developer rules |
+| `backstage-beta-<track>` | `group:default/beta-<track>` | the track's templates ([beta tracks](permissions.md#beta-tracks)) |
+| `backstage-team-<team>` | `group:default/<team>` | none by itself; the group can own ordered resources |
 | no mapped role | -- | sign-in refused |
 
 ## What the resolver does
@@ -23,7 +25,9 @@ in `org.yaml`.
    under `urn:zitadel:iam:org:project:roles` and
    `urn:zitadel:iam:org:project:<projectId>:roles`. With `projectId` set, it
    reads only that project's claim.
-2. It maps them through `roleGroups`. If no role maps and `requireRole` is
+2. It maps them through `roleGroups`, then by prefix (`backstage-beta-`,
+   `backstage-team-`; the rest must be a valid entity name). If no role maps
+   and `requireRole` is
    true (the default), the sign-in is refused.
 3. The username is `preferred_username` without the login domain
    (`mcfly@sthings.zitadel...` becomes `mcfly`).
