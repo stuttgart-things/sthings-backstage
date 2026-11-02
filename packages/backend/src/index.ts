@@ -46,10 +46,11 @@ if (process.env.AUTH_GUEST_ENABLED !== 'false') {
 }
 backend.add(import('@backstage/plugin-auth-backend-module-github-provider'));
 // OIDC (Zitadel) provider — opt-in via AUTH_OIDC_ENABLED=true to keep
-// GitHub-only environments fully unchanged. When enabled, the provider
-// reads auth.providers.oidc.development from app-config (sthings-backstage#82).
+// GitHub-only environments fully unchanged. Our module registers the upstream
+// OIDC authenticator plus the zitadelProjectRoles sign-in resolver, which maps
+// Zitadel project roles to Backstage groups (#200, docs/zitadel.md).
 if (process.env.AUTH_OIDC_ENABLED === 'true') {
-  backend.add(import('@backstage/plugin-auth-backend-module-oidc-provider'));
+  backend.add(import('./plugins/auth-zitadel'));
 }
 // See https://backstage.io/docs/auth/guest/provider
 

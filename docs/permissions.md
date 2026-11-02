@@ -54,7 +54,9 @@ found" when they try to start it, including through the API.
 
 Membership comes from the Backstage token's ownership refs, which the GitHub
 sign-in resolver (`usernameMatchingUserEntityName`) derives from the User
-entity's group relations in the org catalog. A user who signs in must have a
+entity's group relations in the org catalog. With Zitadel sign-in, the
+`zitadelProjectRoles` resolver adds the groups the user's Zitadel project roles
+map to ([zitadel.md](zitadel.md)). A user who signs in must have a
 User entity; to make someone a developer, add a User that is not a member of
 `platform-team`. Group membership is not inherited: a member of only
 `team-infrastructure` (a child of `platform-team`) is not a platform user
