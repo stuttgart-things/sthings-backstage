@@ -1,3 +1,10 @@
+# [1.24.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.23.0...v1.24.0) (2026-11-02)
+
+
+### Features
+
+* **catalog:** Pull Requests tab from the entity's GitHub repo ([#205](https://github.com/stuttgart-things/sthings-backstage/issues/205)) ([4809f99](https://github.com/stuttgart-things/sthings-backstage/commit/4809f996d10e8d81e7c6d456e61d6524d3b46e89)), closes [66/#71](https://github.com/stuttgart-things/sthings-backstage/issues/71) [#201](https://github.com/stuttgart-things/sthings-backstage/issues/201)
+
 # [1.23.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.22.0...v1.23.0) (2026-11-02)
 
 
