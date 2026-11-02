@@ -11,7 +11,7 @@ export interface Config {
       sthingsVms?: {
         [providerId: string]: {
           /** Inventory backend. */
-          type: 'proxmox' | 'vsphere' | 'harvester';
+          type: 'proxmox' | 'vsphere' | 'harvester' | 'machinery';
           /**
            * API base URL: Proxmox, e.g. https://ul-pve01.labul.sva.de:8006,
            * vCenter, e.g. https://10.100.135.50, or the Kubernetes API of a
@@ -52,8 +52,23 @@ export interface Config {
           token?: string;
           /** harvester: only these namespaces; unset means every namespace. */
           namespaces?: string[];
-          /** harvester: UI base URL for the entity link, e.g. https://harvester.sthings.lab */
+          /**
+           * harvester: UI base URL for the entity link, e.g. https://harvester.sthings.lab.
+           * machinery: base URL of the machinery UI for the status link;
+           * defaults to `endpoint`.
+           */
           uiUrl?: string;
+          /**
+           * machinery: claim kinds that are orders. Defaults to
+           * `NativeVsphereVM`, `NativeProxmoxVM`. Only claims with a
+           * `stuttgart-things.com/source-path` annotation count.
+           */
+          kinds?: string[];
+          /**
+           * machinery: repository the claims live in, for the order link.
+           * Defaults to https://github.com/stuttgart-things/stuttgart-things.
+           */
+          repoUrl?: string;
           /**
            * PEM to trust for this endpoint instead of the Node trust store.
            * Can be the server's own self-signed certificate (pinning), e.g.

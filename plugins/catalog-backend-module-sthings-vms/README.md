@@ -170,6 +170,40 @@ tags (labels `tag.harvesterhci.io/<tag>`) become entity tags. VM images are not
 VMs and are not listed. A name that exists in two namespaces becomes
 `<namespace>-<vm>` for both, with a warning.
 
+### Orders on machinery
+
+`type: machinery` mirrors **ordered claims** instead of VMs: every claim of the
+configured kinds on machinery that carries `stuttgart-things.com/source-path`
+(i.e. was written into git by a template such as `create-vm`).
+
+```yaml
+catalog:
+  providers:
+    sthingsVms:
+      machinery-labda:
+        type: machinery
+        endpoint: https://machinery.machinery.4sthings.tiab.ssc.sva.de
+        system: labda
+        # kinds: [NativeVsphereVM, NativeProxmoxVM]   # default
+        # owner: team-infrastructure                   # claims without an owner
+```
+
+Entities are `Resource`s of type `machinery-order`, named `<claim>-order`:
+
+- `spec.owner` is the claim's `stuttgart-things.com/owner` (the user, or one of
+  their groups, the order was placed for), else
+  `stuttgart-things.com/requested-by`, else `owner`. The catalog's **Owned**
+  filter then lists a user's orders and their groups' orders.
+- Status from machinery on every refresh:
+  `machinery.stuttgart-things.com/{ready,status,status-message,created}`, the
+  tags `ready` / `not-ready`, and a one-line description
+  (`NativeVsphereVM · Ready · ordered by user:default/doc`).
+- `backstage.stuttgart-things.com/requested-by`, links to the order file in git
+  and to the claim in the machinery UI.
+
+machinery returns only annotations under `stuttgart-things.com/`, which is why
+the claim carries `stuttgart-things.com/owner` and not a `backstage.` key.
+
 ### Leaving VMs out
 
 ```yaml

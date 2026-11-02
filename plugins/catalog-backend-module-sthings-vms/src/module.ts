@@ -5,6 +5,10 @@ import {
   SchedulerServiceTaskScheduleDefinition,
 } from '@backstage/backend-plugin-api';
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node';
+import {
+  MachineryClaimSource,
+  MachineryOrderEntityProvider,
+} from './machinery';
 import { SthingsVmEntityProvider } from './provider';
 import { HarvesterVmSource } from './sources/harvester';
 import { ProxmoxVmSource } from './sources/proxmox';
@@ -41,6 +45,41 @@ export default createBackendModule({
         for (const providerId of providersConfig.keys()) {
           const c = providersConfig.getConfig(providerId);
           const type = c.getString('type');
+          const schedule = c.has('schedule')
+            ? readSchedulerServiceTaskScheduleDefinitionFromConfig(
+                c.getConfig('schedule'),
+              )
+            : DEFAULT_SCHEDULE;
+
+          // Orders: claims on machinery, owned by whoever they were ordered for.
+          if (type === 'machinery') {
+            const endpoint = c.getString('endpoint');
+            const orders = new MachineryOrderEntityProvider(
+              new MachineryClaimSource({
+                endpoint,
+                kinds: c.getOptionalStringArray('kinds'),
+              }),
+              {
+                providerId,
+                system: c.getString('system'),
+                owner: c.getOptionalString('owner') ?? 'team-infrastructure',
+                lifecycle: c.getOptionalString('lifecycle') ?? 'production',
+                repoUrl:
+                  c.getOptionalString('repoUrl') ??
+                  'https://github.com/stuttgart-things/stuttgart-things',
+                uiUrl: c.getOptionalString('uiUrl') ?? endpoint,
+              },
+              logger,
+            );
+            catalog.addEntityProvider(orders);
+            await scheduler.scheduleTask({
+              id: `${orders.getProviderName()}:refresh`,
+              ...schedule,
+              fn: () => orders.refresh(),
+            });
+            continue;
+          }
+
           let source: VmSource;
           if (type === 'proxmox') {
             source = new ProxmoxVmSource({
@@ -72,7 +111,7 @@ export default createBackendModule({
             });
           } else {
             throw new Error(
-              `${CONFIG_KEY}.${providerId}: type '${type}' is not supported (proxmox, vsphere, harvester)`,
+              `${CONFIG_KEY}.${providerId}: type '${type}' is not supported (proxmox, vsphere, harvester, machinery)`,
             );
           }
 
@@ -89,11 +128,6 @@ export default createBackendModule({
           );
           catalog.addEntityProvider(provider);
 
-          const schedule = c.has('schedule')
-            ? readSchedulerServiceTaskScheduleDefinitionFromConfig(
-                c.getConfig('schedule'),
-              )
-            : DEFAULT_SCHEDULE;
           await scheduler.scheduleTask({
             id: `${provider.getProviderName()}:refresh`,
             ...schedule,
