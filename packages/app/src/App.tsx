@@ -56,12 +56,20 @@ import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/
 import { CatalogGraphPage } from '@backstage/plugin-catalog-graph';
 import { devToolsAdministerPermission } from '@backstage/plugin-devtools-common';
 import { PlatformDevToolsPage } from './components/devtools/DevToolsPage';
+import { devToolsPlugin } from '@backstage/plugin-devtools';
+import { catalogUnprocessedEntitiesPlugin } from '@backstage/plugin-catalog-unprocessed-entities';
 import { NotificationsPage } from '@backstage/plugin-notifications';
 import { RequirePermission } from '@backstage/plugin-permission-react';
 import { SignalsDisplay } from '@backstage/plugin-signals';
 
 const app = createApp({
   apis,
+  // /devtools is built from the plugins' content components, not their
+  // routable pages, so the app never discovers these plugins from the routes
+  // and their API factories (devToolsApiRef, catalogUnprocessedEntitiesApiRef)
+  // stay unregistered: the page crashed with "No implementation available for
+  // apiRef{plugin.devtools.service}". Registering the plugins adds them.
+  plugins: [devToolsPlugin, catalogUnprocessedEntitiesPlugin],
   __experimentalTranslations: {
     resources: [
       {
