@@ -1,4 +1,7 @@
-import { createBackendModule, coreServices } from '@backstage/backend-plugin-api';
+import {
+  createBackendModule,
+  coreServices,
+} from '@backstage/backend-plugin-api';
 import { policyExtensionPoint } from '@backstage/plugin-permission-node/alpha';
 import {
   AUDIENCE_ANNOTATION,

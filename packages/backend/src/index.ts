@@ -26,7 +26,6 @@ backend.add(import('@roadiehq/scaffolder-backend-module-utils/new-backend'));
 // claim-machinery scaffolder module
 backend.add(import('./plugins/scaffolder-claim-machinery'));
 
-
 // yaml-utils scaffolder module
 backend.add(import('./plugins/scaffolder-yaml-utils'));
 
@@ -61,6 +60,13 @@ backend.add(
 
 // See https://backstage.io/docs/features/software-catalog/configuration#subscribing-to-catalog-errors
 backend.add(import('@backstage/plugin-catalog-backend-module-logs'));
+// Entities that failed processing (e.g. Location conflicts), shown under
+// /devtools -> Unprocessed Entities. Platform-only via the permission policy.
+backend.add(import('@backstage/plugin-catalog-backend-module-unprocessed'));
+
+// DevTools: version, config, external dependencies, scheduled tasks.
+// Platform-only via the permission policy.
+backend.add(import('@backstage/plugin-devtools-backend'));
 
 // VM inventories (Proxmox today) mirrored into the catalog. Off unless
 // catalog.providers.sthingsVms is configured. See plugins/catalog-backend-module-sthings-vms.

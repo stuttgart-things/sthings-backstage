@@ -30,6 +30,9 @@ import GroupIcon from '@material-ui/icons/People';
 import { NotificationsSidebarItem } from '@backstage/plugin-notifications';
 import { configApiRef, useApi } from '@backstage/core-plugin-api';
 import { SidebarRagModal } from '@roadiehq/rag-ai';
+import BuildIcon from '@material-ui/icons/Build';
+import { usePermission } from '@backstage/plugin-permission-react';
+import { devToolsAdministerPermission } from '@backstage/plugin-devtools-common';
 
 const useSidebarLogoStyles = makeStyles({
   root: {
@@ -68,6 +71,17 @@ const RagAiSidebarItem = () => {
   ) : null;
 };
 
+// Platform-only admin page (/devtools). Hidden unless the permission policy
+// grants devtools.administer, i.e. for platform-team.
+const DevToolsSidebarItem = () => {
+  const { allowed } = usePermission({
+    permission: devToolsAdministerPermission,
+  });
+  return allowed ? (
+    <SidebarItem icon={BuildIcon} to="devtools" text="DevTools" />
+  ) : null;
+};
+
 export const Root = ({ children }: PropsWithChildren<{}>) => (
   <SidebarPage>
     <Sidebar>
@@ -97,6 +111,7 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
       <SidebarSpace />
       <SidebarDivider />
       <NotificationsSidebarItem />
+      <DevToolsSidebarItem />
       <SidebarDivider />
       <SidebarGroup
         label="Settings"
