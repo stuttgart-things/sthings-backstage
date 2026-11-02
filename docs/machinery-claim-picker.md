@@ -35,7 +35,28 @@ claim:
     # optional; default: every kind machinery watches
     kinds: [NativeVsphereVM, NativeProxmoxVM, ScheduledRun, MinioBucket]
     excludeKinds: [ClusterStack]
+    # optional; offer only "my orders" (see below)
+    ownedOnly: true
 ```
+
+### `ownedOnly`: only my and my groups' orders
+
+With `ownedOnly: true` the field offers only claims whose
+`stuttgart-things.com/owner` or `stuttgart-things.com/requested-by` is one of
+the signed-in user's ownership refs -- the user, or one of their groups
+(e.g. a team from the Zitadel role `backstage-team-<team>`). Order templates
+write both annotations; [`create-vm`](https://github.com/stuttgart-things/stuttgart-things/tree/main/backstage/templates/create-vm)
+fills `owner` from the [Order Owner Picker](order-owner-picker.md).
+
+- Claims ordered before the annotations existed carry neither and are not
+  offered.
+- A convenience, not access control: the developer templates that use it
+  (`request-claim-change`, `request-claim-deletion`) open a pull request a
+  platform engineer merges.
+- The same annotations drive the catalog: the sthings-vms provider's
+  `type: machinery` turns each order into a `machinery-order` entity owned by
+  `stuttgart-things.com/owner`, so it shows under **Owned** with its status
+  ([plugin README](../plugins/catalog-backend-module-sthings-vms/README.md#orders-on-machinery)).
 
 ## Value
 
