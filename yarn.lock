@@ -16860,6 +16860,7 @@ __metadata:
     "@backstage/plugin-org": "npm:^0.7.0"
     "@backstage/plugin-permission-react": "npm:^0.5.0"
     "@backstage/plugin-scaffolder": "npm:^1.36.1"
+    "@backstage/plugin-scaffolder-common": "npm:^2.1.0"
     "@backstage/plugin-scaffolder-react": "npm:^1.20.0"
     "@backstage/plugin-search": "npm:^1.7.0"
     "@backstage/plugin-search-react": "npm:^1.11.0"
