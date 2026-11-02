@@ -37,6 +37,16 @@ export const MachineryClaimPickerFieldExtension = scaffolderPlugin.provide(
   }),
 );
 
+// Order owner: "for whom?" -- the signed-in user or one of their groups
+import { OrderOwnerPickerExtension } from './OrderOwnerPickerExtension';
+
+export const OrderOwnerPickerFieldExtension = scaffolderPlugin.provide(
+  createScaffolderFieldExtension({
+    name: 'OrderOwnerPicker',
+    component: OrderOwnerPickerExtension,
+  }),
+);
+
 // Custom template card (clickable body + prominent CTA)
 export { TemplateCard } from './TemplateCard';
 
@@ -49,4 +59,5 @@ export {
   ClaimMachineryParametersExtension,
   ClaimMachineryMultiClaimExtension,
   MachineryClaimPickerExtension,
+  OrderOwnerPickerExtension,
 };
