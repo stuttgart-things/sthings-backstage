@@ -1,3 +1,10 @@
+## [1.24.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.24.0...v1.24.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* **devtools:** register devtools and unprocessed-entities plugins so /devtools renders ([#207](https://github.com/stuttgart-things/sthings-backstage/issues/207)) ([528a516](https://github.com/stuttgart-things/sthings-backstage/commit/528a5166feeb5163558dd5ec53b70878e8b86602))
+
 # [1.24.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.23.0...v1.24.0) (2026-11-02)
 
 
