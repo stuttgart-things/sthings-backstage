@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.24.1...v1.25.0) (2026-11-02)
+
+
+### Features
+
+* beta tracks, team roles and machinery orders in the catalog (vm-machinery) ([#208](https://github.com/stuttgart-things/sthings-backstage/issues/208)) ([88c6d40](https://github.com/stuttgart-things/sthings-backstage/commit/88c6d405cef6d545ecfc6346656b051f51d4cfd3)), closes [stuttgart-things/stuttgart-things#4276](https://github.com/stuttgart-things/stuttgart-things/issues/4276)
+
 ## [1.24.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.24.0...v1.24.1) (2026-11-02)
 
 
