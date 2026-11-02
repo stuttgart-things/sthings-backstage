@@ -1,3 +1,11 @@
+# [1.23.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.22.0...v1.23.0) (2026-11-02)
+
+
+### Features
+
+* **auth:** zitadelProjectRoles sign-in resolver -- Zitadel roles decide platform or developer ([#203](https://github.com/stuttgart-things/sthings-backstage/issues/203)) ([7693338](https://github.com/stuttgart-things/sthings-backstage/commit/769333839572695b2e11b99ef0b024a9bb2aec03)), closes [#200](https://github.com/stuttgart-things/sthings-backstage/issues/200)
+* **devtools:** platform-only DevTools page with unprocessed entities ([#204](https://github.com/stuttgart-things/sthings-backstage/issues/204)) ([6416b42](https://github.com/stuttgart-things/sthings-backstage/commit/6416b42ba11e1bfed0141905933da3ddc20345ca)), closes [66/#71](https://github.com/stuttgart-things/sthings-backstage/issues/71) [#201](https://github.com/stuttgart-things/sthings-backstage/issues/201)
+
 # [1.22.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.21.0...v1.22.0) (2026-11-01)
 
 
