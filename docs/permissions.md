@@ -62,6 +62,31 @@ User entity; to make someone a developer, add a User that is not a member of
 `team-infrastructure` (a child of `platform-team`) is not a platform user
 unless `team-infrastructure` is listed in `platformGroups`.
 
+## Beta tracks
+
+A beta track is one workflow under test, released to a few test users before
+it goes to every developer -- e.g. `vm-machinery`: order, resize and delete a
+VM on machinery, and see it with its status under Owned.
+
+| Piece | Value |
+|---|---|
+| Template annotation | `backstage.stuttgart-things.com/beta-track: <track>` |
+| Zitadel project role | `backstage-beta-<track>` |
+| Group the resolver grants | `group:default/beta-<track>` |
+
+- Members of `beta-<track>` also see the templates of that track.
+- A beta tester **without** a developer group (`developerGroups`, default
+  `group:default/guests`) sees only the templates of their tracks -- not the
+  general `audience: developers` ones. A test user with just the track role
+  sees exactly the workflow under test.
+- Everything else (own tasks only, no catalog import/unregister, no DevTools)
+  is the same as for developers.
+- Releasing a track's template to everyone: set
+  `backstage.stuttgart-things.com/audience: developers`.
+
+Team roles work the same way: `backstage-team-<team>` grants
+`group:default/<team>`, a group that can own ordered resources.
+
 ## Guest sign-in
 
 Guest counts as a developer, so with guest enabled anyone can run developer
@@ -85,6 +110,10 @@ permission:
     # optional, default: [group:default/platform-team]
     platformGroups:
       - group:default/platform-team
+    # optional, default: [group:default/guests] -- the groups that let a beta
+    # tester also see the general developer templates
+    developerGroups:
+      - group:default/guests
 ```
 
 ## Service principals

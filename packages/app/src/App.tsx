@@ -30,6 +30,7 @@ import {
   ClaimMachineryPickerFieldExtension,
   ClaimMachineryMultiClaimFieldExtension,
   MachineryClaimPickerFieldExtension,
+  OrderOwnerPickerFieldExtension,
   TemplateCard,
   templateGroups,
 } from './scaffolder';
@@ -188,6 +189,7 @@ const routes = (
         <ClaimMachineryParametersFieldExtension />
         <ClaimMachineryMultiClaimFieldExtension />
         <MachineryClaimPickerFieldExtension />
+        <OrderOwnerPickerFieldExtension />
       </ScaffolderFieldExtensions>
     </Route>
     <Route path="/api-docs" element={<ApiExplorerPage />} />

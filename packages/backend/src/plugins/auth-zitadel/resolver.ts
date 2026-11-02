@@ -28,6 +28,23 @@ export const DEFAULT_ROLE_GROUPS: Record<string, string> = {
   'backstage-developer': 'group:default/guests',
 };
 
+/**
+ * Roles mapped by name, so a new beta track or team needs a Zitadel role and
+ * no code change. Checked after the explicit role groups.
+ *
+ * - `backstage-beta-<track>` -> `group:default/beta-<track>`: a beta tester of
+ *   one template track (the permission policy shows that track's templates).
+ * - `backstage-team-<team>` -> `group:default/<team>`: a team that can own
+ *   ordered resources.
+ */
+export const ROLE_GROUP_PREFIXES: ReadonlyArray<{
+  rolePrefix: string;
+  groupPrefix: string;
+}> = [
+  { rolePrefix: 'backstage-beta-', groupPrefix: 'group:default/beta-' },
+  { rolePrefix: 'backstage-team-', groupPrefix: 'group:default/' },
+];
+
 // Backstage entity names: letters, digits, '-', '_', '.', at most 63 chars,
 // starting and ending with a letter or digit.
 const ENTITY_NAME = /^[a-zA-Z0-9]([a-zA-Z0-9._-]{0,61}[a-zA-Z0-9])?$/;
@@ -113,6 +130,29 @@ export function claimSetsOf(result: OidcAuthResult): Claims[] {
 }
 
 /**
+ * The group a Zitadel role grants: an explicit entry in `roleGroups` first,
+ * then {@link ROLE_GROUP_PREFIXES}. A prefixed role whose rest is not a valid
+ * entity name grants nothing.
+ */
+export function groupForRole(
+  role: string,
+  roleGroups: Record<string, string> = DEFAULT_ROLE_GROUPS,
+): string | undefined {
+  if (roleGroups[role]) {
+    return roleGroups[role];
+  }
+  for (const { rolePrefix, groupPrefix } of ROLE_GROUP_PREFIXES) {
+    if (role.startsWith(rolePrefix)) {
+      const rest = role.slice(rolePrefix.length);
+      const group = `${groupPrefix}${rest}`;
+      const name = group.slice('group:default/'.length);
+      return rest && ENTITY_NAME.test(name) ? group.toLowerCase() : undefined;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Signs a user in with the groups their Zitadel project roles grant.
  *
  * The groups are added to the ownership refs of the Backstage token, which is
@@ -130,14 +170,18 @@ export async function signInWithZitadelRoles(
   const roles = extractZitadelRoles(claimSets, options.projectId);
   const groups = [
     ...new Set(
-      roles.flatMap(role => (roleGroups[role] ? [roleGroups[role]] : [])),
+      roles.flatMap(role => {
+        const group = groupForRole(role, roleGroups);
+        return group ? [group] : [];
+      }),
     ),
   ];
 
   if ((options.requireRole ?? true) && groups.length === 0) {
     throw new NotAllowedError(
       `No Backstage role in Zitadel (roles: ${roles.join(', ') || 'none'}; ` +
-        `expected one of ${Object.keys(roleGroups).join(', ')})`,
+        `expected one of ${Object.keys(roleGroups).join(', ')}, or ` +
+        `${ROLE_GROUP_PREFIXES.map(p => `${p.rolePrefix}<name>`).join(', ')})`,
     );
   }
 
