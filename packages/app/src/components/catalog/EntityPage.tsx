@@ -66,6 +66,14 @@ import {
   isGithubActionsAvailable,
 } from '@backstage-community/plugin-github-actions';
 
+// Pull requests of the entity's repo (github.com/project-slug). Nearly every
+// template ends in publish:github:pull-request, so this is where a requester
+// follows their PR. Reads GitHub as the signed-in user (GitHub OAuth popup).
+import {
+  EntityGithubPullRequestsContent,
+  isGithubPullRequestsAvailable,
+} from '@roadiehq/backstage-plugin-github-pull-requests';
+
 const techdocsContent = (
   <EntityTechdocsContent>
     <TechDocsAddons>
@@ -157,6 +165,14 @@ const serviceEntityPage = (
     </EntityLayout.Route>
 
     <EntityLayout.Route
+      path="/pull-requests"
+      title="Pull Requests"
+      if={isGithubPullRequestsAvailable}
+    >
+      <EntityGithubPullRequestsContent />
+    </EntityLayout.Route>
+
+    <EntityLayout.Route
       path="/kubernetes"
       title="Kubernetes"
       if={isKubernetesAvailable}
@@ -200,6 +216,14 @@ const websiteEntityPage = (
 
     <EntityLayout.Route path="/ci-cd" title="CI/CD">
       {cicdContent}
+    </EntityLayout.Route>
+
+    <EntityLayout.Route
+      path="/pull-requests"
+      title="Pull Requests"
+      if={isGithubPullRequestsAvailable}
+    >
+      <EntityGithubPullRequestsContent />
     </EntityLayout.Route>
 
     <EntityLayout.Route
@@ -389,7 +413,7 @@ const systemPage = (
     </EntityLayout.Route>
     <EntityLayout.Route path="/diagram" title="Diagram">
       <EntityCatalogGraphCard
-                direction={Direction.TOP_BOTTOM}
+        direction={Direction.TOP_BOTTOM}
         title="System Diagram"
         height={700}
         relations={[
