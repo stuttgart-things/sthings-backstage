@@ -1,3 +1,7 @@
+import fs from 'node:fs';
+import https from 'node:https';
+import { AddressInfo } from 'node:net';
+import path from 'node:path';
 import {
   claimToEntity,
   MachineryClaimSource,
@@ -163,6 +167,39 @@ describe('MachineryClaimSource', () => {
       }) as unknown as typeof fetch,
     });
     await expect(down.listClaims()).rejects.toThrow('ENOTFOUND');
+  });
+});
+
+describe('MachineryClaimSource with caCert', () => {
+  // machinery in another lab serves a certificate of that lab's Vault PKI,
+  // which the Node trust store does not know: caCert trusts it instead
+  // (the same pinnedFetch as the proxmox, vsphere and harvester sources).
+  const fixtures = path.join(__dirname, 'sources', '__fixtures__');
+  const cert = fs.readFileSync(path.join(fixtures, 'leaf.pem'), 'utf8');
+  const key = fs.readFileSync(path.join(fixtures, 'leaf.key'), 'utf8');
+  let server: https.Server;
+  let endpoint: string;
+
+  beforeAll(async () => {
+    server = https.createServer({ cert, key }, (_req, res) => {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ items: [ordered] }));
+    });
+    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+    endpoint = `https://localhost:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(() => new Promise<void>(resolve => server.close(() => resolve())));
+
+  it('reads the claims from an endpoint signed by the given CA', async () => {
+    const source = new MachineryClaimSource({ endpoint, caCert: cert });
+    expect((await source.listClaims()).map(c => c.name)).toEqual(['biff-vm']);
+  });
+
+  it('refuses the endpoint with another caCert, and says why', async () => {
+    const other = fs.readFileSync(path.join(fixtures, 'other.pem'), 'utf8');
+    const source = new MachineryClaimSource({ endpoint, caCert: other });
+    await expect(source.listClaims()).rejects.toThrow(`machinery ${endpoint}`);
   });
 });
 

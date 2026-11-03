@@ -58,6 +58,7 @@ export default createBackendModule({
               new MachineryClaimSource({
                 endpoint,
                 kinds: c.getOptionalStringArray('kinds'),
+                caCert: c.getOptionalString('caCert'),
               }),
               {
                 providerId,

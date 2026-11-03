@@ -186,7 +186,23 @@ catalog:
         system: labda
         # kinds: [NativeVsphereVM, NativeProxmoxVM]   # default
         # owner: team-infrastructure                   # claims without an owner
+      # A second instance, in another lab: one entry per machinery.
+      machinery-labul:
+        type: machinery
+        endpoint: https://machinery.machinery-labul.sthings-vsphere.labul.sva.de
+        system: labul
+        # PEM to trust instead of the Node store, when the instance's
+        # certificate comes from a CA the pod does not know (another lab's
+        # Vault PKI). Same as the other sources' caCert.
+        caCert: |
+          -----BEGIN CERTIFICATE-----
+          ...
+          -----END CERTIFICATE-----
 ```
+
+Entity names are `<claim>-order` for every instance: two instances with a
+claim of the same name would collide, so keep claim names unique across labs
+(create-vm checks both orders directories).
 
 Entities are `Resource`s of type `machinery-order`, named `<claim>-order`:
 
