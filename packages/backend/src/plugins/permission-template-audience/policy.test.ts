@@ -25,27 +25,46 @@ function userOwning(...ownershipEntityRefs: string[]): PolicyQueryUser {
   } as unknown as PolicyQueryUser;
 }
 
-const developerOnlyTemplates = {
+const notTemplate = {
+  not: {
+    rule: 'IS_ENTITY_KIND',
+    resourceType: 'catalog-entity',
+    params: { kinds: ['Template'] },
+  },
+};
+const developerRule = {
+  rule: 'HAS_ANNOTATION',
+  resourceType: 'catalog-entity',
+  params: { annotation: AUDIENCE_ANNOTATION, value: AUDIENCE_DEVELOPERS },
+};
+
+/** Orders: readable only when not an order, or owned by one of `refs`. */
+const ownOrders = (refs: string[]) => ({
+  anyOf: [
+    {
+      rule: 'IS_ENTITY_OWNER',
+      resourceType: 'catalog-entity',
+      params: { claims: refs },
+    },
+    {
+      not: {
+        rule: 'HAS_SPEC',
+        resourceType: 'catalog-entity',
+        params: { key: 'type', value: 'machinery-order' },
+      },
+    },
+  ],
+});
+
+/** The read decision for a non-platform user: template rules + own orders. */
+const allowing = (refs: string[], ...templateRules: object[]) => ({
   result: AuthorizeResult.CONDITIONAL,
   pluginId: 'catalog',
   resourceType: 'catalog-entity',
   conditions: {
-    anyOf: [
-      {
-        not: {
-          rule: 'IS_ENTITY_KIND',
-          resourceType: 'catalog-entity',
-          params: { kinds: ['Template'] },
-        },
-      },
-      {
-        rule: 'HAS_ANNOTATION',
-        resourceType: 'catalog-entity',
-        params: { annotation: AUDIENCE_ANNOTATION, value: AUDIENCE_DEVELOPERS },
-      },
-    ],
+    allOf: [{ anyOf: [notTemplate, ...templateRules] }, ownOrders(refs)],
   },
-};
+});
 
 describe('TemplateAudiencePolicy', () => {
   const policy = new TemplateAudiencePolicy();
@@ -77,38 +96,38 @@ describe('TemplateAudiencePolicy', () => {
       read,
       userOwning('user:default/dev', 'group:default/guests'),
     );
-    expect(decision).toEqual(developerOnlyTemplates);
+    expect(decision).toEqual(
+      allowing(['user:default/dev', 'group:default/guests'], developerRule),
+    );
   });
 
   it('treats a user without ownership refs, e.g. guest, as a developer', async () => {
     expect(
       await policy.handle(read, userOwning('user:development/guest')),
-    ).toEqual(developerOnlyTemplates);
+    ).toEqual(allowing(['user:development/guest'], developerRule));
     expect(await policy.handle(read, undefined)).toEqual(
-      developerOnlyTemplates,
+      allowing([], developerRule),
     );
   });
 
   describe('beta tracks', () => {
-    const notTemplate = developerOnlyTemplates.conditions.anyOf[0];
-    const developerRule = developerOnlyTemplates.conditions.anyOf[1];
     const track = (value: string) => ({
       rule: 'HAS_ANNOTATION',
       resourceType: 'catalog-entity',
       params: { annotation: BETA_TRACK_ANNOTATION, value },
     });
-    const allowing = (...rules: object[]) => ({
-      ...developerOnlyTemplates,
-      conditions: { anyOf: [notTemplate, ...rules] },
-    });
-
     it('shows a tester with only the track role just the track (doc)', async () => {
       expect(
         await policy.handle(
           read,
           userOwning('user:default/doc', 'group:default/beta-vm-machinery'),
         ),
-      ).toEqual(allowing(track('vm-machinery')));
+      ).toEqual(
+        allowing(
+          ['user:default/doc', 'group:default/beta-vm-machinery'],
+          track('vm-machinery'),
+        ),
+      );
     });
 
     it('does not count a team group as a developer group (biff)', async () => {
@@ -121,7 +140,16 @@ describe('TemplateAudiencePolicy', () => {
             'group:default/hill-valley',
           ),
         ),
-      ).toEqual(allowing(track('vm-machinery')));
+      ).toEqual(
+        allowing(
+          [
+            'user:default/biff',
+            'group:default/beta-vm-machinery',
+            'group:default/hill-valley',
+          ],
+          track('vm-machinery'),
+        ),
+      );
     });
 
     it('gives a developer who also tests both', async () => {
@@ -134,7 +162,17 @@ describe('TemplateAudiencePolicy', () => {
             'group:default/Beta-VM-Machinery',
           ),
         ),
-      ).toEqual(allowing(developerRule, track('vm-machinery')));
+      ).toEqual(
+        allowing(
+          [
+            'user:default/mcfly',
+            'group:default/guests',
+            'group:default/beta-vm-machinery',
+          ],
+          developerRule,
+          track('vm-machinery'),
+        ),
+      );
     });
 
     it('honours configured developer groups', async () => {
@@ -150,7 +188,13 @@ describe('TemplateAudiencePolicy', () => {
             'group:default/beta-a',
           ),
         ),
-      ).toEqual(allowing(developerRule, track('a')));
+      ).toEqual(
+        allowing(
+          ['user:default/x', 'group:default/devs', 'group:default/beta-a'],
+          developerRule,
+          track('a'),
+        ),
+      );
     });
   });
 
@@ -169,7 +213,12 @@ describe('TemplateAudiencePolicy', () => {
         read,
         userOwning('user:default/b', 'group:default/platform-team'),
       ),
-    ).toEqual(developerOnlyTemplates);
+    ).toEqual(
+      allowing(
+        ['user:default/b', 'group:default/platform-team'],
+        developerRule,
+      ),
+    );
   });
 
   describe('platform-only permissions', () => {
