@@ -50,6 +50,12 @@ interface PickerOptions {
   /** Proxy endpoint name under /api/proxy. Default: "machinery". */
   proxyPath?: string;
   /**
+   * Several proxy endpoints, one per machinery instance (e.g. ["machinery",
+   * "machinery-labul"]): their claims are offered together. Takes precedence
+   * over proxyPath. Default: [proxyPath], i.e. ["machinery"].
+   */
+  proxyPaths?: string[] | string;
+  /**
    * Offer only claims the user ordered or that belong to one of their groups
    * (stuttgart-things.com/owner or requested-by in their ownership refs). For
    * developer templates: "my orders", not everybody's. A convenience, not
@@ -64,8 +70,63 @@ const asList = (v?: string[] | string): string[] =>
     .map(s => s.trim())
     .filter(Boolean);
 
-const keyOf = (r: { kind: string; namespace?: string; name: string }) =>
-  `${r.kind}/${r.namespace ?? ''}/${r.name}`;
+/** The proxy endpoints to read: proxyPaths, else proxyPath, else machinery. */
+export const proxyPathsOf = (options: {
+  proxyPath?: string;
+  proxyPaths?: string[] | string;
+}): string[] => {
+  const paths = asList(options.proxyPaths);
+  return [...new Set(paths.length > 0 ? paths : [options.proxyPath || 'machinery'])];
+};
+
+/**
+ * A claim is one file (source-path), so the key carries it: two machinery
+ * instances may each have an XR with the same kind, namespace and name.
+ */
+const keyOf = (r: { kind: string; namespace?: string; name: string }, sourcePath: string) =>
+  `${r.kind}/${r.namespace ?? ''}/${r.name}@${sourcePath}`;
+const sourcePathOf = (r: MachineryResource) => r.annotations?.[SOURCE_PATH] ?? '';
+
+/**
+ * The ordered claims of every proxy endpoint, merged. An endpoint that fails
+ * is reported in `failed` and the others are still offered; only when all of
+ * them fail is that an error.
+ */
+export const loadClaims = async (
+  fetchFn: (url: string) => Promise<Pick<Response, 'ok' | 'status' | 'statusText' | 'json'>>,
+  backendUrl: string,
+  proxyPaths: string[],
+  query: string,
+): Promise<{ items: MachineryResource[]; failed: string[] }> => {
+  const results = await Promise.allSettled(
+    proxyPaths.map(async proxy => {
+      const response = await fetchFn(`${backendUrl}/api/proxy/${proxy}/api/v1/resources?${query}`);
+      if (!response.ok) {
+        throw new Error(`${proxy}: ${response.status} ${response.statusText}`);
+      }
+      const data = (await response.json()) as { items?: MachineryResource[] };
+      return data.items ?? [];
+    }),
+  );
+  const failed = results.flatMap((r, i) =>
+    r.status === 'rejected'
+      ? [r.reason instanceof Error ? r.reason.message : `${proxyPaths[i]}: failed`]
+      : [],
+  );
+  if (failed.length === results.length) {
+    throw new Error(`Failed to fetch resources: ${failed.join('; ')}`);
+  }
+  const seen = new Set<string>();
+  const items = results
+    .flatMap(r => (r.status === 'fulfilled' ? r.value : []))
+    .filter(r => {
+      const k = keyOf(r, sourcePathOf(r));
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  return { items, failed };
+};
 
 /** `biff` -> `user:default/biff`; refs compare case-insensitively. */
 const asRef = (v?: string) => {
@@ -114,6 +175,8 @@ export const MachineryClaimPickerExtension = ({
   const [items, setItems] = useState<MachineryResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState<string[]>([]);
+  const proxyPaths = proxyPathsOf(options);
 
   useEffect(() => {
     const load = async () => {
@@ -125,16 +188,10 @@ export const MachineryClaimPickerExtension = ({
         if (kinds.length > 0) {
           params.set('kind', kinds.join(','));
         }
-        const proxy = options.proxyPath || 'machinery';
-        const response = await fetch(
-          `${backendUrl}/api/proxy/${proxy}/api/v1/resources?${params.toString()}`,
-        );
-        if (!response.ok) {
-          throw new Error(`Failed to fetch resources: ${response.status} ${response.statusText}`);
-        }
-        const data = await response.json();
+        const loaded = await loadClaims(url => fetch(url), backendUrl, proxyPaths, params.toString());
+        setFailed(loaded.failed);
         const excluded = new Set(asList(options.excludeKinds));
-        let offered = ((data.items ?? []) as MachineryResource[]).filter(r => !excluded.has(r.kind));
+        let offered = loaded.items.filter(r => !excluded.has(r.kind));
         if (options.ownedOnly) {
           const { ownershipEntityRefs } = await identityApi.getBackstageIdentity();
           offered = offered.filter(r => ownedBy(r, ownershipEntityRefs));
@@ -168,11 +225,12 @@ export const MachineryClaimPickerExtension = ({
     // yet, not a claim (it rendered as "undefined//undefined").
     return v?.kind && v?.name ? v : null;
   })();
-  const selected = picked ? items.find(r => keyOf(r) === keyOf(picked)) : undefined;
+  const pickedKey = picked ? keyOf(picked, picked.sourcePath) : '';
+  const selected = picked ? items.find(r => keyOf(r, sourcePathOf(r)) === pickedKey) : undefined;
 
   const handleChange = (event: ChangeEvent<{ value: unknown }>) => {
     const key = event.target.value as string;
-    const r = items.find(i => keyOf(i) === key);
+    const r = items.find(i => keyOf(i, sourcePathOf(i)) === key);
     if (!r) {
       onChange(asObject ? undefined : '');
       return;
@@ -182,7 +240,7 @@ export const MachineryClaimPickerExtension = ({
       apiVersion: r.apiVersion,
       name: r.name,
       namespace: r.namespace ?? '',
-      sourcePath: r.annotations?.[SOURCE_PATH] ?? '',
+      sourcePath: sourcePathOf(r),
       managementCluster: r.annotations?.[MANAGEMENT_CLUSTER] ?? '',
     };
     onChange(asObject ? value : JSON.stringify(value));
@@ -216,7 +274,7 @@ export const MachineryClaimPickerExtension = ({
       <Select
         labelId={idSchema?.$id}
         id={idSchema?.$id}
-        value={picked ? keyOf(picked) : ''}
+        value={pickedKey}
         onChange={handleChange}
         label={label}
       >
@@ -224,14 +282,22 @@ export const MachineryClaimPickerExtension = ({
           <em>Select a claim</em>
         </MenuItem>
         {items.map(r => (
-          <MenuItem key={keyOf(r)} value={keyOf(r)}>
+          <MenuItem key={keyOf(r, sourcePathOf(r))} value={keyOf(r, sourcePathOf(r))}>
             {r.kind} / {r.name}
             {r.namespace ? ` (${r.namespace})` : ''}
+            {proxyPaths.length > 1 && r.annotations?.[MANAGEMENT_CLUSTER]
+              ? ` -- ${r.annotations[MANAGEMENT_CLUSTER]}`
+              : ''}
           </MenuItem>
         ))}
       </Select>
 
       {schema.description && <FormHelperText>{schema.description}</FormHelperText>}
+      {failed.length > 0 && (
+        <FormHelperText error>
+          Not reachable, its claims are missing here: {failed.join('; ')}
+        </FormHelperText>
+      )}
       {items.length === 0 && (
         <FormHelperText>
           {options.ownedOnly

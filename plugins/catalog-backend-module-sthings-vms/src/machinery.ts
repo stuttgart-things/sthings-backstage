@@ -9,6 +9,7 @@ import {
   EntityProviderConnection,
 } from '@backstage/plugin-catalog-node';
 import { toEntityName, toTag } from './entity';
+import { pinnedFetch } from './sources/proxmox';
 
 /**
  * One object from the machinery JSON API (`GET /api/v1/resources`). machinery
@@ -63,11 +64,17 @@ export class MachineryClaimSource {
     private readonly options: {
       endpoint: string;
       kinds?: string[];
+      /**
+       * PEM to trust instead of the Node trust store, e.g. the Vault PKI CA
+       * of a machinery instance in another lab.
+       */
+      caCert?: string;
       fetch?: typeof fetch;
     },
   ) {
     this.baseUrl = options.endpoint.replace(/\/+$/, '');
-    this.fetchImpl = options.fetch ?? fetch;
+    this.fetchImpl =
+      options.fetch ?? (options.caCert ? pinnedFetch(options.caCert) : fetch);
   }
 
   async listClaims(): Promise<MachineryResource[]> {

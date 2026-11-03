@@ -72,7 +72,8 @@ export interface Config {
           /**
            * PEM to trust for this endpoint instead of the Node trust store.
            * Can be the server's own self-signed certificate (pinning), e.g.
-           * Proxmox's default node certificate when its CA is not at hand.
+           * Proxmox's default node certificate when its CA is not at hand,
+           * or (machinery) the Vault PKI CA of an instance in another lab.
            */
           caCert?: string;
           /**
