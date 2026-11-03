@@ -24,6 +24,36 @@ proxy:
         '^/api/proxy/machinery': ''
 ```
 
+### Several machinery instances
+
+Each lab has its own factory (LabDA `machinery`, LabUL `machinery-labul`), and
+each one only knows its own claims. With `proxyPaths` the field reads every
+listed endpoint and offers their claims together; it takes precedence over
+`proxyPath`. Each entry needs its own proxy endpoint:
+
+```yaml
+proxy:
+  endpoints:
+    '/machinery-labul':
+      target: ${MACHINERY_LABUL_URL}
+      changeOrigin: true
+      pathRewrite:
+        '^/api/proxy/machinery-labul': ''
+```
+
+```yaml
+ui:options:
+  proxyPaths: [machinery, machinery-labul]
+```
+
+- Without it the field reads `[proxyPath]`, i.e. `[machinery]` -- unchanged.
+- A claim is one file: two instances may each have an XR with the same kind
+  and name, and both are offered (told apart by their file and, with more than
+  one endpoint, by their management cluster in the list).
+- An endpoint that does not answer is named under the field, and the claims
+  of the others are still offered. Only when none answers is that an error.
+- `ownedOnly` applies to the merged list.
+
 ## Usage
 
 ```yaml
@@ -37,6 +67,8 @@ claim:
     excludeKinds: [ClusterStack]
     # optional; offer only "my orders" (see below)
     ownedOnly: true
+    # optional; several machinery instances (see above). Default: [machinery]
+    proxyPaths: [machinery, machinery-labul]
 ```
 
 ### `ownedOnly`: only my and my groups' orders

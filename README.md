@@ -121,7 +121,7 @@ For complete installation and usage details, see the [Claim Machinery Plugin doc
 
 ## Machinery Claim Picker
 
-Scaffolder field `MachineryClaimPicker` (`packages/app/src/scaffolder/MachineryClaimPickerExtension.tsx`): picks an ordered XR from the live inventory that [stuttgart-things/machinery](https://github.com/stuttgart-things/machinery) watches, through the `/machinery` proxy (`MACHINERY_URL`). Replaces the Registry Claim Picker and its `claim-registry:delete` action; machinery-registry-api is archived. Details: [docs/machinery-claim-picker.md](docs/machinery-claim-picker.md).
+Scaffolder field `MachineryClaimPicker` (`packages/app/src/scaffolder/MachineryClaimPickerExtension.tsx`): picks an ordered XR from the live inventory that [stuttgart-things/machinery](https://github.com/stuttgart-things/machinery) watches, through the `/machinery` proxy (`MACHINERY_URL`), or several instances at once with `proxyPaths` (e.g. `[machinery, machinery-labul]`). Replaces the Registry Claim Picker and its `claim-registry:delete` action; machinery-registry-api is archived. Details: [docs/machinery-claim-picker.md](docs/machinery-claim-picker.md).
 
 ## YAML Utils Module
 
