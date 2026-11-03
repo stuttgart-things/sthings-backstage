@@ -87,6 +87,17 @@ VM on machinery, and see it with its status under Owned.
 Team roles work the same way: `backstage-team-<team>` grants
 `group:default/<team>`, a group that can own ordered resources.
 
+## Orders are private
+
+Orders (`Resource`s of `spec.type: machinery-order`, from the sthings-vms
+provider's `type: machinery`) are readable only by their owner -- the user
+they were ordered for, or every member of the owning group -- and by
+platform-team. Everyone else neither finds them in the catalog nor opens them
+by URL. The types are `PRIVATE_RESOURCE_TYPES` in the policy.
+
+The live VM entities (`*-vsphere-vm`, `*-proxmox-vm`) stay readable for all:
+they mirror the inventory, not who ordered what.
+
 ## Guest sign-in
 
 Guest counts as a developer, so with guest enabled anyone can run developer

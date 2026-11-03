@@ -1,5 +1,7 @@
 import {
   AuthorizeResult,
+  PermissionCondition,
+  PermissionCriteria,
   PolicyDecision,
   isPermission,
 } from '@backstage/plugin-permission-common';
@@ -52,6 +54,22 @@ export const BETA_GROUP_PREFIX = 'group:default/beta-';
 export const DEFAULT_DEVELOPER_GROUPS = ['group:default/guests'];
 
 /**
+ * Orders are private: a Resource of one of these `spec.type`s is readable only
+ * by its owner -- the user it was ordered for, or the members of the group --
+ * and by the platform groups. Other users neither see it in the catalog nor
+ * can open it by URL.
+ */
+export const PRIVATE_RESOURCE_TYPES = ['machinery-order'];
+
+type EntityCriteria = PermissionCriteria<PermissionCondition<'catalog-entity'>>;
+
+/** anyOf over a list known to be non-empty (its first entry is fixed). */
+const anyOf = (
+  first: EntityCriteria,
+  ...rest: EntityCriteria[]
+): EntityCriteria => ({ anyOf: [first, ...rest] });
+
+/**
  * Permissions only the platform groups hold. Matched by name, so the policy
  * needs no dependency on every plugin that defines one.
  *
@@ -94,7 +112,9 @@ export const PLATFORM_ONLY_PREFIXES = [
  *
  * - `catalog.entity.read`: every entity except Templates without the audience
  *   annotation -- plus the Templates of their beta tracks; a beta tester
- *   without a developer group sees only those (see BETA_TRACK_ANNOTATION). The Create page lists templates through the catalog, and the
+ *   without a developer group sees only those (see BETA_TRACK_ANNOTATION) --
+ *   and no orders (PRIVATE_RESOURCE_TYPES) but their own and their groups'.
+ *   The Create page lists templates through the catalog, and the
  *   scaffolder loads the template for a task with the CALLER's credentials, so
  *   a template a user cannot read is "not found" when they try to start it.
  * - `scaffolder.task.read` / `scaffolder.task.cancel`: only tasks they
@@ -143,24 +163,31 @@ export class TemplateAudiencePolicy implements PermissionPolicy {
         .filter(Boolean);
       const seesDeveloperTemplates =
         tracks.length === 0 || refs.some(ref => this.developerGroups.has(ref));
+      const templates = anyOf(
+        { not: catalogConditions.isEntityKind({ kinds: ['Template'] }) },
+        ...(seesDeveloperTemplates
+          ? [
+              catalogConditions.hasAnnotation({
+                annotation: AUDIENCE_ANNOTATION,
+                value: AUDIENCE_DEVELOPERS,
+              }),
+            ]
+          : []),
+        ...tracks.map(track =>
+          catalogConditions.hasAnnotation({
+            annotation: BETA_TRACK_ANNOTATION,
+            value: track,
+          }),
+        ),
+      );
+      const ownOrders = anyOf(
+        catalogConditions.isEntityOwner({ claims: refs }),
+        ...PRIVATE_RESOURCE_TYPES.map(type => ({
+          not: catalogConditions.hasSpec({ key: 'type', value: type }),
+        })),
+      );
       return createCatalogConditionalDecision(request.permission, {
-        anyOf: [
-          { not: catalogConditions.isEntityKind({ kinds: ['Template'] }) },
-          ...(seesDeveloperTemplates
-            ? [
-                catalogConditions.hasAnnotation({
-                  annotation: AUDIENCE_ANNOTATION,
-                  value: AUDIENCE_DEVELOPERS,
-                }),
-              ]
-            : []),
-          ...tracks.map(track =>
-            catalogConditions.hasAnnotation({
-              annotation: BETA_TRACK_ANNOTATION,
-              value: track,
-            }),
-          ),
-        ],
+        allOf: [templates, ownOrders],
       });
     }
 

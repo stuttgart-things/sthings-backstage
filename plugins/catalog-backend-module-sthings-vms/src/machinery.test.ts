@@ -101,6 +101,19 @@ describe('claimToEntity', () => {
     );
   });
 
+  it('does not repeat a generic status message', () => {
+    for (const statusMessage of [
+      'Not Ready',
+      'not ready',
+      'No conditions found',
+    ]) {
+      expect(
+        claimToEntity({ ...ordered, statusMessage }, defaults).metadata
+          .description,
+      ).toBe('NativeVsphereVM · Not ready · ordered by user:default/biff');
+    }
+  });
+
   it('keeps a non-default namespace in the name and the detail link', () => {
     const e = claimToEntity({ ...ordered, namespace: 'team-a' }, defaults);
     expect(e.metadata.name).toBe('biff-vm-team-a-order');

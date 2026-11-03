@@ -171,11 +171,14 @@ export function claimToEntity(
       : []),
   ];
 
+  // machinery's generic message ("Not Ready") repeats the state; only a real
+  // reason ("Creating", "ReconcileError: ...") is worth appending.
+  const reason = claim.statusMessage?.trim();
+  const hasReason =
+    !!reason && !/^(not ready|ready|no conditions found)$/i.test(reason);
   const description = [
     claim.kind,
-    claim.ready
-      ? 'Ready'
-      : `Not ready${claim.statusMessage ? `: ${claim.statusMessage}` : ''}`,
+    claim.ready ? 'Ready' : `Not ready${hasReason ? `: ${reason}` : ''}`,
     requestedBy ? `ordered by ${requestedBy}` : undefined,
   ]
     .filter(Boolean)
