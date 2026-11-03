@@ -1,3 +1,10 @@
+# [1.26.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.25.1...v1.26.0) (2026-11-03)
+
+
+### Features
+
+* MachineryClaimPicker proxyPaths and caCert for type machinery (several machinery instances) ([#211](https://github.com/stuttgart-things/sthings-backstage/issues/211)) ([5be1515](https://github.com/stuttgart-things/sthings-backstage/commit/5be15159d492808bbc0680b8b045308d6b77d078)), closes [stuttgart-things/stuttgart-things#4310](https://github.com/stuttgart-things/stuttgart-things/issues/4310)
+
 ## [1.25.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.25.0...v1.25.1) (2026-11-03)
 
 
