@@ -1,3 +1,10 @@
+## [1.25.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.25.0...v1.25.1) (2026-11-03)
+
+
+### Bug Fixes
+
+* **catalog,permission:** orders are private; no doubled status text ([#210](https://github.com/stuttgart-things/sthings-backstage/issues/210)) ([df817b2](https://github.com/stuttgart-things/sthings-backstage/commit/df817b2b1210e5b1ef18e10297aa7a2efc8dca09)), closes [stuttgart-things/stuttgart-things#4276](https://github.com/stuttgart-things/stuttgart-things/issues/4276)
+
 # [1.25.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.24.1...v1.25.0) (2026-11-02)
 
 
