@@ -170,6 +170,68 @@ tags (labels `tag.harvesterhci.io/<tag>`) become entity tags. VM images are not
 VMs and are not listed. A name that exists in two namespaces becomes
 `<namespace>-<vm>` for both, with a warning.
 
+### Kubernetes clusters
+
+Clusters are not mirrored like VMs: their entities stay the hand-maintained
+`Resource`s of type `kubernetes-cluster` (stuttgart-things
+`catalog/clusters/`), because links and `dependsOn` (which VMs carry the
+cluster) are things only a person knows. What the cluster's API knows is added
+on top, **opt-in per cluster**, by a catalog processor:
+
+```yaml
+catalog:
+  providers:
+    sthingsClusters:
+      machinery-cluster: # entity name of the kubernetes-cluster Resource
+        endpoint: https://10.100.136.121:6443
+        token: ${MACHINERY_CLUSTER_TOKEN}
+        caCert: | # cluster CA, certificate-authority-data from a kubeconfig, base64-decoded
+          -----BEGIN CERTIFICATE-----
+          ...
+```
+
+Every 5 minutes it reads `/version` and `/api/v1/nodes`, nothing else. That
+needs neither the Backstage Kubernetes plugin (no `kubernetes:` config, no
+`backstage.io/kubernetes-id`) nor anything installed in the cluster besides a
+read-only ServiceAccount:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: backstage-cluster-reader, namespace: kube-system }
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata: { name: backstage-cluster-reader }
+rules:
+  - apiGroups: ['']
+    resources: [nodes]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata: { name: backstage-cluster-reader }
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: backstage-cluster-reader }
+subjects: [{ kind: ServiceAccount, name: backstage-cluster-reader, namespace: kube-system }]
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: backstage-cluster-reader
+  namespace: kube-system
+  annotations: { kubernetes.io/service-account.name: backstage-cluster-reader }
+```
+
+A configured cluster gets
+`cluster.stuttgart-things.com/{status,version,distribution,nodes,nodes-ready,control-planes,cpus,memory-mib,node-names,checked}`,
+and its description gains one line for the catalog list:
+`rke2 cluster machinery in LabDA (vsphere) -- v1.33.4+rke2r1 · 3 nodes · 24 vCPU · 48 GiB · ready`.
+Status is `ready` (every node Ready), `degraded` or `unreachable`; an
+unreachable cluster keeps its last facts plus `error`. Clusters that are not
+configured stay exactly as their file says. The app shows them on a cluster
+page with a **Cluster** card and the VMs from `dependsOn`.
+
 ### Orders on machinery
 
 `type: machinery` mirrors **ordered claims** instead of VMs: every claim of the

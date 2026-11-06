@@ -11,6 +11,13 @@ export { ProxmoxVmSource } from './sources/proxmox';
 export { HarvesterVmSource } from './sources/harvester';
 export { vmToEntity } from './entity';
 export {
+  clusterFacts,
+  KubernetesClusterSource,
+  SthingsClusterProcessor,
+  withClusterFacts,
+} from './cluster';
+export type { ClusterFacts, ClusterTarget } from './cluster';
+export {
   claimToEntity,
   MachineryClaimSource,
   MachineryOrderEntityProvider,

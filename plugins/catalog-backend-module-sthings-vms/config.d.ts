@@ -8,6 +8,25 @@ export interface Config {
        * (e.g. `proxmox-labul`). Each entry becomes one entity provider that
        * owns exactly the VMs its source returns.
        */
+      /**
+       * Live facts (version, nodes, size, status) for existing `Resource`
+       * entities of type `kubernetes-cluster`, keyed by entity name (e.g.
+       * `machinery-cluster`). Opt-in per cluster; clusters not listed stay
+       * as their catalog-info.yaml says. Asked every 5 minutes.
+       */
+      sthingsClusters?: {
+        [entityName: string]: {
+          /** Kubernetes API, e.g. https://10.100.136.121:6443 */
+          endpoint: string;
+          /**
+           * Bearer token of a ServiceAccount that may get/list nodes.
+           * @visibility secret
+           */
+          token: string;
+          /** PEM to trust for this endpoint, usually the cluster CA. */
+          caCert?: string;
+        };
+      };
       sthingsVms?: {
         [providerId: string]: {
           /** Inventory backend. */
