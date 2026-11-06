@@ -38,8 +38,10 @@ export function ClusterDetailsCard() {
     if (key === 'memory-mib') rows[label] = memory(value);
     else if (key === 'nodes') {
       const ready = annotations[`${PREFIX}nodes-ready`];
-      rows[label] = ready && ready !== value ? `${ready}/${value} ready` : value;
-    } else if (key === 'checked') rows[label] = new Date(value).toLocaleString();
+      rows[label] =
+        ready && ready !== value ? `${ready}/${value} ready` : value;
+    } else if (key === 'checked')
+      rows[label] = new Date(value).toLocaleString();
     else rows[label] = value;
   }
 

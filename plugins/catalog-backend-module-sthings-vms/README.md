@@ -185,7 +185,8 @@ catalog:
       machinery-cluster: # entity name of the kubernetes-cluster Resource
         endpoint: https://10.100.136.121:6443
         token: ${MACHINERY_CLUSTER_TOKEN}
-        caCert: | # cluster CA, certificate-authority-data from a kubeconfig, base64-decoded
+        caCert:
+          | # cluster CA, certificate-authority-data from a kubeconfig, base64-decoded
           -----BEGIN CERTIFICATE-----
           ...
 ```
@@ -211,8 +212,20 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata: { name: backstage-cluster-reader }
-roleRef: { apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: backstage-cluster-reader }
-subjects: [{ kind: ServiceAccount, name: backstage-cluster-reader, namespace: kube-system }]
+roleRef:
+  {
+    apiGroup: rbac.authorization.k8s.io,
+    kind: ClusterRole,
+    name: backstage-cluster-reader,
+  }
+subjects:
+  [
+    {
+      kind: ServiceAccount,
+      name: backstage-cluster-reader,
+      namespace: kube-system,
+    },
+  ]
 ---
 apiVersion: v1
 kind: Secret

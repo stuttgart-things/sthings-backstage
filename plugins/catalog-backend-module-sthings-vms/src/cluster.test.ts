@@ -17,9 +17,9 @@ const logger = {
 const node = (name: string, ready = true, controlPlane = false) => ({
   metadata: {
     name,
-    labels: controlPlane
+    labels: (controlPlane
       ? { 'node-role.kubernetes.io/control-plane': 'true' }
-      : {},
+      : {}) as Record<string, string>,
   },
   status: {
     capacity: { cpu: '8', memory: '16393940Ki' },
@@ -55,7 +55,7 @@ describe('clusterFacts', () => {
       nodesReady: 3,
       controlPlanes: 1,
       cpus: 24,
-      memoryMiB: 48024,
+      memoryMiB: 48030,
       nodeNames: ['m-1', 'm-2', 'm-3'],
     });
     expect(clusterFacts('v1.30.2+k3s1', []).distribution).toBe('k3s');

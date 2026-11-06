@@ -121,12 +121,12 @@ function cpusOf(quantity?: string): number | undefined {
 
 /** `v1.33.4+rke2r1 · 3 nodes · 24 vCPU · 48 GiB · ready` */
 export function clusterDescription(facts: ClusterFacts): string {
-  const nodes =
-    facts.nodes === undefined
-      ? undefined
-      : facts.nodesReady !== facts.nodes
-      ? `${facts.nodesReady}/${facts.nodes} nodes ready`
-      : `${facts.nodes} ${facts.nodes === 1 ? 'node' : 'nodes'}`;
+  let nodes: string | undefined;
+  if (facts.nodes !== undefined && facts.nodesReady !== facts.nodes) {
+    nodes = `${facts.nodesReady}/${facts.nodes} nodes ready`;
+  } else if (facts.nodes !== undefined) {
+    nodes = `${facts.nodes} ${facts.nodes === 1 ? 'node' : 'nodes'}`;
+  }
   return [
     facts.version,
     nodes,

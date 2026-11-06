@@ -72,7 +72,9 @@ export default createBackendModule({
         const providersConfig = config.getOptionalConfig(CONFIG_KEY);
         if (!providersConfig) {
           if (!clustersConfig) {
-            logger.info(`No ${CONFIG_KEY} configured, VM entity provider is off`);
+            logger.info(
+              `No ${CONFIG_KEY} configured, VM entity provider is off`,
+            );
           }
           return;
         }
