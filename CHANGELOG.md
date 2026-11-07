@@ -1,3 +1,10 @@
+# [1.27.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.26.0...v1.27.0) (2026-11-07)
+
+
+### Features
+
+* **catalog:** live facts for kubernetes-cluster entities, opt-in per cluster ([#213](https://github.com/stuttgart-things/sthings-backstage/issues/213)) ([b4f581a](https://github.com/stuttgart-things/sthings-backstage/commit/b4f581ac603a009cd15ab9c1eba3b5862a039c98))
+
 # [1.26.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.25.1...v1.26.0) (2026-11-03)
 
 
