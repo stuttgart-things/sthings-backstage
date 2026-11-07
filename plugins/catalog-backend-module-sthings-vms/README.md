@@ -236,7 +236,12 @@ metadata:
   annotations: { kubernetes.io/service-account.name: backstage-cluster-reader }
 ```
 
-For the **Deployments** list (Flux, Argo CD), add to the ClusterRole:
+For the **Deployments** list (Flux, Argo CD), add both rules to the ClusterRole,
+**even on a cluster without Argo CD or without Flux**. Kubernetes checks RBAC before
+it checks whether an API exists. Without the rule, a missing API answers 403
+instead of 404, and the processor warns about missing RBAC that nothing needs.
+With the rule, it answers 404, which is skipped silently. The rule grants nothing
+where the API is not installed.
 
 ```yaml
 - apiGroups: [kustomize.toolkit.fluxcd.io, helm.toolkit.fluxcd.io]
