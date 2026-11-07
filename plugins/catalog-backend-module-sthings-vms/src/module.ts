@@ -5,6 +5,7 @@ import {
   SchedulerServiceTaskScheduleDefinition,
 } from '@backstage/backend-plugin-api';
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node';
+import { KubernetesClusterSource, SthingsClusterProcessor } from './cluster';
 import {
   MachineryClaimSource,
   MachineryOrderEntityProvider,
@@ -16,6 +17,13 @@ import { VsphereVmSource } from './sources/vsphere';
 import { VmSource } from './types';
 
 const CONFIG_KEY = 'catalog.providers.sthingsVms';
+const CLUSTERS_CONFIG_KEY = 'catalog.providers.sthingsClusters';
+
+const CLUSTER_SCHEDULE: SchedulerServiceTaskScheduleDefinition = {
+  frequency: { minutes: 5 },
+  timeout: { minutes: 1 },
+  initialDelay: { seconds: 15 },
+};
 
 const DEFAULT_SCHEDULE: SchedulerServiceTaskScheduleDefinition = {
   frequency: { minutes: 10 },
@@ -36,9 +44,38 @@ export default createBackendModule({
         scheduler: coreServices.scheduler,
       },
       async init({ catalog, config, logger, scheduler }) {
+        // Live facts for existing kubernetes-cluster entities, opt-in per cluster.
+        const clustersConfig = config.getOptionalConfig(CLUSTERS_CONFIG_KEY);
+        if (clustersConfig) {
+          const processor = new SthingsClusterProcessor(
+            clustersConfig.keys().map(entity => {
+              const c = clustersConfig.getConfig(entity);
+              return {
+                entity,
+                source: new KubernetesClusterSource({
+                  endpoint: c.getString('endpoint'),
+                  token: c.getString('token'),
+                  caCert: c.getOptionalString('caCert'),
+                }),
+              };
+            }),
+            logger,
+          );
+          catalog.addProcessor(processor);
+          await scheduler.scheduleTask({
+            id: 'sthings-clusters:refresh',
+            ...CLUSTER_SCHEDULE,
+            fn: () => processor.refresh(),
+          });
+        }
+
         const providersConfig = config.getOptionalConfig(CONFIG_KEY);
         if (!providersConfig) {
-          logger.info(`No ${CONFIG_KEY} configured, VM entity provider is off`);
+          if (!clustersConfig) {
+            logger.info(
+              `No ${CONFIG_KEY} configured, VM entity provider is off`,
+            );
+          }
           return;
         }
 

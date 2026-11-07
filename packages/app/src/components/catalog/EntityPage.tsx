@@ -54,6 +54,7 @@ import {
 
 import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
 import { VmDetailsCard } from './VmDetailsCard';
+import { ClusterDetailsCard } from './ClusterDetailsCard';
 import { ReportIssue } from '@backstage/plugin-techdocs-module-addons-contrib';
 
 import {
@@ -299,6 +300,36 @@ const vmPage = (
   </EntityLayout>
 );
 
+/**
+ * Kubernetes clusters (Resources of type kubernetes-cluster): live details
+ * from the sthings-clusters processor where configured, and the VMs the
+ * cluster runs on via dependsOn. Works without the Kubernetes plugin.
+ */
+const clusterPage = (
+  <EntityLayout>
+    <EntityLayout.Route path="/" title="Overview">
+      <Grid container spacing={3} alignItems="stretch">
+        {entityWarningContent}
+        <Grid item md={6} xs={12}>
+          <EntityAboutCard />
+        </Grid>
+        <Grid item md={6} xs={12}>
+          <ClusterDetailsCard />
+        </Grid>
+        <Grid item md={6} xs={12}>
+          <EntityDependsOnResourcesCard />
+        </Grid>
+        <Grid item md={6} xs={12}>
+          <EntityLinksCard />
+        </Grid>
+        <Grid item md={12} xs={12}>
+          <EntityCatalogGraphCard height={400} />
+        </Grid>
+      </Grid>
+    </EntityLayout.Route>
+  </EntityLayout>
+);
+
 const componentPage = (
   <EntitySwitch>
     <EntitySwitch.Case if={isComponentType('service')}>
@@ -460,6 +491,10 @@ export const entityPage = (
     <EntitySwitch.Case if={isKind('system')} children={systemPage} />
     <EntitySwitch.Case if={isKind('domain')} children={domainPage} />
     <EntitySwitch.Case if={isVm} children={vmPage} />
+    <EntitySwitch.Case
+      if={isResourceType('kubernetes-cluster')}
+      children={clusterPage}
+    />
 
     <EntitySwitch.Case>{defaultEntityPage}</EntitySwitch.Case>
   </EntitySwitch>
