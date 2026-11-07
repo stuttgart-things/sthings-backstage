@@ -1,3 +1,10 @@
+# [1.28.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.27.0...v1.28.0) (2026-11-07)
+
+
+### Features
+
+* **catalog:** Flux and Argo CD deployments on kubernetes-cluster entities ([#214](https://github.com/stuttgart-things/sthings-backstage/issues/214)) ([10a30a4](https://github.com/stuttgart-things/sthings-backstage/commit/10a30a4ea90a544b21440f3f1a8b294ccd6ab9b5))
+
 # [1.27.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.26.0...v1.27.0) (2026-11-07)
 
 
