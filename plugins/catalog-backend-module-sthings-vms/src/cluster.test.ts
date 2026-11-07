@@ -1,6 +1,9 @@
 import { Entity } from '@backstage/catalog-model';
 import {
+  argoDeployment,
+  clusterDescription,
   clusterFacts,
+  fluxDeployment,
   KubernetesClusterSource,
   SthingsClusterProcessor,
   withClusterFacts,
@@ -87,6 +90,7 @@ describe('KubernetesClusterSource', () => {
     const facts = await new KubernetesClusterSource({
       endpoint: 'https://k8s:6443/',
       token: 't0k',
+      deployments: false,
       fetch: impl,
     }).read();
 
@@ -176,5 +180,210 @@ describe('SthingsClusterProcessor', () => {
       'cluster.stuttgart-things.com/error': 'connect ECONNREFUSED',
     });
     expect(logger.warn).toHaveBeenCalled();
+  });
+});
+
+describe('fluxDeployment', () => {
+  it('reads Ready, the applied revision and the chart', () => {
+    expect(
+      fluxDeployment('HelmRelease', {
+        metadata: { name: 'cert-manager', namespace: 'flux-system' },
+        spec: { chart: { spec: { chart: 'cert-manager', version: '1.x' } } },
+        status: {
+          conditions: [{ type: 'Ready', status: 'True', message: 'ok' }],
+          lastAttemptedRevision: '1.16.2',
+          history: [{ chartName: 'cert-manager', chartVersion: '1.16.2' }],
+        },
+      }),
+    ).toEqual({
+      tool: 'flux',
+      kind: 'HelmRelease',
+      namespace: 'flux-system',
+      name: 'cert-manager',
+      ready: true,
+      status: 'Ready',
+      source: 'cert-manager@1.16.2',
+      revision: '1.16.2',
+    });
+  });
+
+  it('keeps the message of a failing one, and knows suspended', () => {
+    const failing = fluxDeployment('Kustomization', {
+      metadata: { name: 'apps', namespace: 'flux-system' },
+      status: {
+        conditions: [
+          { type: 'Ready', status: 'False', message: `x${'y'.repeat(300)}` },
+        ],
+        lastAppliedRevision: 'main@sha1:1a2b3c4',
+      },
+    });
+    expect(failing).toMatchObject({ ready: false, status: 'NotReady' });
+    expect(failing.message).toHaveLength(200);
+    expect(failing.revision).toBe('main@sha1:1a2b3c4');
+
+    expect(
+      fluxDeployment('Kustomization', {
+        metadata: { name: 'old', namespace: 'flux-system' },
+        spec: { suspend: true },
+        status: { conditions: [{ type: 'Ready', status: 'True' }] },
+      }),
+    ).toMatchObject({ ready: false, status: 'Suspended' });
+  });
+});
+
+describe('argoDeployment', () => {
+  it('is ready when Synced and Healthy, with a short sha', () => {
+    expect(
+      argoDeployment({
+        metadata: { name: 'cicd-platform', namespace: 'argocd' },
+        spec: {
+          source: {
+            repoURL: 'https://github.com/stuttgart-things/stuttgart-things.git',
+            path: 'clusters/labul/vsphere/platform-sthings/cicd',
+          },
+        },
+        status: {
+          sync: {
+            status: 'Synced',
+            revision: '0123456789abcdef0123456789abcdef01234567',
+          },
+          health: { status: 'Healthy' },
+        },
+      }),
+    ).toEqual({
+      tool: 'argocd',
+      kind: 'Application',
+      namespace: 'argocd',
+      name: 'cicd-platform',
+      ready: true,
+      status: 'Synced/Healthy',
+      source:
+        'github.com/stuttgart-things/stuttgart-things/clusters/labul/vsphere/platform-sthings/cicd',
+      revision: '0123456',
+    });
+  });
+
+  it('shows chart sources and why it is not ready', () => {
+    expect(
+      argoDeployment({
+        metadata: { name: 'network', namespace: 'argocd' },
+        spec: { sources: [{ chart: 'cilium', targetRevision: '1.17.0' }] },
+        status: {
+          sync: { status: 'OutOfSync', revision: '1.17.0' },
+          health: { status: 'Degraded', message: 'pod crashloop' },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      status: 'OutOfSync/Degraded',
+      source: 'cilium@1.17.0',
+      revision: '1.17.0',
+      message: 'pod crashloop',
+    });
+  });
+});
+
+describe('KubernetesClusterSource deployments', () => {
+  const answer = (status: number, body: unknown = {}) =>
+    ({
+      ok: status < 400,
+      status,
+      statusText: String(status),
+      json: async () => body,
+    }) as Response;
+
+  function api(routes: Record<string, Response>) {
+    return (async (url: string) =>
+      routes[new URL(url).pathname] ?? answer(404)) as unknown as typeof fetch;
+  }
+
+  it('lists Flux and Argo CD, skipping APIs that are not installed', async () => {
+    const warn = jest.fn();
+    const source = new KubernetesClusterSource({
+      endpoint: 'https://k8s:6443',
+      token: 't',
+      logger: { ...logger, warn },
+      fetch: api({
+        '/version': answer(200, { gitVersion: 'v1.33.4+rke2r1' }),
+        '/api/v1/nodes': answer(200, { items: [node('a')] }),
+        '/apis/kustomize.toolkit.fluxcd.io/v1/kustomizations': answer(200, {
+          items: [
+            {
+              metadata: { name: 'infra', namespace: 'flux-system' },
+              status: { conditions: [{ type: 'Ready', status: 'True' }] },
+            },
+            {
+              metadata: { name: 'apps', namespace: 'flux-system' },
+              status: { conditions: [{ type: 'Ready', status: 'False' }] },
+            },
+          ],
+        }),
+        '/apis/helm.toolkit.fluxcd.io/v2/helmreleases': answer(403),
+        // argoproj.io: 404, not installed
+      }),
+    });
+
+    const facts = await source.read();
+    // not ready first
+    expect(facts.deployments?.map(d => d.name)).toEqual(['apps', 'infra']);
+    expect(clusterDescription(facts)).toBe(
+      'v1.33.4+rke2r1 · 1 node · 8 vCPU · 15.6 GiB · ready · flux 1/2 ready',
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    // 403 is not asked again
+    await source.read();
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('has no deployments when neither is installed, or when switched off', async () => {
+    const routes = {
+      '/version': answer(200, { gitVersion: 'v1' }),
+      '/api/v1/nodes': answer(200, { items: [] }),
+    };
+    const none = await new KubernetesClusterSource({
+      endpoint: 'https://k8s',
+      token: 't',
+      fetch: api(routes),
+    }).read();
+    expect(none.deployments).toBeUndefined();
+
+    const calls: string[] = [];
+    const off = await new KubernetesClusterSource({
+      endpoint: 'https://k8s',
+      token: 't',
+      deployments: false,
+      fetch: (async (url: string) => {
+        calls.push(new URL(url).pathname);
+        return api(routes)(url);
+      }) as unknown as typeof fetch,
+    }).read();
+    expect(off.deployments).toBeUndefined();
+    expect(calls).toEqual(['/version', '/api/v1/nodes']);
+  });
+});
+
+describe('withClusterFacts deployments', () => {
+  it('writes a summary and the JSON list', () => {
+    const facts = {
+      ...clusterFacts('v1', [node('a')]),
+      deployments: [
+        {
+          tool: 'argocd' as const,
+          kind: 'Application' as const,
+          namespace: 'argocd',
+          name: 'x',
+          ready: true,
+          status: 'Synced/Healthy',
+        },
+      ],
+    };
+    const a = withClusterFacts(cluster(), facts).metadata.annotations!;
+    expect(a['cluster.stuttgart-things.com/deployments-summary']).toBe(
+      'argocd 1/1 ready',
+    );
+    expect(JSON.parse(a['cluster.stuttgart-things.com/deployments'])).toEqual(
+      facts.deployments,
+    );
   });
 });

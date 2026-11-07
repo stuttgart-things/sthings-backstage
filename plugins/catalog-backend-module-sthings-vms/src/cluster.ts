@@ -23,10 +23,36 @@ export interface ClusterFacts {
   memoryMiB?: number;
   /** Node names, sorted. */
   nodeNames?: string[];
+  /**
+   * What Flux and Argo CD deploy on the cluster; unset when neither is
+   * installed (or readable).
+   */
+  deployments?: Deployment[];
   /** Why the cluster is unreachable. */
   error?: string;
   /** ISO time of the last successful look. */
   checked?: string;
+}
+
+/** One Flux Kustomization/HelmRelease or Argo CD Application. */
+export interface Deployment {
+  tool: 'flux' | 'argocd';
+  kind: 'Kustomization' | 'HelmRelease' | 'Application';
+  namespace: string;
+  name: string;
+  /** Flux: Ready=True and not suspended. Argo CD: Synced and Healthy. */
+  ready: boolean;
+  /**
+   * Flux: `Ready`, `NotReady`, `Unknown` or `Suspended`.
+   * Argo CD: `<sync>/<health>`, e.g. `Synced/Healthy`, `OutOfSync/Degraded`.
+   */
+  status: string;
+  /** HelmRelease: `<chart>@<version>`; Application: chart or repo path. */
+  source?: string;
+  /** Applied revision, e.g. `main@sha1:1a2b3c4` or a chart version. */
+  revision?: string;
+  /** Why it is not ready, shortened. */
+  message?: string;
 }
 
 export interface ClusterSourceOptions {
@@ -36,6 +62,9 @@ export interface ClusterSourceOptions {
   token: string;
   /** PEM to trust for this endpoint instead of the Node trust store. */
   caCert?: string;
+  /** Read Flux and Argo CD objects too. Default true. */
+  deployments?: boolean;
+  logger?: LoggerService;
   fetch?: typeof fetch;
 }
 
@@ -48,14 +77,81 @@ interface Node {
   };
 }
 
+interface Condition {
+  type: string;
+  status: string;
+  message?: string;
+}
+
+/** The parts of a Flux Kustomization or HelmRelease that we read. */
+interface FluxObject {
+  metadata: { name: string; namespace: string };
+  spec?: {
+    suspend?: boolean;
+    chart?: { spec?: { chart?: string; version?: string } };
+    chartRef?: { kind?: string; name?: string };
+  };
+  status?: {
+    conditions?: Condition[];
+    lastAppliedRevision?: string;
+    lastAttemptedRevision?: string;
+    history?: { chartName?: string; chartVersion?: string }[];
+  };
+}
+
+/** The parts of an Argo CD Application that we read. */
+interface ArgoApplication {
+  metadata: { name: string; namespace: string };
+  spec?: {
+    source?: ArgoSource;
+    sources?: ArgoSource[];
+    destination?: { namespace?: string };
+  };
+  status?: {
+    sync?: { status?: string; revision?: string; revisions?: string[] };
+    health?: { status?: string; message?: string };
+    conditions?: { type?: string; message?: string }[];
+    operationState?: { phase?: string; message?: string };
+  };
+}
+
+interface ArgoSource {
+  repoURL?: string;
+  path?: string;
+  chart?: string;
+  targetRevision?: string;
+}
+
+/** API paths per kind. Flux v1/v2 are the GA versions (Flux 2.3+). */
+const FLUX_KUSTOMIZATIONS =
+  '/apis/kustomize.toolkit.fluxcd.io/v1/kustomizations';
+const FLUX_HELMRELEASES = '/apis/helm.toolkit.fluxcd.io/v2/helmreleases';
+const ARGO_APPLICATIONS = '/apis/argoproj.io/v1alpha1/applications';
+
+/** Longest message we keep per deployment; annotations are not a log. */
+const MAX_MESSAGE = 200;
+
+class HttpError extends Error {
+  constructor(
+    path: string,
+    readonly status: number,
+    statusText: string,
+  ) {
+    super(`GET ${path}: ${status} ${statusText}`);
+  }
+}
+
 /**
  * Reads version and nodes of one cluster straight from its API: `/version`
- * and `/api/v1/nodes`, nothing else. No Backstage Kubernetes plugin and no
- * agent on the cluster, only a read-only ServiceAccount token.
+ * and `/api/v1/nodes`, plus the Flux Kustomizations/HelmReleases and Argo CD
+ * Applications when those are installed. No Backstage Kubernetes plugin and
+ * no agent on the cluster, only a read-only ServiceAccount token.
  */
 export class KubernetesClusterSource {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
+  /** Deployment APIs we may not read (403): warned once, then skipped. */
+  private readonly forbidden = new Set<string>();
 
   constructor(private readonly options: ClusterSourceOptions) {
     this.baseUrl = options.endpoint.replace(/\/+$/, '');
@@ -66,7 +162,53 @@ export class KubernetesClusterSource {
   async read(): Promise<ClusterFacts> {
     const version = await this.get<{ gitVersion?: string }>('/version');
     const nodes = await this.get<{ items?: Node[] }>('/api/v1/nodes');
-    return clusterFacts(version.gitVersion, nodes.items ?? []);
+    const facts = clusterFacts(version.gitVersion, nodes.items ?? []);
+    if (this.options.deployments !== false) {
+      facts.deployments = await this.readDeployments();
+    }
+    return facts;
+  }
+
+  /**
+   * Flux and Argo CD objects. A missing API (404: not installed) is no
+   * error; neither is a forbidden one, which is warned about once. Unset
+   * when none of the three APIs answered.
+   */
+  private async readDeployments(): Promise<Deployment[] | undefined> {
+    const [kustomizations, helmReleases, applications] = await Promise.all([
+      this.list<FluxObject>(FLUX_KUSTOMIZATIONS),
+      this.list<FluxObject>(FLUX_HELMRELEASES),
+      this.list<ArgoApplication>(ARGO_APPLICATIONS),
+    ]);
+    if (!kustomizations && !helmReleases && !applications) return undefined;
+    return [
+      ...(kustomizations ?? []).map(k => fluxDeployment('Kustomization', k)),
+      ...(helmReleases ?? []).map(h => fluxDeployment('HelmRelease', h)),
+      ...(applications ?? []).map(argoDeployment),
+    ].sort(
+      (a, b) =>
+        Number(a.ready) - Number(b.ready) ||
+        a.tool.localeCompare(b.tool) ||
+        a.namespace.localeCompare(b.namespace) ||
+        a.name.localeCompare(b.name),
+    );
+  }
+
+  private async list<T>(path: string): Promise<T[] | undefined> {
+    if (this.forbidden.has(path)) return undefined;
+    try {
+      return (await this.get<{ items?: T[] }>(path)).items ?? [];
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 404) return undefined;
+      if (e instanceof HttpError && e.status === 403) {
+        this.forbidden.add(path);
+        this.options.logger?.warn(
+          `${this.baseUrl}: ${e.message}; not listing these deployments (see README for the RBAC)`,
+        );
+        return undefined;
+      }
+      throw e;
+    }
   }
 
   private async get<T>(path: string): Promise<T> {
@@ -77,7 +219,7 @@ export class KubernetesClusterSource {
       },
     });
     if (!res.ok) {
-      throw new Error(`GET ${path}: ${res.status} ${res.statusText}`);
+      throw new HttpError(path, res.status, res.statusText);
     }
     return (await res.json()) as T;
   }
@@ -112,6 +254,109 @@ export function clusterFacts(
   };
 }
 
+export function fluxDeployment(
+  kind: 'Kustomization' | 'HelmRelease',
+  obj: FluxObject,
+): Deployment {
+  const readyCondition = obj.status?.conditions?.find(c => c.type === 'Ready');
+  const suspended = obj.spec?.suspend === true;
+  let status = 'Unknown';
+  if (suspended) status = 'Suspended';
+  else if (readyCondition?.status === 'True') status = 'Ready';
+  else if (readyCondition?.status === 'False') status = 'NotReady';
+  const ready = status === 'Ready';
+
+  let source: string | undefined;
+  if (kind === 'HelmRelease') {
+    const last = obj.status?.history?.[0];
+    const chart =
+      last?.chartName ??
+      obj.spec?.chart?.spec?.chart ??
+      obj.spec?.chartRef?.name;
+    const version = last?.chartVersion ?? obj.spec?.chart?.spec?.version;
+    source = chart && version ? `${chart}@${version}` : chart;
+  }
+
+  return compact({
+    tool: 'flux',
+    kind,
+    namespace: obj.metadata.namespace,
+    name: obj.metadata.name,
+    ready,
+    status,
+    source,
+    revision:
+      obj.status?.lastAppliedRevision ?? obj.status?.lastAttemptedRevision,
+    message: ready ? undefined : shorten(readyCondition?.message),
+  });
+}
+
+export function argoDeployment(app: ArgoApplication): Deployment {
+  const sync = app.status?.sync?.status ?? 'Unknown';
+  const health = app.status?.health?.status ?? 'Unknown';
+  const ready = sync === 'Synced' && health === 'Healthy';
+  const src = app.spec?.source ?? app.spec?.sources?.[0];
+  let source: string | undefined;
+  if (src?.chart) {
+    source = src.targetRevision
+      ? `${src.chart}@${src.targetRevision}`
+      : src.chart;
+  } else if (src?.repoURL) {
+    source = [
+      src.repoURL.replace(/^https?:\/\//, '').replace(/\.git$/, ''),
+      src.path,
+    ]
+      .filter(Boolean)
+      .join('/');
+  }
+  const revision =
+    app.status?.sync?.revision ?? app.status?.sync?.revisions?.[0];
+  const message =
+    app.status?.conditions?.[0]?.message ??
+    app.status?.health?.message ??
+    (app.status?.operationState?.phase !== 'Succeeded'
+      ? app.status?.operationState?.message
+      : undefined);
+
+  return compact({
+    tool: 'argocd',
+    kind: 'Application',
+    namespace: app.metadata.namespace,
+    name: app.metadata.name,
+    ready,
+    status: `${sync}/${health}`,
+    source,
+    // A chart version is already in `source`; a git sha reads better short.
+    revision:
+      revision && /^[0-9a-f]{40}$/.test(revision)
+        ? revision.slice(0, 7)
+        : revision,
+    message: ready ? undefined : shorten(message),
+  });
+}
+
+function shorten(message?: string): string | undefined {
+  const m = message?.replace(/\s+/g, ' ').trim();
+  if (!m) return undefined;
+  return m.length > MAX_MESSAGE ? `${m.slice(0, MAX_MESSAGE - 1)}…` : m;
+}
+
+/** Drops undefined fields, so the JSON annotation stays small. */
+function compact<T extends object>(value: T): T {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, v]) => v !== undefined),
+  ) as T;
+}
+
+/** `flux 23/24 ready`, `argocd 12/12 ready`, per tool that has any. */
+export function deploymentsSummary(deployments: Deployment[]): string[] {
+  return (['flux', 'argocd'] as const).flatMap(tool => {
+    const own = deployments.filter(d => d.tool === tool);
+    if (!own.length) return [];
+    return [`${tool} ${own.filter(d => d.ready).length}/${own.length} ready`];
+  });
+}
+
 /** `4` -> 4, `3500m` -> 3.5. */
 function cpusOf(quantity?: string): number | undefined {
   const m = quantity?.trim().match(/^(\d+(?:\.\d+)?)(m)?$/);
@@ -119,7 +364,7 @@ function cpusOf(quantity?: string): number | undefined {
   return m[2] ? Number(m[1]) / 1000 : Number(m[1]);
 }
 
-/** `v1.33.4+rke2r1 · 3 nodes · 24 vCPU · 48 GiB · ready` */
+/** `v1.33.4+rke2r1 · 3 nodes · 24 vCPU · 48 GiB · ready · flux 23/24 ready` */
 export function clusterDescription(facts: ClusterFacts): string {
   let nodes: string | undefined;
   if (facts.nodes !== undefined && facts.nodesReady !== facts.nodes) {
@@ -133,6 +378,7 @@ export function clusterDescription(facts: ClusterFacts): string {
     facts.cpus ? `${Math.round(facts.cpus * 10) / 10} vCPU` : undefined,
     facts.memoryMiB ? formatMiB(facts.memoryMiB) : undefined,
     facts.status,
+    ...deploymentsSummary(facts.deployments ?? []),
   ]
     .filter(Boolean)
     .join(' · ');
@@ -221,6 +467,12 @@ export function withClusterFacts(entity: Entity, facts: ClusterFacts): Entity {
   set('cpus', facts.cpus);
   set('memory-mib', facts.memoryMiB);
   set('node-names', facts.nodeNames?.join(', '));
+  if (facts.deployments) {
+    const summary = deploymentsSummary(facts.deployments);
+    set('deployments-summary', summary.join(', ') || 'none');
+    // JSON for the app's Deployments card; the catalog keeps strings only.
+    set('deployments', JSON.stringify(facts.deployments));
+  }
   set('error', facts.error);
   set('checked', facts.checked);
 

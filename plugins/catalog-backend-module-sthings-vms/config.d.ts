@@ -25,6 +25,12 @@ export interface Config {
           token: string;
           /** PEM to trust for this endpoint, usually the cluster CA. */
           caCert?: string;
+          /**
+           * Also list Flux Kustomizations/HelmReleases and Argo CD
+           * Applications (needs get/list on them). Default true; APIs that
+           * are not installed are skipped.
+           */
+          deployments?: boolean;
         };
       };
       sthingsVms?: {

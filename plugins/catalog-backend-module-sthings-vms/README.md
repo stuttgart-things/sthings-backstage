@@ -236,14 +236,37 @@ metadata:
   annotations: { kubernetes.io/service-account.name: backstage-cluster-reader }
 ```
 
+For the **Deployments** list (Flux, Argo CD), add to the ClusterRole:
+
+```yaml
+- apiGroups: [kustomize.toolkit.fluxcd.io, helm.toolkit.fluxcd.io]
+  resources: [kustomizations, helmreleases]
+  verbs: [get, list]
+- apiGroups: [argoproj.io]
+  resources: [applications]
+  verbs: [get, list]
+```
+
+Flux is read at its GA versions (`kustomize.toolkit.fluxcd.io/v1`,
+`helm.toolkit.fluxcd.io/v2`, Flux 2.3+), Argo CD Applications in every
+namespace. An API that is not installed (404) is skipped silently, a forbidden
+one (403) with one warning; `deployments: false` on a cluster turns the lists
+off.
+
 A configured cluster gets
 `cluster.stuttgart-things.com/{status,version,distribution,nodes,nodes-ready,control-planes,cpus,memory-mib,node-names,checked}`,
+with Flux or Argo CD also `deployments-summary` (`flux 23/24 ready, argocd
+12/12 ready`) and `deployments`: a JSON list with tool, kind, namespace, name,
+ready, status (Flux `Ready`/`NotReady`/`Suspended`/`Unknown`, Argo CD
+`<sync>/<health>`), source (chart@version or repo path), revision and, when
+not ready, the message. Not-ready entries come first.
 and its description gains one line for the catalog list:
-`rke2 cluster machinery in LabDA (vsphere) -- v1.33.4+rke2r1 · 3 nodes · 24 vCPU · 48 GiB · ready`.
+`rke2 cluster machinery in LabDA (vsphere) -- v1.33.4+rke2r1 · 3 nodes · 24 vCPU · 48 GiB · ready · flux 23/24 ready`.
 Status is `ready` (every node Ready), `degraded` or `unreachable`; an
 unreachable cluster keeps its last facts plus `error`. Clusters that are not
 configured stay exactly as their file says. The app shows them on a cluster
-page with a **Cluster** card and the VMs from `dependsOn`.
+page with a **Cluster** card, a **Deployments** table and the VMs from
+`dependsOn`.
 
 ### Orders on machinery
 
