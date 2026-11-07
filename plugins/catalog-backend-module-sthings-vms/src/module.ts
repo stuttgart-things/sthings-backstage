@@ -56,6 +56,8 @@ export default createBackendModule({
                   endpoint: c.getString('endpoint'),
                   token: c.getString('token'),
                   caCert: c.getOptionalString('caCert'),
+                  deployments: c.getOptionalBoolean('deployments'),
+                  logger,
                 }),
               };
             }),

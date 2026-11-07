@@ -55,6 +55,7 @@ import {
 import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
 import { VmDetailsCard } from './VmDetailsCard';
 import { ClusterDetailsCard } from './ClusterDetailsCard';
+import { ClusterDeploymentsCard } from './ClusterDeploymentsCard';
 import { ReportIssue } from '@backstage/plugin-techdocs-module-addons-contrib';
 
 import {
@@ -302,8 +303,9 @@ const vmPage = (
 
 /**
  * Kubernetes clusters (Resources of type kubernetes-cluster): live details
- * from the sthings-clusters processor where configured, and the VMs the
- * cluster runs on via dependsOn. Works without the Kubernetes plugin.
+ * and Flux/Argo CD deployments from the sthings-clusters processor where
+ * configured, and the VMs the cluster runs on via dependsOn. Works without
+ * the Kubernetes plugin.
  */
 const clusterPage = (
   <EntityLayout>
@@ -315,6 +317,9 @@ const clusterPage = (
         </Grid>
         <Grid item md={6} xs={12}>
           <ClusterDetailsCard />
+        </Grid>
+        <Grid item md={12} xs={12}>
+          <ClusterDeploymentsCard />
         </Grid>
         <Grid item md={6} xs={12}>
           <EntityDependsOnResourcesCard />
