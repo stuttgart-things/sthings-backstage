@@ -1,3 +1,15 @@
+# [1.29.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.28.0...v1.29.0) (2026-11-07)
+
+
+### Bug Fixes
+
+* **deps:** update backstage monorepo ([#185](https://github.com/stuttgart-things/sthings-backstage/issues/185)) ([4e6571e](https://github.com/stuttgart-things/sthings-backstage/commit/4e6571e8380f41a8e9d0be06301111d1075ee150))
+
+
+### Features
+
+* **scaffolder:** group templates by purpose on the Create page ([#206](https://github.com/stuttgart-things/sthings-backstage/issues/206)) ([e053e13](https://github.com/stuttgart-things/sthings-backstage/commit/e053e135335dce5e4ce320d59a7e40eb44a80efd)), closes [stuttgart-things/backstage-resources#72](https://github.com/stuttgart-things/backstage-resources/issues/72)
+
 # [1.28.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.27.0...v1.28.0) (2026-11-07)
 
 
