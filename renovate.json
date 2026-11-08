@@ -49,6 +49,16 @@
         "major"
       ],
       "enabled": false
+    },
+    {
+      "description": "Defer Node.js majors (engines, setup-node, Docker base image) — isolated-vm 6.2.0 does not compile on Node 26 (#224); patch/minor updates of the pinned 24.x still flow",
+      "matchPackageNames": [
+        "node"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
     }
   ]
 }
