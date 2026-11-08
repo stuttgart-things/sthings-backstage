@@ -8409,6 +8409,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nodable/entities@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "@nodable/entities@npm:3.1.0"
+  checksum: 10c0/a1a2a081949a72da17846dc44962dc95a2bf5268867407fc4f6b686acda4dc5e9fd85f0398999969309b9f7fe0fbe85947a91c1ddac47eba8f9b58224c36f6fb
+  languageName: node
+  linkType: hard
+
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -16639,6 +16646,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"anynum@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "anynum@npm:1.0.1"
+  checksum: 10c0/cfda92c9215722fc4b15faa33d0eb3d5dfd28fba6cb67c1f50d214feaa7ba6497814a3e110777853585de6d91c8c962a1ae425b637d3598d9f9d8f6f6802e5bb
+  languageName: node
+  linkType: hard
+
 "apg-lite@npm:^1.0.3, apg-lite@npm:^1.0.4":
   version: 1.0.5
   resolution: "apg-lite@npm:1.0.5"
@@ -21445,6 +21459,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fast-xml-builder@npm:^1.3.1":
+  version: 1.3.1
+  resolution: "fast-xml-builder@npm:1.3.1"
+  dependencies:
+    path-expression-matcher: "npm:^1.6.2"
+    xml-naming: "npm:^0.3.0"
+  checksum: 10c0/5aaf30465e6ba4ae9780eb3916878d5bd40763a3fd6b8b079a76aabe8f3e9e852327280e7c1be2b63ec141424b6ec61b7ab8acca8b3948779b164b004a294b4c
+  languageName: node
+  linkType: hard
+
 "fast-xml-parser@npm:5.2.5":
   version: 5.2.5
   resolution: "fast-xml-parser@npm:5.2.5"
@@ -21470,24 +21494,29 @@ __metadata:
   linkType: hard
 
 "fast-xml-parser@npm:^4.4.1, fast-xml-parser@npm:^4.5.0":
-  version: 4.5.3
-  resolution: "fast-xml-parser@npm:4.5.3"
+  version: 4.5.7
+  resolution: "fast-xml-parser@npm:4.5.7"
   dependencies:
-    strnum: "npm:^1.1.1"
+    strnum: "npm:^1.0.5"
   bin:
     fxparser: src/cli/cli.js
-  checksum: 10c0/bf9ccadacfadc95f6e3f0e7882a380a7f219cf0a6f96575149f02cb62bf44c3b7f0daee75b8ff3847bcfd7fbcb201e402c71045936c265cf6d94b141ec4e9327
+  checksum: 10c0/5fccf3f53d6b2b83143d73089f04ef5db5343422891193cf10d92d3eb856007b7337818494109e46f6fa47b31b9716be15c4b275ff87a0aeb6f7315aa2edc181
   languageName: node
   linkType: hard
 
 "fast-xml-parser@npm:^5.0.7":
-  version: 5.3.3
-  resolution: "fast-xml-parser@npm:5.3.3"
+  version: 5.12.0
+  resolution: "fast-xml-parser@npm:5.12.0"
   dependencies:
-    strnum: "npm:^2.1.0"
+    "@nodable/entities": "npm:^3.1.0"
+    fast-xml-builder: "npm:^1.3.1"
+    is-unsafe: "npm:^2.0.3"
+    path-expression-matcher: "npm:^1.6.2"
+    strnum: "npm:^2.5.1"
+    xml-naming: "npm:^0.3.0"
   bin:
     fxparser: src/cli/cli.js
-  checksum: 10c0/2cc690f220a17f77b797923b8b943172c5072d066e3d9846d52be5443682fdbb2bad8302c9996f04a9e6a59603f05a99b2053b564459ac35bd8f6339e8ac06f3
+  checksum: 10c0/a63d7bb83aa4a0375762598ddc46535eb02237b046fa235c67e10079a4d706c34467d8336fb492b8020f6dd90070817e08792d1acb93fa4e8b8bd1aee99f705f
   languageName: node
   linkType: hard
 
@@ -24109,6 +24138,13 @@ __metadata:
   version: 0.1.0
   resolution: "is-unicode-supported@npm:0.1.0"
   checksum: 10c0/00cbe3455c3756be68d2542c416cab888aebd5012781d6819749fefb15162ff23e38501fe681b3d751c73e8ff561ac09a5293eba6f58fdf0178462ce6dcb3453
+  languageName: node
+  linkType: hard
+
+"is-unsafe@npm:^2.0.3":
+  version: 2.0.3
+  resolution: "is-unsafe@npm:2.0.3"
+  checksum: 10c0/509ee09ccaa2613c95e3625c39be029fc8838cce29e1582a560d7f11291516cfad55178efbb1062ac50267064a08ce8c724757d0b90c6b45d6ee5e4b121d45a6
   languageName: node
   linkType: hard
 
@@ -28607,6 +28643,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"path-expression-matcher@npm:^1.6.2":
+  version: 1.6.2
+  resolution: "path-expression-matcher@npm:1.6.2"
+  checksum: 10c0/8241302f563de367a81acacd417055a22dd3792a84700569dc2a7888da31aa18eb01131c55f05200c92790b6c45b01fee1984b02540cc5f15726ba1b73a8a075
+  languageName: node
+  linkType: hard
+
 "path-is-absolute@npm:^1.0.0":
   version: 1.0.1
   resolution: "path-is-absolute@npm:1.0.1"
@@ -32941,7 +32984,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"strnum@npm:^1.1.1":
+"strnum@npm:^1.0.5":
   version: 1.1.2
   resolution: "strnum@npm:1.1.2"
   checksum: 10c0/a0fce2498fa3c64ce64a40dada41beb91cabe3caefa910e467dc0518ef2ebd7e4d10f8c2202a6104f1410254cae245066c0e94e2521fb4061a5cb41831952392
@@ -32959,6 +33002,15 @@ __metadata:
   version: 2.2.3
   resolution: "strnum@npm:2.2.3"
   checksum: 10c0/1ee78101f1cd73a5b32f63cfd0be501bd246801a002f5987efef903a49e9297d1b63574e302ab3c06ee5e715c524d6cbdfef010e372ec1ea848e0179836cc208
+  languageName: node
+  linkType: hard
+
+"strnum@npm:^2.5.1":
+  version: 2.5.1
+  resolution: "strnum@npm:2.5.1"
+  dependencies:
+    anynum: "npm:^1.0.1"
+  checksum: 10c0/8624abed504759ec6f3e1511823c15f39ab3161a9f7c5905fed54d95c4e5a41e02e2e9fb538da3ed6c6f667a978df9c4456aed8146ddfb7b2790001cd2afda7c
   languageName: node
   linkType: hard
 
@@ -35318,6 +35370,13 @@ __metadata:
   version: 5.0.0
   resolution: "xml-name-validator@npm:5.0.0"
   checksum: 10c0/3fcf44e7b73fb18be917fdd4ccffff3639373c7cb83f8fc35df6001fecba7942f1dbead29d91ebb8315e2f2ff786b508f0c9dc0215b6353f9983c6b7d62cb1f5
+  languageName: node
+  linkType: hard
+
+"xml-naming@npm:^0.3.0":
+  version: 0.3.0
+  resolution: "xml-naming@npm:0.3.0"
+  checksum: 10c0/48bfc4fe888cdf1c3eceb7853632ebce59e4aa71f0ae33c3f9ce1fbd3213caad293457de0a311114491f0d4efcfba70977dcba3a4f66dfed8c92edbb938056bf
   languageName: node
   linkType: hard
 
