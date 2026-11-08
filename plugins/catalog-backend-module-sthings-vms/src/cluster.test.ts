@@ -5,6 +5,7 @@ import {
   clusterFacts,
   fluxDeployment,
   KubernetesClusterSource,
+  routeLinks,
   SthingsClusterProcessor,
   withClusterFacts,
 } from './cluster';
@@ -91,6 +92,7 @@ describe('KubernetesClusterSource', () => {
       endpoint: 'https://k8s:6443/',
       token: 't0k',
       deployments: false,
+      routes: false,
       fetch: impl,
     }).read();
 
@@ -353,6 +355,7 @@ describe('KubernetesClusterSource deployments', () => {
       endpoint: 'https://k8s',
       token: 't',
       deployments: false,
+      routes: false,
       fetch: (async (url: string) => {
         calls.push(new URL(url).pathname);
         return api(routes)(url);
@@ -385,5 +388,173 @@ describe('withClusterFacts deployments', () => {
     expect(JSON.parse(a['cluster.stuttgart-things.com/deployments'])).toEqual(
       facts.deployments,
     );
+  });
+});
+
+describe('routeLinks', () => {
+  const route = (
+    namespace: string,
+    name: string,
+    hostnames: string[],
+    paths: (string | undefined)[] = ['/'],
+    accepted?: boolean,
+  ) => ({
+    metadata: { name, namespace },
+    spec: {
+      hostnames,
+      rules: [
+        {
+          matches: paths.map(value =>
+            value === undefined ? {} : { path: { type: 'PathPrefix', value } },
+          ),
+        },
+      ],
+    },
+    status:
+      accepted === undefined
+        ? undefined
+        : {
+            parents: [
+              {
+                conditions: [
+                  { type: 'Accepted', status: accepted ? 'True' : 'False' },
+                ],
+              },
+            ],
+          },
+  });
+
+  it('links each hostname, the root unless only sub-paths are served', () => {
+    expect(
+      routeLinks([
+        route('headlamp', 'headlamp', ['headlamp.example.com'], ['/'], true),
+        route(
+          'machinery',
+          'machinery',
+          ['machinery.example.com'],
+          ['/health', '/api'],
+        ),
+        route('flux-system', 'flux-web', ['flux.example.com'], [undefined]),
+      ]),
+    ).toEqual([
+      {
+        url: 'https://flux.example.com',
+        title: 'flux-web',
+        namespace: 'flux-system',
+        name: 'flux-web',
+      },
+      {
+        url: 'https://headlamp.example.com',
+        title: 'headlamp',
+        namespace: 'headlamp',
+        name: 'headlamp',
+      },
+      {
+        url: 'https://machinery.example.com/api',
+        title: 'machinery',
+        namespace: 'machinery',
+        name: 'machinery',
+      },
+    ]);
+  });
+
+  it('skips wildcards and unaccepted routes, and disambiguates titles', () => {
+    const links = routeLinks([
+      route('harbor', 'harbor-project-proxy', ['*.harbor.example.com']),
+      route('x', 'broken', ['broken.example.com'], ['/'], false),
+      route('homerun2', 'sthings-portal', ['portal.example.com']),
+      route('machinery-portal', 'sthings-portal', ['mp.example.com']),
+      route('multi', 'multi', ['a.example.com', 'b.example.com']),
+    ]);
+    expect(links.map(l => [l.title, l.url])).toEqual([
+      ['a.example.com', 'https://a.example.com'],
+      ['b.example.com', 'https://b.example.com'],
+      ['homerun2/sthings-portal', 'https://portal.example.com'],
+      ['machinery-portal/sthings-portal', 'https://mp.example.com'],
+    ]);
+  });
+});
+
+describe('KubernetesClusterSource routes', () => {
+  const answer = (status: number, body: unknown = {}) =>
+    ({
+      ok: status < 400,
+      status,
+      statusText: String(status),
+      json: async () => body,
+    }) as Response;
+  const base = {
+    '/version': answer(200, { gitVersion: 'v1' }),
+    '/api/v1/nodes': answer(200, { items: [node('a')] }),
+  };
+  const api = (routes: Record<string, Response>) =>
+    (async (url: string) =>
+      routes[new URL(url).pathname] ?? answer(404)) as unknown as typeof fetch;
+
+  it('reads HTTPRoutes, and has none without the Gateway API', async () => {
+    const withRoutes = await new KubernetesClusterSource({
+      endpoint: 'https://k8s',
+      token: 't',
+      deployments: false,
+      fetch: api({
+        ...base,
+        '/apis/gateway.networking.k8s.io/v1/httproutes': answer(200, {
+          items: [
+            {
+              metadata: { name: 'headlamp', namespace: 'headlamp' },
+              spec: { hostnames: ['headlamp.example.com'] },
+            },
+          ],
+        }),
+      }),
+    }).read();
+    expect(withRoutes.routes?.map(r => r.url)).toEqual([
+      'https://headlamp.example.com',
+    ]);
+
+    const without = await new KubernetesClusterSource({
+      endpoint: 'https://k8s',
+      token: 't',
+      deployments: false,
+      fetch: api(base),
+    }).read();
+    expect(without.routes).toBeUndefined();
+  });
+});
+
+describe('withClusterFacts routes', () => {
+  it('appends route links after the hand-written ones, which win', () => {
+    const entity = cluster({
+      links: [{ url: 'https://flux.example.com/', title: 'Flux UI' }],
+    });
+    const facts = {
+      ...clusterFacts('v1', [node('a')]),
+      routes: [
+        {
+          url: 'https://flux.example.com',
+          title: 'flux-web',
+          namespace: 'flux-system',
+          name: 'flux-web',
+        },
+        {
+          url: 'https://headlamp.example.com',
+          title: 'headlamp',
+          namespace: 'headlamp',
+          name: 'headlamp',
+        },
+      ],
+    };
+    expect(withClusterFacts(entity, facts).metadata.links).toEqual([
+      { url: 'https://flux.example.com/', title: 'Flux UI' },
+      {
+        url: 'https://headlamp.example.com',
+        title: 'headlamp',
+        type: 'httproute',
+      },
+    ]);
+    // no routes: links untouched, and not added when there were none
+    expect(
+      withClusterFacts(cluster(), clusterFacts('v1', [node('a')])).metadata,
+    ).not.toHaveProperty('links');
   });
 });

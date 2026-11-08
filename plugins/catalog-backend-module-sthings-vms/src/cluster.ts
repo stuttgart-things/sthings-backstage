@@ -28,6 +28,11 @@ export interface ClusterFacts {
    * installed (or readable).
    */
   deployments?: Deployment[];
+  /**
+   * One link per hostname of the cluster's Gateway API HTTPRoutes; unset
+   * when the API is not installed (or readable).
+   */
+  routes?: RouteLink[];
   /** Why the cluster is unreachable. */
   error?: string;
   /** ISO time of the last successful look. */
@@ -55,6 +60,16 @@ export interface Deployment {
   message?: string;
 }
 
+/** A hostname an HTTPRoute serves, as a link. */
+export interface RouteLink {
+  /** `https://<hostname>[<path>]` */
+  url: string;
+  /** The route's name; its namespace too when two routes share one. */
+  title: string;
+  namespace: string;
+  name: string;
+}
+
 export interface ClusterSourceOptions {
   /** Kubernetes API, e.g. https://10.100.136.121:6443 */
   endpoint: string;
@@ -64,6 +79,8 @@ export interface ClusterSourceOptions {
   caCert?: string;
   /** Read Flux and Argo CD objects too. Default true. */
   deployments?: boolean;
+  /** Read Gateway API HTTPRoutes as links. Default true. */
+  routes?: boolean;
   logger?: LoggerService;
   fetch?: typeof fetch;
 }
@@ -122,11 +139,22 @@ interface ArgoSource {
   targetRevision?: string;
 }
 
+/** The parts of a Gateway API HTTPRoute that we read. */
+interface HttpRoute {
+  metadata: { name: string; namespace: string };
+  spec?: {
+    hostnames?: string[];
+    rules?: { matches?: { path?: { type?: string; value?: string } }[] }[];
+  };
+  status?: { parents?: { conditions?: Condition[] }[] };
+}
+
 /** API paths per kind. Flux v1/v2 are the GA versions (Flux 2.3+). */
 const FLUX_KUSTOMIZATIONS =
   '/apis/kustomize.toolkit.fluxcd.io/v1/kustomizations';
 const FLUX_HELMRELEASES = '/apis/helm.toolkit.fluxcd.io/v2/helmreleases';
 const ARGO_APPLICATIONS = '/apis/argoproj.io/v1alpha1/applications';
+const GATEWAY_HTTPROUTES = '/apis/gateway.networking.k8s.io/v1/httproutes';
 
 /** Longest message we keep per deployment; annotations are not a log. */
 const MAX_MESSAGE = 200;
@@ -166,6 +194,10 @@ export class KubernetesClusterSource {
     if (this.options.deployments !== false) {
       facts.deployments = await this.readDeployments();
     }
+    if (this.options.routes !== false) {
+      const routes = await this.list<HttpRoute>(GATEWAY_HTTPROUTES);
+      if (routes) facts.routes = routeLinks(routes);
+    }
     return facts;
   }
 
@@ -203,7 +235,7 @@ export class KubernetesClusterSource {
       if (e instanceof HttpError && e.status === 403) {
         this.forbidden.add(path);
         this.options.logger?.warn(
-          `${this.baseUrl}: ${e.message}; not listing these deployments (see README for the RBAC)`,
+          `${this.baseUrl}: ${e.message}; not reading these (see README for the RBAC)`,
         );
         return undefined;
       }
@@ -357,6 +389,64 @@ export function deploymentsSummary(deployments: Deployment[]): string[] {
   });
 }
 
+/**
+ * One link per concrete hostname of the routes, sorted by title.
+ *
+ * - `https://` always: the clusters terminate TLS at the Gateway, and reading
+ *   the Gateways' listeners would cost another RBAC rule for little.
+ * - The path is the host root when a rule matches `/` (or anything); a route
+ *   that only serves e.g. `/api` and `/health` links its first such path, so
+ *   the link does not land on a 404.
+ * - Wildcard hostnames are no address to click, and a route no Gateway
+ *   accepted serves nothing: both are left out.
+ */
+export function routeLinks(routes: HttpRoute[]): RouteLink[] {
+  const links: RouteLink[] = [];
+  for (const route of routes) {
+    const parents = route.status?.parents ?? [];
+    const accepted =
+      parents.length === 0 ||
+      parents.some(p =>
+        p.conditions?.some(c => c.type === 'Accepted' && c.status === 'True'),
+      );
+    if (!accepted) continue;
+
+    const matches = (route.spec?.rules ?? []).flatMap(r => r.matches ?? [{}]);
+    const paths = matches
+      .filter(m => m.path?.type !== 'RegularExpression')
+      .map(m => m.path?.value ?? '/');
+    const path =
+      paths.length === 0 || paths.includes('/') ? '' : [...paths].sort()[0];
+
+    const hosts = (route.spec?.hostnames ?? []).filter(h => !h.includes('*'));
+    for (const host of hosts) {
+      links.push({
+        url: `https://${host}${path}`,
+        title: hosts.length > 1 ? host : route.metadata.name,
+        namespace: route.metadata.namespace,
+        name: route.metadata.name,
+      });
+    }
+  }
+
+  // Same title from different routes (sthings-portal in two namespaces):
+  // say which one.
+  const count = new Map<string, number>();
+  links.forEach(l => count.set(l.title, (count.get(l.title) ?? 0) + 1));
+  const unique = new Map<string, RouteLink>();
+  for (const l of links) {
+    const title =
+      (count.get(l.title) ?? 0) > 1 ? `${l.namespace}/${l.title}` : l.title;
+    if (!unique.has(l.url)) unique.set(l.url, { ...l, title });
+  }
+  return [...unique.values()].sort((a, b) => a.title.localeCompare(b.title));
+}
+
+/** URLs compare equal regardless of case and a trailing slash. */
+function sameUrl(url: string): string {
+  return url.trim().toLowerCase().replace(/\/+$/, '');
+}
+
 /** `4` -> 4, `3500m` -> 3.5. */
 function cpusOf(quantity?: string): number | undefined {
   const m = quantity?.trim().match(/^(\d+(?:\.\d+)?)(m)?$/);
@@ -483,8 +573,27 @@ export function withClusterFacts(entity: Entity, facts: ClusterFacts): Entity {
     .filter(Boolean)
     .join(' -- ');
 
+  // The routes after the hand-written links, which win on the same URL:
+  // a person's title ("Flux UI") reads better than a route name.
+  let links = entity.metadata.links;
+  if (facts.routes?.length) {
+    const own = links ?? [];
+    const seen = new Set(own.map(l => sameUrl(l.url)));
+    links = [
+      ...own,
+      ...facts.routes
+        .filter(r => !seen.has(sameUrl(r.url)))
+        .map(r => ({ url: r.url, title: r.title, type: 'httproute' })),
+    ];
+  }
+
   return {
     ...entity,
-    metadata: { ...entity.metadata, description, annotations },
+    metadata: {
+      ...entity.metadata,
+      description,
+      annotations,
+      ...(links ? { links } : {}),
+    },
   };
 }
