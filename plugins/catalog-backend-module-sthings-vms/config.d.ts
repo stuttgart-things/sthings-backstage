@@ -31,6 +31,12 @@ export interface Config {
            * are not installed are skipped.
            */
           deployments?: boolean;
+          /**
+           * Add every hostname of the cluster's Gateway API HTTPRoutes to the
+           * entity's links (needs get/list on httproutes). Default true;
+           * skipped when the Gateway API is not installed.
+           */
+          routes?: boolean;
         };
       };
       sthingsVms?: {

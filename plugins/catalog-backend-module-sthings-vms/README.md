@@ -258,6 +258,25 @@ namespace. An API that is not installed (404) is skipped silently, a forbidden
 one (403) with one warning; `deployments: false` on a cluster turns the lists
 off.
 
+For **links** to what the cluster serves, add the Gateway API rule as well, for
+the same reason, also on clusters without the Gateway API:
+
+```yaml
+- apiGroups: [gateway.networking.k8s.io]
+  resources: [httproutes]
+  verbs: [get, list]
+```
+
+Every concrete hostname of an accepted `HTTPRoute` (`gateway.networking.k8s.io/v1`,
+all namespaces) becomes a link on the entity, titled with the route's name (the
+host when a route has several, `<namespace>/<name>` when two routes share a name)
+and `type: httproute`. The URL is `https://<host>`. If no rule matches `/`, the
+URL is `https://<host><first path>` instead, so a route serving only `/api` does
+not link to a 404. Wildcard hosts and routes no Gateway accepted are left out.
+The links follow the ones in the file. A route with the same URL as a hand-written
+link adds nothing, so keep a hand-written link where its title (`Flux UI`)
+reads better than the route name. `routes: false` on a cluster turns this off.
+
 A configured cluster gets
 `cluster.stuttgart-things.com/{status,version,distribution,nodes,nodes-ready,control-planes,cpus,memory-mib,node-names,checked}`,
 with Flux or Argo CD also `deployments-summary` (`flux 23/24 ready, argocd
