@@ -39,6 +39,23 @@
         "major"
       ],
       "enabled": false
+    },
+    {
+      "description": "Defer TypeScript 7 (the Go-native compiler) — the Backstage tooling crashes on it in yarn tsc ('useCaseSensitiveFileNames', #148)",
+      "matchPackageNames": [
+        "typescript"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Hold the Dagger engine on v0.20.x — v0.21's llbtodagger rejects packages/backend/Dockerfile ('mkdir without makeParents is unsupported', #98, #145). Lift together with the Dockerfile fix and the module bump (#140)",
+      "matchPackageNames": [
+        "dagger"
+      ],
+      "allowedVersions": "<0.21.0"
     }
   ]
 }
