@@ -39,6 +39,16 @@
         "major"
       ],
       "enabled": false
+    },
+    {
+      "description": "Defer TypeScript 7 (the Go-native compiler) — the Backstage tooling crashes on it in yarn tsc ('useCaseSensitiveFileNames', #148)",
+      "matchPackageNames": [
+        "typescript"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
     }
   ]
 }
