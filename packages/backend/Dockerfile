@@ -56,8 +56,12 @@ ENV NODE_ENV=production
 COPY --chown=node:node yarn.lock package.json packages/backend/dist/skeleton.tar.gz ./
 RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
 
-RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
-    yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
+# No cache mount. The Backstage template mounts /home/node/.cache/yarn with
+# uid/gid, but that is Yarn 1's cache: Yarn 4 caches in ~/.yarn/berry/cache,
+# so the mount cached nothing. Its uid/gid also makes BuildKit emit an mkdir
+# without parents, which Dagger v0.21's llbtodagger rejects ("mkdir without
+# makeParents is unsupported", #98).
+RUN yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
 
 # better-sqlite3's prebuilt binary isn't fetched under this install, so the
 # install leaves only source and the backend crashes at startup with "Could
