@@ -1,3 +1,10 @@
+## [1.30.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.30.0...v1.30.1) (2026-11-08)
+
+
+### Bug Fixes
+
+* **ci:** Dagger v0.21.11 -- drop the Yarn 1 cache mount it rejects ([#226](https://github.com/stuttgart-things/sthings-backstage/issues/226)) ([0f9a097](https://github.com/stuttgart-things/sthings-backstage/commit/0f9a097863fab1b62cba5212d32b67071731ab3d)), closes [#98](https://github.com/stuttgart-things/sthings-backstage/issues/98) [#98](https://github.com/stuttgart-things/sthings-backstage/issues/98) [#98](https://github.com/stuttgart-things/sthings-backstage/issues/98) [#145](https://github.com/stuttgart-things/sthings-backstage/issues/145)
+
 # [1.30.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.29.0...v1.30.0) (2026-11-08)
 
 
