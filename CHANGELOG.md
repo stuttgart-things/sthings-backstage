@@ -1,3 +1,10 @@
+# [1.30.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.29.0...v1.30.0) (2026-11-08)
+
+
+### Features
+
+* **sthings-clusters:** link every HTTPRoute of a cluster ([#222](https://github.com/stuttgart-things/sthings-backstage/issues/222)) ([f4f0d07](https://github.com/stuttgart-things/sthings-backstage/commit/f4f0d07429876bb473aac5941c0ec2df9bbdf687))
+
 # [1.29.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.28.0...v1.29.0) (2026-11-07)
 
 
