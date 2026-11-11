@@ -26,7 +26,7 @@
 # better-sqlite3 13 (N-API) runs fine on 24.21.0.
 
 # ---------- Stage 1: builder (has the native build toolchain) ----------
-FROM node:24.22.2-bookworm-slim AS builder
+FROM node:24.22.3-bookworm-slim AS builder
 
 # Python interpreter for node-gyp
 ENV PYTHON=/usr/bin/python3
@@ -73,7 +73,7 @@ COPY --chown=node:node scripts/rebuild-native.sh ./scripts/rebuild-native.sh
 RUN bash scripts/rebuild-native.sh
 
 # ---------- Stage 2: runtime (no build toolchain) ----------
-FROM node:24.22.2-bookworm-slim
+FROM node:24.22.3-bookworm-slim
 
 # This disables node snapshot for the Scaffolder
 ENV NODE_OPTIONS="--no-node-snapshot"
