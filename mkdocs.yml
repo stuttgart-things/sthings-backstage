@@ -8,6 +8,7 @@ nav:
   - GitHub Integration: github-integration.md
   - Configuration: configuration.md
   - Permissions: permissions.md
+  - Announcements: announcements.md
   - Zitadel Sign-in: zitadel.md
 
 plugins:

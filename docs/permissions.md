@@ -21,6 +21,7 @@ Code: [`packages/backend/src/plugins/permission-template-audience`](../packages/
 | `catalog.entity.delete`, `catalog.location.delete` | denied -- no unregistering |
 | `scaffolder.template.management` | denied -- no template editor or dry-run (`/create/edit`) |
 | `kubernetes.proxy` | denied |
+| `announcement.*` (`announcement.entity.create`, `.update`, `.delete`) | denied -- reading announcements is open to all, publishing is platform-only |
 | everything else (`scaffolder.task.create`, `scaffolder.action.execute`, `catalog.entity.refresh`, `kubernetes.resources.read`, ...) | allowed |
 
 A caller without a user ref (no sign-in) gets no tasks at all.

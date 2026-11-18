@@ -98,10 +98,13 @@ export const PLATFORM_ONLY_PERMISSIONS = new Set([
  *   tasks and triggering them).
  * - catalog.entities.unprocessed.*: the unprocessed-entities view and
  *   deleting entries from it.
+ * - announcement.*: creating, editing and deleting announcements (and their
+ *   categories and tags). Reading them needs no permission.
  */
 export const PLATFORM_ONLY_PREFIXES = [
   'devtools.',
   'catalog.entities.unprocessed.',
+  'announcement.',
 ];
 
 /**
