@@ -1,3 +1,10 @@
+# [1.31.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.30.1...v1.31.0) (2026-11-18)
+
+
+### Features
+
+* add announcements plugin for platform news ([#248](https://github.com/stuttgart-things/sthings-backstage/issues/248)) ([91e68bd](https://github.com/stuttgart-things/sthings-backstage/commit/91e68bdb9570230e526874aa34fa06a0b8610b06))
+
 ## [1.30.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.30.0...v1.30.1) (2026-11-08)
 
 
