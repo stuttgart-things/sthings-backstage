@@ -93,6 +93,9 @@ backend.add(import('@backstage/plugin-search-backend-module-pg'));
 // search collators
 backend.add(import('@backstage/plugin-search-backend-module-catalog'));
 backend.add(import('@backstage/plugin-search-backend-module-techdocs'));
+backend.add(
+  import('@backstage-community/plugin-search-backend-module-announcements'),
+);
 
 // kubernetes plugin
 backend.add(import('@backstage/plugin-kubernetes-backend'));
@@ -105,5 +108,11 @@ backend.add(import('./plugins/rag-ai'));
 // notifications and signals plugins
 backend.add(import('@backstage/plugin-notifications-backend'));
 backend.add(import('@backstage/plugin-signals-backend'));
+
+// Announcements: platform news (new claim templates, cluster maintenance,
+// release notes) under /announcements. Publishing can broadcast a
+// notification. Creating, editing and deleting is platform-only via the
+// permission policy (announcement.*). See docs/announcements.md.
+backend.add(import('@backstage-community/plugin-announcements-backend'));
 
 backend.start();

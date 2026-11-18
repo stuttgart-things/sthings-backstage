@@ -234,6 +234,9 @@ describe('TemplateAudiencePolicy', () => {
       'devtools.scheduler.trigger',
       'catalog.entities.unprocessed.read',
       'catalog.entities.unprocessed.delete',
+      'announcement.entity.create',
+      'announcement.entity.update',
+      'announcement.entity.delete',
     ];
 
     it.each(names)('denies %s to developers and guest', async name => {

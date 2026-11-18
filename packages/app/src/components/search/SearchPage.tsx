@@ -8,6 +8,8 @@ import {
 import { TechDocsSearchResultListItem } from '@backstage/plugin-techdocs';
 
 import { SearchType } from '@backstage/plugin-search';
+import { AnnouncementSearchResultListItem } from '@backstage-community/plugin-announcements';
+import AnnouncementIcon from '@material-ui/icons/Announcement';
 import {
   SearchBar,
   SearchFilter,
@@ -69,6 +71,11 @@ const SearchPage = () => {
                   name: 'Documentation',
                   icon: <DocsIcon />,
                 },
+                {
+                  value: 'announcements',
+                  name: 'Announcements',
+                  icon: <AnnouncementIcon />,
+                },
               ]}
             />
             <Paper className={classes.filters}>
@@ -112,6 +119,7 @@ const SearchPage = () => {
             <SearchResult>
               <CatalogSearchResultListItem icon={<CatalogIcon />} />
               <TechDocsSearchResultListItem icon={<DocsIcon />} />
+              <AnnouncementSearchResultListItem />
             </SearchResult>
           </Grid>
         </Grid>

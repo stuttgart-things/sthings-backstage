@@ -28,6 +28,7 @@ import SearchIcon from '@material-ui/icons/Search';
 import { MyGroupsSidebarItem } from '@backstage/plugin-org';
 import GroupIcon from '@material-ui/icons/People';
 import { NotificationsSidebarItem } from '@backstage/plugin-notifications';
+import AnnouncementIcon from '@material-ui/icons/Announcement';
 import { configApiRef, useApi } from '@backstage/core-plugin-api';
 import { SidebarRagModal } from '@roadiehq/rag-ai';
 import BuildIcon from '@material-ui/icons/Build';
@@ -102,6 +103,11 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
         <SidebarItem icon={ExtensionIcon} to="api-docs" text="APIs" />
         <SidebarItem icon={LibraryBooks} to="docs" text="Docs" />
         <SidebarItem icon={CreateComponentIcon} to="create" text="Create..." />
+        <SidebarItem
+          icon={AnnouncementIcon}
+          to="announcements"
+          text="Announcements"
+        />
         {/* End global nav */}
         <SidebarDivider />
         <SidebarScrollWrapper>
