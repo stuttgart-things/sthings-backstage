@@ -1,5 +1,6 @@
 import { InfoCard, StructuredMetadataTable } from '@backstage/core-components';
 import { useEntity } from '@backstage/plugin-catalog-react';
+import { KEEP_LABELS } from './keepLabels';
 
 /**
  * Details of a VM Resource from the sthings-vms provider
@@ -58,7 +59,7 @@ export function VmDetailsCard() {
 
   return (
     <InfoCard title="VM">
-      <StructuredMetadataTable metadata={rows} />
+      <StructuredMetadataTable metadata={rows} options={KEEP_LABELS} />
     </InfoCard>
   );
 }

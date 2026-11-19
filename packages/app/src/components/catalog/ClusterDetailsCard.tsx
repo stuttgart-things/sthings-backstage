@@ -1,5 +1,6 @@
 import { InfoCard, StructuredMetadataTable } from '@backstage/core-components';
 import { useEntity } from '@backstage/plugin-catalog-react';
+import { KEEP_LABELS } from './keepLabels';
 
 /**
  * Live details of a `kubernetes-cluster` Resource, from the annotations the
@@ -48,7 +49,7 @@ export function ClusterDetailsCard() {
   return (
     <InfoCard title="Cluster">
       {Object.keys(rows).length ? (
-        <StructuredMetadataTable metadata={rows} />
+        <StructuredMetadataTable metadata={rows} options={KEEP_LABELS} />
       ) : (
         'No live data: this cluster is not configured under catalog.providers.sthingsClusters.'
       )}
