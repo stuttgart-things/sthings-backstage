@@ -1,3 +1,10 @@
+## [1.31.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.31.0...v1.31.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **catalog:** keep field names in the VM and cluster cards ([#249](https://github.com/stuttgart-things/sthings-backstage/issues/249)) ([#250](https://github.com/stuttgart-things/sthings-backstage/issues/250)) ([a08a475](https://github.com/stuttgart-things/sthings-backstage/commit/a08a4756a54bf29366ae290fb665d0dfaa7b0f1c))
+
 # [1.31.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.30.1...v1.31.0) (2026-11-18)
 
 
