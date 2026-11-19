@@ -23,5 +23,7 @@ test('App should render the welcome page', async ({ page }) => {
   await expect(enterButton).toBeVisible();
   await enterButton.click();
 
-  await expect(page.getByText('My Company Catalog')).toBeVisible();
+  // / is the home page (#242): toolkit card with the curated entry points.
+  await expect(page.getByText('Platform', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Clusters' })).toBeVisible();
 });
