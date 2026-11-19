@@ -6,12 +6,12 @@ windows and release notes. Built on the community plugin
 
 ## Where they appear
 
-| Place                                         | What                                                                                                             |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `/announcements` (sidebar: **Announcements**) | all announcements, filterable by category and tag                                                                |
-| Catalog start page (`/` → `/catalog`)         | banner with up to three announcements the user has not seen yet; moves to the home page once there is one (#242) |
-| Notifications (bell)                          | optional broadcast when an announcement is published with **Send Notification** checked                          |
-| Search                                        | result type **Announcements**                                                                                    |
+| Place                                         | What                                                                                                                  |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `/announcements` (sidebar: **Announcements**) | all announcements, filterable by category and tag                                                                     |
+| Home page (`/`)                               | banner with up to three announcements the user has not seen yet, and the **Platform news** card with the latest three |
+| Notifications (bell)                          | optional broadcast when an announcement is published with **Send Notification** checked                               |
+| Search                                        | result type **Announcements**                                                                                         |
 
 ## Who may publish
 
@@ -50,5 +50,5 @@ search:
 
 Code: backend in `packages/backend/src/index.ts`, page and sidebar entry in
 `packages/app/src/App.tsx` and `packages/app/src/components/Root/Root.tsx`,
-banner in `packages/app/src/components/catalog/CustomCatalogPage.tsx`, search
+banner and card in `packages/app/src/components/home/HomePage.tsx`, search
 in `packages/app/src/components/search/SearchPage.tsx`.

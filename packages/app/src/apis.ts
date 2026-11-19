@@ -17,7 +17,9 @@ import {
   ProfileInfoApi,
   BackstageIdentityApi,
   SessionApi,
+  storageApiRef,
 } from '@backstage/core-plugin-api';
+import { VisitsStorageApi, visitsApiRef } from '@backstage/plugin-home';
 import { toastApiRef } from '@backstage/frontend-plugin-api';
 import { OAuth2 } from '@backstage/core-app-api';
 import { ragAiApiRef, RoadieRagAiClient } from '@roadiehq/rag-ai';
@@ -35,6 +37,14 @@ export const oidcAuthApiRef = createApiRef<
 });
 
 export const apis: AnyApiFactory[] = [
+  // Page visits for HomePageRecentlyVisited/TopVisited (#242), kept per user
+  // in the StorageApi.
+  createApiFactory({
+    api: visitsApiRef,
+    deps: { storageApi: storageApiRef, identityApi: identityApiRef },
+    factory: ({ storageApi, identityApi }) =>
+      VisitsStorageApi.create({ storageApi, identityApi }),
+  }),
   createApiFactory({
     api: scmIntegrationsApiRef,
     deps: { configApi: configApiRef },

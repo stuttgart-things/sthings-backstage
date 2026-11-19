@@ -35,6 +35,7 @@
     "@backstage/plugin-catalog-unprocessed-entities-common": "^0.0.18",
     "@backstage/plugin-devtools": "0.1.44",
     "@backstage/plugin-devtools-common": "^0.1.25",
+    "@backstage/plugin-home": "0.9.11",
     "@backstage/plugin-kubernetes": "^0.12.17",
     "@backstage/plugin-notifications": "^0.6.0",
     "@backstage/plugin-org": "^0.8.0",
