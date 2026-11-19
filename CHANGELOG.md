@@ -1,3 +1,15 @@
+# [1.32.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.31.1...v1.32.0) (2026-11-19)
+
+
+### Bug Fixes
+
+* **deps:** sync yarn.lock after the parallel merges ([#254](https://github.com/stuttgart-things/sthings-backstage/issues/254)) ([60ef721](https://github.com/stuttgart-things/sthings-backstage/commit/60ef721fd672f3111a7d4c25c63a03c5269ea4da)), closes [#251](https://github.com/stuttgart-things/sthings-backstage/issues/251)
+
+
+### Features
+
+* **app:** home page with plugin-home instead of the catalog redirect ([#242](https://github.com/stuttgart-things/sthings-backstage/issues/242)) ([#251](https://github.com/stuttgart-things/sthings-backstage/issues/251)) ([b086a5f](https://github.com/stuttgart-things/sthings-backstage/commit/b086a5f87207ceb6a0e1ac195be304d4984412a0))
+
 ## [1.31.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.31.0...v1.31.1) (2026-11-19)
 
 
