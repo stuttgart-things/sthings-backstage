@@ -15,13 +15,13 @@ import {
   EntityListProvider,
   EntityOwnerPicker,
   EntityTagPicker,
-  EntityTypePicker,
   UserListPicker,
   useEntityList,
 } from '@backstage/plugin-catalog-react';
 import { configApiRef, createRoutableExtension, useApi } from '@backstage/core-plugin-api';
 import { catalogPlugin } from '@backstage/plugin-catalog';
 import { EntityCard } from './EntityCard';
+import { LabeledEntityTypePicker } from './LabeledEntityTypePicker';
 
 const useStyles = makeStyles((theme: Theme) => ({
   gridContainer: {
@@ -105,7 +105,7 @@ function CustomCatalogPageContent() {
           <CatalogFilterLayout>
             <CatalogFilterLayout.Filters>
               <EntityKindPicker />
-              <EntityTypePicker />
+              <LabeledEntityTypePicker />
               <UserListPicker />
               <EntityOwnerPicker />
               <EntityLifecyclePicker />
