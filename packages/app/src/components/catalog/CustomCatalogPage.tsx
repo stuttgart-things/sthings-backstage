@@ -20,7 +20,6 @@ import {
 } from '@backstage/plugin-catalog-react';
 import { configApiRef, createRoutableExtension, useApi } from '@backstage/core-plugin-api';
 import { catalogPlugin } from '@backstage/plugin-catalog';
-import { NewAnnouncementBanner } from '@backstage-community/plugin-announcements';
 import { EntityCard } from './EntityCard';
 import { LabeledEntityTypePicker } from './LabeledEntityTypePicker';
 
@@ -95,8 +94,6 @@ function CustomCatalogPageContent() {
   return (
     <PageWithHeader title={orgName} themeId="home">
       <Content>
-        {/* Unseen announcements; / lands here until there is a home page (#242). */}
-        <NewAnnouncementBanner max={3} />
         <ContentHeader title="">
           <CreateButton
             title="Register Existing Component"
