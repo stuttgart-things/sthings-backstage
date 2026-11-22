@@ -10,12 +10,7 @@ import { makeStyles, Theme } from '@material-ui/core/styles';
 import { Entity } from '@backstage/catalog-model';
 import { useEntityPresentation } from '@backstage/plugin-catalog-react';
 import { useNavigate } from 'react-router-dom';
-import StorageIcon from '@material-ui/icons/Storage';
-import WebIcon from '@material-ui/icons/Web';
-import ExtensionIcon from '@material-ui/icons/Extension';
-import MenuBookIcon from '@material-ui/icons/MenuBook';
-import SettingsIcon from '@material-ui/icons/Settings';
-import CodeIcon from '@material-ui/icons/Code';
+import { typeColor, typeIcon, typeLabel } from './entityTypes';
 
 const MAX_TAGS = 3;
 
@@ -36,14 +31,6 @@ const tagColors: Record<string, { bg: string; color: string }> = {
   cicd: { bg: 'rgba(234,88,12,0.10)', color: '#ea580c' },
   kubernetes: { bg: 'rgba(37,99,235,0.10)', color: '#2563eb' },
   dagger: { bg: 'rgba(234,88,12,0.10)', color: '#ea580c' },
-};
-
-const typeIcons: Record<string, React.ReactElement> = {
-  service: <StorageIcon fontSize="small" />,
-  website: <WebIcon fontSize="small" />,
-  library: <ExtensionIcon fontSize="small" />,
-  documentation: <MenuBookIcon fontSize="small" />,
-  resource: <SettingsIcon fontSize="small" />,
 };
 
 const useStyles = makeStyles((theme: Theme) => ({
@@ -129,13 +116,14 @@ const useStyles = makeStyles((theme: Theme) => ({
     lineHeight: 1.8,
     whiteSpace: 'nowrap' as const,
   },
-  typeBadge: {
+  typeChip: {
+    height: 24,
     fontSize: '0.72rem',
     fontWeight: 600,
-    color: theme.palette.text.secondary,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 4,
+    '& .MuiChip-icon': {
+      color: 'inherit',
+      marginLeft: 6,
+    },
   },
   owner: {
     fontSize: '0.78rem',
@@ -197,7 +185,8 @@ export function EntityCard({ entity }: { entity: Entity }) {
     color: '#6b7280',
   };
 
-  const icon = typeIcons[type.toLowerCase()] || <CodeIcon fontSize="small" />;
+  const icon = typeIcon(type);
+  const chipColor = typeColor(type);
 
   const ownerShort = owner.replace(/^(group:|user:)?(default\/)?/i, '');
 
@@ -238,10 +227,14 @@ export function EntityCard({ entity }: { entity: Entity }) {
                 {lifecycle}
               </span>
             )}
-            <span className={classes.typeBadge}>
-              {icon}
-              {type}
-            </span>
+            <Chip
+              size="small"
+              icon={typeIcon(type)}
+              label={typeLabel(type)}
+              title={type}
+              className={classes.typeChip}
+              style={{ backgroundColor: `${chipColor}1f`, color: chipColor }}
+            />
             {ownerShort && (
               <Typography className={classes.owner} title={owner}>
                 {ownerShort}
