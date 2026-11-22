@@ -1,3 +1,10 @@
+# [1.33.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.32.0...v1.33.0) (2026-11-22)
+
+
+### Features
+
+* **catalog:** display names and type chips in the catalog ([#259](https://github.com/stuttgart-things/sthings-backstage/issues/259)) ([96da40e](https://github.com/stuttgart-things/sthings-backstage/commit/96da40e93b7eb5ea849f88a463829bac5a7fe333))
+
 # [1.32.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.31.1...v1.32.0) (2026-11-19)
 
 
