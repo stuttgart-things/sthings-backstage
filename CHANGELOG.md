@@ -1,3 +1,10 @@
+## [1.33.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.33.0...v1.33.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* **deps:** dedupe parse5 so frontend tests start again ([#261](https://github.com/stuttgart-things/sthings-backstage/issues/261)) ([86c25f3](https://github.com/stuttgart-things/sthings-backstage/commit/86c25f36f9e26517755ff252dafec3c392885331))
+
 # [1.33.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.32.0...v1.33.0) (2026-11-22)
 
 
