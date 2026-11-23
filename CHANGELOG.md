@@ -1,3 +1,10 @@
+# [1.35.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.34.0...v1.35.0) (2026-11-23)
+
+
+### Features
+
+* **offerings:** curated offerings page fed by catalog entities ([#265](https://github.com/stuttgart-things/sthings-backstage/issues/265)) ([db2bd3b](https://github.com/stuttgart-things/sthings-backstage/commit/db2bd3b3ddb96de8d9fdf74ae083fa9b7a7e186c))
+
 # [1.34.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.33.1...v1.34.0) (2026-11-23)
 
 
