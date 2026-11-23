@@ -6,8 +6,9 @@
 #   yarn tsc
 #   yarn build:backend
 #
-# Stage 1 compiles production deps (incl. native modules better-sqlite3 /
-# isolated-vm) with the build toolchain. Stage 2 is a slim runtime that
+# Stage 1 compiles production deps (incl. the native module better-sqlite3;
+# isolated-vm is gone since scaffolder-backend 4 templates with nunjitsu)
+# with the build toolchain. Stage 2 is a slim runtime that
 # copies the result, so the compiler chain (g++, build-essential,
 # linux-libc-dev kernel headers, python, dev headers) never ships in the
 # final image. That toolchain accounted for ~180 of the image's
@@ -31,7 +32,7 @@ FROM node:24.22.3-bookworm-slim AS builder
 # Python interpreter for node-gyp
 ENV PYTHON=/usr/bin/python3
 
-# Build deps for native modules (better-sqlite3, isolated-vm).
+# Build deps for native modules (better-sqlite3).
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
