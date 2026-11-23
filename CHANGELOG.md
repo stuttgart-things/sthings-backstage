@@ -1,3 +1,10 @@
+# [1.36.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.35.2...v1.36.0) (2026-11-23)
+
+
+### Features
+
+* **vms:** live VM info card on the entity page ([#272](https://github.com/stuttgart-things/sthings-backstage/issues/272)) ([0029fd6](https://github.com/stuttgart-things/sthings-backstage/commit/0029fd630b01f3e7da40260474ac6ff490f2ba98)), closes [#244](https://github.com/stuttgart-things/sthings-backstage/issues/244)
+
 ## [1.35.2](https://github.com/stuttgart-things/sthings-backstage/compare/v1.35.1...v1.35.2) (2026-11-23)
 
 
