@@ -2,7 +2,7 @@
 name: Release
 on:
   workflow_run:
-    workflows: ["Docker Build & Push"]
+    workflows: ['Docker Build & Push']
     types: [completed]
     branches: [main]
   workflow_dispatch:
@@ -40,12 +40,41 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # semantic-release releases everything on main, but promote-image copies
+      # the image of the build that triggered this run (workflow_run.head_sha).
+      # If main has moved on since that build, the two do not match: v1.35.1
+      # was cut from main with #269 but got the #266 image (Backstage 1.49),
+      # because #269's own build failed and #266's finished later. So only
+      # release when the triggering build is the newest real commit on main;
+      # otherwise the newer commit's own build releases (or, if it fails,
+      # nothing does until a fix lands). chore(release) commits are skipped:
+      # they are [skip ci] and never get an image.
+      - name: Check the build is the current main
+        id: guard
+        env:
+          EVENT: ${{ github.event_name }}
+          BUILT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ "$EVENT" != workflow_run ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git fetch --quiet origin main
+          MAIN_SHA=$(git log -1 --format=%H --invert-grep --grep='^chore(release):' origin/main)
+          if [ "$BUILT_SHA" = "$MAIN_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Build ${BUILT_SHA:0:7} is not the newest commit on main (${MAIN_SHA:0:7}); its build releases instead."
+          fi
+
       - name: Setup Node.js
+        if: steps.guard.outputs.current == 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 24
 
       - name: Install semantic-release
+        if: steps.guard.outputs.current == 'true'
         run: >-
           npm install -g
           semantic-release
@@ -56,6 +85,7 @@ jobs:
 
       - name: Run semantic-release
         id: semantic
+        if: steps.guard.outputs.current == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -139,4 +169,3 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Source:** \`ttl.sh/stuttgart-things-sthings-backstage:${SOURCE_SHA}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Tags:** \`ghcr.io/stuttgart-things/sthings-backstage:v${VERSION}\`, \`:latest\`" >> $GITHUB_STEP_SUMMARY
-
