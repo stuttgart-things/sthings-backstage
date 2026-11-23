@@ -97,3 +97,6 @@ kubeconfig
 # OS
 .DS_Store
 Thumbs.db
+
+# Build commit for the image (docker-build), see plugins/release-announcements
+build-info.json

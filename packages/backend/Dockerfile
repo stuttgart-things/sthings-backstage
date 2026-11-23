@@ -102,8 +102,11 @@ WORKDIR /app
 # bindings) and the workspace skeleton from the builder.
 COPY --from=builder --chown=node:node /app ./
 
-# Then the backend bundle and runtime config.
-COPY --chown=node:node packages/backend/dist/bundle.tar.gz app-config*.yaml ./
+# Then the backend bundle and runtime config. build-info.json (build commit,
+# written by docker-build) lets the backend announce the release it runs
+# (plugins/release-announcements); the glob keeps local builds without it
+# working.
+COPY --chown=node:node packages/backend/dist/bundle.tar.gz app-config*.yaml build-info*.json ./
 RUN tar xzf bundle.tar.gz && rm bundle.tar.gz
 
 CMD ["node", "packages/backend", "--config", "app-config.yaml"]

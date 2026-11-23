@@ -33,6 +33,38 @@ Announcements are stored in the backend database (plugin `announcements`),
 so with the default in-memory SQLite of local development they are lost on
 restart.
 
+## Release announcements
+
+Every instance announces the portal release it runs, by itself, once that
+release is deployed: title `Portal v1.36.0`, category **Release**, the
+release notes as body and a link to the GitHub release. Each lab announces in
+its own database when Flux has rolled the new image out there, not when the
+release is cut.
+
+How it finds the version: the image is built from a main commit before
+semantic-release tags it, so it only knows that commit (`build-info.json`,
+written by the docker-build workflow). Shortly after startup and then hourly
+the backend (`packages/backend/src/plugins/release-announcements`) checks the
+ten newest GitHub releases for the one whose `chore(release)` commit sits on
+that commit, and creates the announcement unless one with the same title is
+already in category Release. The category is created when missing. A failed
+lookup (GitHub unreachable) is logged as a warning and retried an hour later.
+
+Images built locally have no `build-info.json` and announce nothing. Delete a
+release announcement in the admin portal and it is created again after the
+next restart; to stop them, turn the job off.
+
+```yaml
+releaseAnnouncements:
+  enabled: false # default true (in CI images)
+  sendNotification: true # also broadcast to the bell, default false
+  publisher: group:default/platform-team # default
+  repository: stuttgart-things/sthings-backstage # default
+```
+
+GitHub is asked with the token of `integrations.github` (host `github.com`)
+when there is one, otherwise anonymously.
+
 ## Configuration
 
 Nothing is required. The search collator runs on its default schedule and can

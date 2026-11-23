@@ -40,6 +40,13 @@ jobs:
       - name: Build backend
         run: yarn build:backend
 
+      # The image is promoted to v<version> only after semantic-release tags
+      # the release, so it cannot carry its version. It carries its build
+      # commit; the backend finds the release on top of it and announces it
+      # (packages/backend/src/plugins/release-announcements).
+      - name: Write build info
+        run: echo '{"sha":"${{ github.sha }}"}' > build-info.json
+
       - name: Set image name
         id: image-name
         run: |
