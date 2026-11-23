@@ -5,10 +5,21 @@
  * @packageDocumentation
  */
 export { default } from './module';
+export {
+  createVmInfoRouter,
+  LiveInfoCache,
+  liveSourcesFromConfig,
+  vmInfoPlugin,
+  vmLocatorOf,
+} from './vmInfo';
+export { VmNotFoundError, usableAddresses } from './live';
+export type { LiveVmSource, VmLiveInfo, VmLocator } from './live';
 export { SthingsVmEntityProvider, excludeMatcher } from './provider';
 export type { ProviderOptions } from './provider';
 export { ProxmoxVmSource } from './sources/proxmox';
 export { HarvesterVmSource } from './sources/harvester';
+export { VsphereVmSource } from './sources/vsphere';
+export { createVmSource } from './sources/factory';
 export { vmToEntity } from './entity';
 export {
   argoDeployment,

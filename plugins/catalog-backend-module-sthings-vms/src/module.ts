@@ -11,12 +11,10 @@ import {
   MachineryOrderEntityProvider,
 } from './machinery';
 import { SthingsVmEntityProvider } from './provider';
-import { HarvesterVmSource } from './sources/harvester';
-import { ProxmoxVmSource } from './sources/proxmox';
-import { VsphereVmSource } from './sources/vsphere';
-import { VmSource } from './types';
-
-const CONFIG_KEY = 'catalog.providers.sthingsVms';
+import {
+  createVmSource,
+  VMS_CONFIG_KEY as CONFIG_KEY,
+} from './sources/factory';
 const CLUSTERS_CONFIG_KEY = 'catalog.providers.sthingsClusters';
 
 const CLUSTER_SCHEDULE: SchedulerServiceTaskScheduleDefinition = {
@@ -121,40 +119,7 @@ export default createBackendModule({
             continue;
           }
 
-          let source: VmSource;
-          if (type === 'proxmox') {
-            source = new ProxmoxVmSource({
-              endpoint: c.getString('endpoint'),
-              pool: c.getString('pool'),
-              tokenId: c.getString('tokenId'),
-              tokenSecret: c.getString('tokenSecret'),
-              caCert: c.getOptionalString('caCert'),
-              logger,
-            });
-          } else if (type === 'vsphere') {
-            source = new VsphereVmSource({
-              endpoint: c.getString('endpoint'),
-              folder: c.getString('folder'),
-              username: c.getString('username'),
-              password: c.getString('password'),
-              apiVersion: c.getOptionalString('apiVersion'),
-              caCert: c.getOptionalString('caCert'),
-              logger,
-            });
-          } else if (type === 'harvester') {
-            source = new HarvesterVmSource({
-              endpoint: c.getString('endpoint'),
-              token: c.getString('token'),
-              namespaces: c.getOptionalStringArray('namespaces'),
-              uiUrl: c.getOptionalString('uiUrl'),
-              caCert: c.getOptionalString('caCert'),
-              logger,
-            });
-          } else {
-            throw new Error(
-              `${CONFIG_KEY}.${providerId}: type '${type}' is not supported (proxmox, vsphere, harvester, machinery)`,
-            );
-          }
+          const source = createVmSource(providerId, c, logger);
 
           const provider = new SthingsVmEntityProvider(
             source,

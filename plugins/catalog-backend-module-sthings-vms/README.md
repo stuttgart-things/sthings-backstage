@@ -367,6 +367,60 @@ Names as the source reports them (`machinery`), not entity names
 An excluded VM is simply not part of the provider's full mutation: an entity
 the provider created for it before is removed on the next run.
 
+## Live VM info (`vm-info` plugin)
+
+The catalog annotations are a snapshot of the last provider run (every 10
+minutes by default). The same package also exports `vmInfoPlugin`, a backend
+plugin that asks the hypervisor **at request time**, for the "Live" card on the
+entity page of every VM this provider created (`spec.type: vm`, location
+`sthings-vms:<providerId>`):
+
+|              | Proxmox                | vSphere                | Harvester                    |
+| ------------ | ---------------------- | ---------------------- | ---------------------------- |
+| Power state  | yes                    | yes                    | yes                          |
+| Uptime       | yes                    | yes                    | since the VMI went `Running` |
+| IP addresses | guest agent, all NICs  | VMware Tools, all NICs | VMI interfaces               |
+| Host / node  | node                   | ESXi host              | node                         |
+| CPU usage    | % of the VM's vCPUs    | % of its max MHz       | – (needs metrics)            |
+| Memory       | host-side used / total | guest-active / total   | total only                   |
+
+`GET /api/vm-info/entity/:namespace/:name` (user tokens only):
+
+1. Reads the entity through the catalog **with the caller's credentials**, so
+   whoever cannot see the VM gets 404 and the hypervisor is never asked.
+2. Takes provider and VM id only from the entity's annotations (`vmid`,
+   `moid`, `namespace` + `name`). Proxmox looks the VM up in the configured
+   pool across the cluster, so a migrated VM is still found.
+3. Asks the source with the **same config and credentials** as the catalog
+   module (`catalog.providers.sthingsVms`); no extra secrets. VMs of a provider
+   that is not configured on this instance get 404.
+4. Answers from a per-pod cache for `vmInfo.cacheSeconds` (default 30), so a
+   reload or several viewers cost one hypervisor request. Failures are not
+   cached; hypervisor errors come back as 502 with the source's message.
+
+Read-only. Start/stop/reboot are a later step behind the permission framework
+(docs/permissions.md).
+
+```ts
+backend.add(
+  import('@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms').then(
+    m => ({ default: m.vmInfoPlugin }),
+  ),
+);
+```
+
+**Checking against real hypervisors.** `src/live.real.test.ts` is skipped
+unless `LIVE_VM_CHECK=1`. It reads a config file with
+`catalog.providers.sthingsVms` (e.g. a lab's `app-config.vms.yaml` from the
+ConfigMap), resolves `${VAR}` from the environment, and asks one running and
+one stopped VM of every Proxmox/vSphere/Harvester provider:
+
+```sh
+LIVE_VM_CHECK=1 LIVE_VM_CONFIG=/path/app-config.vms.yaml CI=true \
+  node_modules/.bin/backstage-cli repo test \
+  plugins/catalog-backend-module-sthings-vms/src/live.real.test.ts
+```
+
 ## Install
 
 In this repo it is a workspace package and already added in

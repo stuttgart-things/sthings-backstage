@@ -1,4 +1,11 @@
 import { LoggerService } from '@backstage/backend-plugin-api';
+import {
+  LiveVmSource,
+  usableAddresses,
+  VmLiveInfo,
+  VmLocator,
+  VmNotFoundError,
+} from '../live';
 import { VmRecord, VmSource } from '../types';
 import { pinnedFetch } from './proxmox';
 
@@ -69,6 +76,10 @@ interface KubevirtVmi {
   metadata: { name: string; namespace: string };
   status?: {
     nodeName?: string;
+    phaseTransitionTimestamps?: {
+      phase?: string;
+      phaseTransitionTimestamp?: string;
+    }[];
     guestOSInfo?: { prettyName?: string; name?: string; versionId?: string };
     interfaces?: {
       name?: string;
@@ -118,7 +129,7 @@ const STATUSES: Record<string, string> = {
  * ServiceAccount that may get/list both is enough. VM images are not VMs and
  * are not listed.
  */
-export class HarvesterVmSource implements VmSource {
+export class HarvesterVmSource implements VmSource, LiveVmSource {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
   /** PVCs not readable (403): warned once, then disks come from the VM only. */
@@ -171,6 +182,7 @@ export class HarvesterVmSource implements VmSource {
       const ipv4 = ipv4Of(vmi, nic.name);
       const annotations: Record<string, string> = {
         [`${HARVESTER_ANNOTATION_PREFIX}/namespace`]: namespace,
+        [`${HARVESTER_ANNOTATION_PREFIX}/name`]: name,
       };
       if (vm.metadata.uid) {
         annotations[`${HARVESTER_ANNOTATION_PREFIX}/uid`] = vm.metadata.uid;
@@ -238,6 +250,62 @@ export class HarvesterVmSource implements VmSource {
   }
 
   /**
+   * Live state of one VM: the VirtualMachine for status and size, its
+   * VirtualMachineInstance (absent while stopped) for node, addresses and
+   * uptime. KubeVirt reports no CPU/memory usage without metrics, so those
+   * stay empty.
+   */
+  async liveInfo(locator: VmLocator): Promise<VmLiveInfo> {
+    if (locator.cloud !== 'harvester') {
+      throw new Error(`Harvester source cannot look up a ${locator.cloud} VM`);
+    }
+    const ns = encodeURIComponent(locator.namespace);
+    const name = encodeURIComponent(locator.name);
+    const base = `/apis/kubevirt.io/v1/namespaces/${ns}`;
+    const vm = await this.getOptional<KubevirtVm>(
+      `${base}/virtualmachines/${name}`,
+    );
+    if (!vm) {
+      throw new VmNotFoundError(
+        `Harvester VM ${locator.namespace}/${locator.name} not found`,
+      );
+    }
+    const vmi = await this.getOptional<KubevirtVmi>(
+      `${base}/virtualmachineinstances/${name}`,
+    );
+    const printable = vm.status?.printableStatus;
+    const domain = vm.spec?.template?.spec?.domain;
+    const runningSince = vmi?.status?.phaseTransitionTimestamps?.find(
+      t => t.phase === 'Running',
+    )?.phaseTransitionTimestamp;
+    const started = runningSince ? Date.parse(runningSince) : NaN;
+    return {
+      cloud: 'harvester',
+      status: printable && (STATUSES[printable] ?? printable.toLowerCase()),
+      uptimeSeconds:
+        printable === 'Running' && Number.isFinite(started)
+          ? Math.max(0, Math.round((Date.now() - started) / 1000))
+          : undefined,
+      ipAddresses: usableAddresses(
+        (vmi?.status?.interfaces ?? []).flatMap(i => [
+          i.ipAddress,
+          ...(i.ipAddresses ?? []),
+        ]),
+      ),
+      host: vmi?.status?.nodeName,
+      cpu: { count: cpusOf(domain?.cpu) },
+      memory: {
+        totalMiB: toMiB(
+          domain?.memory?.guest ??
+            domain?.resources?.limits?.memory ??
+            domain?.resources?.requests?.memory,
+        ),
+      },
+      fetchedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
    * PVCs, for disk sizes and images. Optional: a token without list on
    * persistentvolumeclaims still gets every VM, warned once.
    */
@@ -277,6 +345,16 @@ export class HarvesterVmSource implements VmSource {
       cont = page.metadata?.continue || undefined;
     } while (cont);
     return out;
+  }
+
+  /** Like get, but undefined on 404. */
+  private async getOptional<T>(path: string): Promise<T | undefined> {
+    try {
+      return await this.get<T>(path);
+    } catch (e) {
+      if (/ failed: 404 /.test((e as Error).message)) return undefined;
+      throw e;
+    }
   }
 
   private async get<T>(path: string): Promise<T> {

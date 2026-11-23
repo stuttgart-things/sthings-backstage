@@ -1,7 +1,7 @@
 {
   "name": "@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms",
   "version": "0.1.0",
-  "description": "Catalog entity provider that keeps VM Resource entities in sync with the live inventory (Proxmox and vSphere; Harvester planned)",
+  "description": "Catalog entity provider that keeps VM Resource entities in sync with the live inventory (Proxmox, vSphere, Harvester), plus the vm-info backend plugin for live VM state",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "license": "Apache-2.0",
@@ -34,11 +34,16 @@
     "@backstage/backend-plugin-api": "^1.12.0",
     "@backstage/catalog-model": "^1.10.3",
     "@backstage/config": "^1.3.11",
+    "@backstage/errors": "^1.4.0",
     "@backstage/plugin-catalog-node": "^3.0.0",
+    "express": "^4.22.0",
+    "express-promise-router": "^4.1.0",
     "fast-xml-parser": "^5.0.7"
   },
   "devDependencies": {
-    "@backstage/cli": "^0.36.8"
+    "@backstage/cli": "^0.36.8",
+    "@types/express": "^4.17.6",
+    "yaml": "^2.8.0"
   },
   "files": [
     "dist",
