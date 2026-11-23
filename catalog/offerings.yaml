@@ -1,0 +1,99 @@
+# Curated offerings for the /offerings page (#243). Schema: docs/offerings.md.
+# Registered in app-config.yaml (catalog.locations).
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: offering-order-vm
+  title: Order a VM
+  description: A virtual machine on Proxmox, vSphere or Harvester, built from a golden VM template.
+  annotations:
+    backstage.stuttgart-things.com/offering-group: Order
+    backstage.stuttgart-things.com/offering-order: '10'
+    backstage.stuttgart-things.com/offering-icon: vm
+  tags: [vm, self-service]
+  links:
+    - url: portal:/create
+      title: Order
+    - url: portal:/catalog?filters[kind]=resource&filters[type]=vm
+      title: My VMs
+spec:
+  type: offering
+  owner: group:default/platform-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: offering-cluster
+  title: Kubernetes cluster
+  description: Request a cluster or see the ones that exist, with their deployments and endpoints.
+  annotations:
+    backstage.stuttgart-things.com/offering-group: Order
+    backstage.stuttgart-things.com/offering-order: '20'
+    backstage.stuttgart-things.com/offering-icon: cluster
+  tags: [kubernetes]
+  links:
+    - url: portal:/create
+      title: Request
+    - url: portal:/catalog?filters[kind]=resource&filters[type]=kubernetes-cluster
+      title: Clusters
+spec:
+  type: offering
+  owner: group:default/platform-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: offering-crossplane-claim
+  title: Crossplane claim
+  description: Infrastructure as a claim from the Claim Registry, rendered and opened as a pull request by Claim Machinery.
+  annotations:
+    backstage.stuttgart-things.com/offering-group: Order
+    backstage.stuttgart-things.com/offering-order: '30'
+    backstage.stuttgart-things.com/offering-icon: claim
+  tags: [crossplane, claim-machinery]
+  links:
+    - url: portal:/create
+      title: New claim
+    - url: portal:/docs/default/component/sthings-backstage/claim-machinery-plugin/
+      title: How it works
+spec:
+  type: offering
+  owner: group:default/platform-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: offering-vm-templates
+  title: VM templates
+  description: The golden images VMs are built from, with build date and status.
+  annotations:
+    backstage.stuttgart-things.com/offering-group: Operate
+    backstage.stuttgart-things.com/offering-order: '40'
+    backstage.stuttgart-things.com/offering-icon: storage
+  tags: [vm, packer]
+  links:
+    - url: portal:/catalog?filters[kind]=resource&filters[type]=vm-template
+      title: VM templates
+spec:
+  type: offering
+  owner: group:default/platform-team
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: offering-docs
+  title: Documentation
+  description: TechDocs of all services and of this portal.
+  annotations:
+    backstage.stuttgart-things.com/offering-group: Learn
+    backstage.stuttgart-things.com/offering-order: '50'
+    backstage.stuttgart-things.com/offering-icon: docs
+  links:
+    - url: portal:/docs
+      title: Docs
+    - url: portal:/announcements
+      title: Platform news
+spec:
+  type: offering
+  owner: group:default/platform-team

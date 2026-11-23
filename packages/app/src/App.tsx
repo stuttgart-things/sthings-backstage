@@ -62,6 +62,7 @@ import { devToolsPlugin } from '@backstage/plugin-devtools';
 import { catalogUnprocessedEntitiesPlugin } from '@backstage/plugin-catalog-unprocessed-entities';
 import { NotificationsPage } from '@backstage/plugin-notifications';
 import { AnnouncementsPage } from '@backstage-community/plugin-announcements';
+import { OfferingsPage } from './components/offerings/OfferingsPage';
 import { RequirePermission } from '@backstage/plugin-permission-react';
 import { SignalsDisplay } from '@backstage/plugin-signals';
 
@@ -210,6 +211,7 @@ const routes = (
     <Route path="/catalog-graph" element={<CatalogGraphPage />} />
     <Route path="/notifications" element={<NotificationsPage />} />
     <Route path="/announcements" element={<AnnouncementsPage />} />
+    <Route path="/offerings" element={<OfferingsPage />} />
     <Route
       path="/devtools/*"
       element={

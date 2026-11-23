@@ -31,6 +31,7 @@ import { MyGroupsSidebarItem } from '@backstage/plugin-org';
 import GroupIcon from '@material-ui/icons/People';
 import { NotificationsSidebarItem } from '@backstage/plugin-notifications';
 import AnnouncementIcon from '@material-ui/icons/Announcement';
+import StorefrontIcon from '@material-ui/icons/Storefront';
 import { configApiRef, useApi } from '@backstage/core-plugin-api';
 import { SidebarRagModal } from '@roadiehq/rag-ai';
 import BuildIcon from '@material-ui/icons/Build';
@@ -97,6 +98,7 @@ export const Root = ({ children }: PropsWithChildren<{}>) => (
       <SidebarGroup label="Menu" icon={<MenuIcon />}>
         {/* Global nav, not org-specific */}
         <SidebarItem icon={HomeIcon} to="/" text="Home" />
+        <SidebarItem icon={StorefrontIcon} to="offerings" text="Offerings" />
         <SidebarItem icon={CategoryIcon} to="catalog" text="Catalog" />
         <MyGroupsSidebarItem
           singularTitle="My Group"
