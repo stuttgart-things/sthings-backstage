@@ -1,3 +1,10 @@
+## [1.35.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.35.0...v1.35.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* **deps:** update Backstage to 1.57.1 ([#269](https://github.com/stuttgart-things/sthings-backstage/issues/269)) ([8747bb9](https://github.com/stuttgart-things/sthings-backstage/commit/8747bb9794803bc2312902f4021465bb227c5776)), closes [#238](https://github.com/stuttgart-things/sthings-backstage/issues/238) [#251](https://github.com/stuttgart-things/sthings-backstage/issues/251)
+
 # [1.35.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.34.0...v1.35.0) (2026-11-23)
 
 
