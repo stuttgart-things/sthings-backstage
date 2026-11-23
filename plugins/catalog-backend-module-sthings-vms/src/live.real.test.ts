@@ -56,7 +56,9 @@ const logger = {
       if (!configFile) throw new Error('set LIVE_VM_CONFIG');
       const raw = parse(readFileSync(configFile, 'utf8'));
       const providers = raw?.catalog?.providers?.sthingsVms ?? {};
-      const report: string[] = [];
+      // Printed as it goes: a later provider failing must not hide this one.
+      const say = (line: string) => process.stdout.write(`${line}\n`);
+      const failures: string[] = [];
       let asked = 0;
 
       for (const [id, entry] of Object.entries<any>(providers)) {
@@ -67,53 +69,61 @@ const logger = {
         try {
           resolved = substitute(entry);
         } catch (e) {
-          report.push(`${id}: skipped (${(e as Error).message})`);
+          say(`${id}: skipped (${(e as Error).message})`);
           continue;
         }
-        const c = new ConfigReader(resolved as any, `${VMS_CONFIG_KEY}.${id}`);
-        const source = createVmSource(id, c, logger as any);
-        const vms = (await source.listVms()).filter(v => !v.template);
-        report.push(`${id}: ${vms.length} VMs listed`);
-
-        const picks = [
-          vms.find(v => v.status === 'running'),
-          vms.find(v => v.status && v.status !== 'running'),
-        ].filter(Boolean);
-        for (const vm of picks) {
-          const a = vm!.annotations;
-          const locator =
-            entry.type === 'proxmox'
-              ? {
-                  cloud: 'proxmox' as const,
-                  vmid: Number(a['proxmox.stuttgart-things.com/vmid']),
-                }
-              : entry.type === 'vsphere'
-                ? {
-                    cloud: 'vsphere' as const,
-                    moid: a['vsphere.stuttgart-things.com/moid'],
-                  }
-                : {
-                    cloud: 'harvester' as const,
-                    namespace: a['harvester.stuttgart-things.com/namespace'],
-                    name: a['harvester.stuttgart-things.com/name'],
-                  };
-          const t0 = Date.now();
-          const info = await source.liveInfo(locator);
-          asked++;
-          report.push(
-            `  ${vm!.name} (catalog: ${vm!.status}) -> ${info.status}, ` +
-              `uptime ${info.uptimeSeconds ?? '-'}s, host ${info.host ?? '-'}, ` +
-              `cpu ${info.cpu?.usagePercent ?? '-'}% of ${info.cpu?.count ?? '-'}, ` +
-              `mem ${info.memory?.usedMiB ?? '-'}/${info.memory?.totalMiB ?? '-'} MiB, ` +
-              `${info.ipAddresses.length} address(es), ${Date.now() - t0} ms`,
+        try {
+          const c = new ConfigReader(
+            resolved as any,
+            `${VMS_CONFIG_KEY}.${id}`,
           );
-          expect(info.status).toBe(vm!.status);
-          if (info.status === 'running') {
-            expect(info.uptimeSeconds).toBeGreaterThan(0);
+          const source = createVmSource(id, c, logger as any);
+          const vms = (await source.listVms()).filter(v => !v.template);
+          say(`${id}: ${vms.length} VMs listed`);
+
+          const picks = [
+            vms.find(v => v.status === 'running'),
+            vms.find(v => v.status && v.status !== 'running'),
+          ].filter(Boolean);
+          for (const vm of picks) {
+            const a = vm!.annotations;
+            const locator =
+              entry.type === 'proxmox'
+                ? {
+                    cloud: 'proxmox' as const,
+                    vmid: Number(a['proxmox.stuttgart-things.com/vmid']),
+                  }
+                : entry.type === 'vsphere'
+                  ? {
+                      cloud: 'vsphere' as const,
+                      moid: a['vsphere.stuttgart-things.com/moid'],
+                    }
+                  : {
+                      cloud: 'harvester' as const,
+                      namespace: a['harvester.stuttgart-things.com/namespace'],
+                      name: a['harvester.stuttgart-things.com/name'],
+                    };
+            const t0 = Date.now();
+            const info = await source.liveInfo(locator);
+            asked++;
+            say(
+              `  ${vm!.name} (catalog: ${vm!.status}) -> ${info.status}, ` +
+                `uptime ${info.uptimeSeconds ?? '-'}s, host ${info.host ?? '-'}, ` +
+                `cpu ${info.cpu?.usagePercent ?? '-'}% of ${info.cpu?.count ?? '-'}, ` +
+                `mem ${info.memory?.usedMiB ?? '-'}/${info.memory?.totalMiB ?? '-'} MiB, ` +
+                `${info.ipAddresses.length} address(es), ${Date.now() - t0} ms`,
+            );
+            expect(info.status).toBe(vm!.status);
+            if (info.status === 'running') {
+              expect(info.uptimeSeconds).toBeGreaterThan(0);
+            }
           }
+        } catch (e) {
+          failures.push(id);
+          say(`${id}: FAILED ${(e as Error).message}`);
         }
       }
-      process.stdout.write(`\n${report.join('\n')}\n\n`);
+      expect(failures).toEqual([]);
       expect(asked).toBeGreaterThan(0);
     });
   },
