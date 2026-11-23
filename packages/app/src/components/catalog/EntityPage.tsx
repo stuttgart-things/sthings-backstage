@@ -54,6 +54,7 @@ import {
 
 import { TechDocsAddons } from '@backstage/plugin-techdocs-react';
 import { VmDetailsCard } from './VmDetailsCard';
+import { hasLiveVmInfo, VmLiveInfoCard } from './VmLiveInfoCard';
 import { ClusterDetailsCard } from './ClusterDetailsCard';
 import { ClusterDeploymentsCard } from './ClusterDeploymentsCard';
 import { ReportIssue } from '@backstage/plugin-techdocs-module-addons-contrib';
@@ -290,6 +291,14 @@ const vmPage = (
         <Grid item md={6} xs={12}>
           <VmDetailsCard />
         </Grid>
+        {/* Live state from the hypervisor (#244), VMs of the sthings-vms provider only. */}
+        <EntitySwitch>
+          <EntitySwitch.Case if={hasLiveVmInfo}>
+            <Grid item md={6} xs={12}>
+              <VmLiveInfoCard />
+            </Grid>
+          </EntitySwitch.Case>
+        </EntitySwitch>
         <Grid item md={6} xs={12}>
           <EntityCatalogGraphCard height={400} />
         </Grid>

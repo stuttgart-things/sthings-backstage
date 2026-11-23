@@ -1,5 +1,12 @@
 import { LoggerService } from '@backstage/backend-plugin-api';
 import { XMLParser } from 'fast-xml-parser';
+import {
+  LiveVmSource,
+  usableAddresses,
+  VmLiveInfo,
+  VmLocator,
+  VmNotFoundError,
+} from '../live';
 import { VmRecord, VmSource } from '../types';
 import { pinnedFetch } from './proxmox';
 
@@ -57,6 +64,20 @@ const VM_PROPERTIES = [
   'guest.ipAddress',
 ];
 
+/** Read on one VM for the live card (#244). */
+const LIVE_PROPERTIES = [
+  'runtime.powerState',
+  'runtime.host',
+  'summary.quickStats.uptimeSeconds',
+  'summary.quickStats.overallCpuUsage',
+  'summary.runtime.maxCpuUsage',
+  'summary.quickStats.guestMemoryUsage',
+  'summary.config.numCpu',
+  'summary.config.memorySizeMB',
+  'guest.ipAddress',
+  'guest.net',
+];
+
 const POWER_STATES: Record<string, string> = {
   poweredOn: 'running',
   poweredOff: 'stopped',
@@ -77,7 +98,8 @@ const xmlParser = new XMLParser({
   isArray: name =>
     name === 'objects' ||
     name === 'propSet' ||
-    name === 'ManagedObjectReference',
+    name === 'ManagedObjectReference' ||
+    name === 'GuestNicInfo',
 });
 
 /**
@@ -141,7 +163,7 @@ class SoapSession {
  * (/api/vcenter/vm), it also returns templates kept in folders; unlike the
  * VI/JSON API, it is served by vCenter 7 as well. A read-only user is enough.
  */
-export class VsphereVmSource implements VmSource {
+export class VsphereVmSource implements VmSource, LiveVmSource {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
 
@@ -152,6 +174,89 @@ export class VsphereVmSource implements VmSource {
   }
 
   async listVms(): Promise<VmRecord[]> {
+    return this.withSession((session, content) =>
+      this.listWithSession(session, content),
+    );
+  }
+
+  /** Live state of one VM by moid, in its own short session. */
+  async liveInfo(locator: VmLocator): Promise<VmLiveInfo> {
+    if (locator.cloud !== 'vsphere') {
+      throw new Error(`vSphere source cannot look up a ${locator.cloud} VM`);
+    }
+    return this.withSession(async (session, content) => {
+      const ref = { type: 'VirtualMachine', value: locator.moid };
+      let objects;
+      try {
+        objects = await this.retrieve(
+          session,
+          content,
+          wrap(
+            'propSet',
+            el('type', 'VirtualMachine') +
+              LIVE_PROPERTIES.map(p => el('pathSet', p)).join(''),
+          ) + wrap('objectSet', moRefXml('obj', ref)),
+        );
+      } catch (e) {
+        // A deleted VM is a ManagedObjectNotFound fault.
+        if (
+          /has already been deleted|not found|ManagedObjectNotFound/i.test(
+            (e as Error).message,
+          )
+        ) {
+          throw new VmNotFoundError(`vSphere VM ${locator.moid} not found`);
+        }
+        throw e;
+      }
+      const p = objects[0]?.props;
+      if (!p) throw new VmNotFoundError(`vSphere VM ${locator.moid} not found`);
+
+      const hostRef = p['runtime.host'] as MoRef | undefined;
+      const host = hostRef
+        ? (await this.names(session, content, [hostRef])).get(hostRef.value)
+        : undefined;
+      const powerState = p['runtime.powerState'] as string | undefined;
+      const running = powerState === 'poweredOn';
+      const num = (key: string) =>
+        typeof p[key] === 'number' ? (p[key] as number) : undefined;
+      const usedMhz = num('summary.quickStats.overallCpuUsage');
+      const maxMhz = num('summary.runtime.maxCpuUsage');
+
+      return {
+        cloud: 'vsphere',
+        status: powerState && (POWER_STATES[powerState] ?? powerState),
+        uptimeSeconds: running
+          ? num('summary.quickStats.uptimeSeconds')
+          : undefined,
+        ipAddresses: running
+          ? usableAddresses([
+              p['guest.ipAddress'] as string | undefined,
+              ...((p['guest.net'] as string[] | undefined) ?? []),
+            ])
+          : [],
+        host,
+        cpu: {
+          count: num('summary.config.numCpu'),
+          usagePercent:
+            running && usedMhz !== undefined && maxMhz
+              ? Math.round((usedMhz / maxMhz) * 1000) / 10
+              : undefined,
+        },
+        memory: {
+          totalMiB: num('summary.config.memorySizeMB'),
+          usedMiB: running
+            ? num('summary.quickStats.guestMemoryUsage')
+            : undefined,
+        },
+        fetchedAt: new Date().toISOString(),
+      };
+    });
+  }
+
+  /** Login, run `fn`, always logout. */
+  private async withSession<T>(
+    fn: (session: SoapSession, content: ServiceContent) => Promise<T>,
+  ): Promise<T> {
     const session = new SoapSession(
       init => this.fetchImpl(`${this.baseUrl}/sdk`, init),
       this.options.apiVersion ?? DEFAULT_VSPHERE_API_VERSION,
@@ -172,7 +277,7 @@ export class VsphereVmSource implements VmSource {
         el('password', this.options.password),
     );
     try {
-      return await this.listWithSession(session, content);
+      return await fn(session, content);
     } finally {
       await session
         .call('Logout', moRefXml('_this', content.sessionManager))
@@ -390,6 +495,12 @@ function fromXml(val: unknown): unknown {
       return toMoRef(node);
     case 'ArrayOfManagedObjectReference':
       return ((node.ManagedObjectReference ?? []) as XmlNode[]).map(toMoRef);
+    case 'ArrayOfGuestNicInfo':
+      // Every address of every NIC, flattened; GuestNicInfo.ipAddress is a
+      // single element or a list depending on the count.
+      return ((node.GuestNicInfo ?? []) as XmlNode[]).flatMap(nic =>
+        ([] as unknown[]).concat(nic.ipAddress ?? []).map(text),
+      );
     case 'boolean':
       return text(node) === 'true';
     case 'int':

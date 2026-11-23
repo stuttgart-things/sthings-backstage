@@ -1,5 +1,13 @@
 import { LoggerService } from '@backstage/backend-plugin-api';
 import https from 'node:https';
+import {
+  LiveVmSource,
+  toPercent,
+  usableAddresses,
+  VmLiveInfo,
+  VmLocator,
+  VmNotFoundError,
+} from '../live';
 import { VmRecord, VmSource } from '../types';
 
 export const PROXMOX_ANNOTATION_PREFIX = 'proxmox.stuttgart-things.com';
@@ -30,6 +38,12 @@ interface ProxmoxResource {
   tags?: string;
   maxcpu?: number;
   maxmem?: number;
+  /** Seconds since start; 0 while stopped. */
+  uptime?: number;
+  /** CPU usage as a fraction of maxcpu. */
+  cpu?: number;
+  /** Bytes in use (host view). */
+  mem?: number;
 }
 
 interface GuestInterface {
@@ -41,7 +55,7 @@ interface GuestInterface {
  * Lists the VMs of one Proxmox pool via the cluster API. A read-only token
  * (PVEAuditor) is enough. TLS uses the Node trust store, or `caCert` if set.
  */
-export class ProxmoxVmSource implements VmSource {
+export class ProxmoxVmSource implements VmSource, LiveVmSource {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
 
@@ -59,6 +73,50 @@ export class ProxmoxVmSource implements VmSource {
       r => r.type === 'qemu' && r.pool === this.options.pool,
     );
     return Promise.all(ours.map(r => this.toRecord(r)));
+  }
+
+  /**
+   * Live state of one VM of the pool. The node comes from the same
+   * cluster-wide call, so a VM migrated since the last catalog run is found.
+   */
+  async liveInfo(locator: VmLocator): Promise<VmLiveInfo> {
+    if (locator.cloud !== 'proxmox') {
+      throw new Error(`Proxmox source cannot look up a ${locator.cloud} VM`);
+    }
+    const resources = await this.get<ProxmoxResource[]>(
+      '/api2/json/cluster/resources?type=vm',
+    );
+    const r = resources.find(
+      x =>
+        x.type === 'qemu' &&
+        x.vmid === locator.vmid &&
+        x.pool === this.options.pool,
+    );
+    if (!r) {
+      throw new VmNotFoundError(
+        `Proxmox VM ${locator.vmid} not found in pool ${this.options.pool}`,
+      );
+    }
+    const running = r.status === 'running';
+    return {
+      cloud: 'proxmox',
+      status: r.status,
+      uptimeSeconds: running && r.uptime ? r.uptime : undefined,
+      ipAddresses: running ? await this.guestAddresses(r) : [],
+      host: r.node,
+      cpu: {
+        count: r.maxcpu,
+        usagePercent: running ? toPercent(r.cpu) : undefined,
+      },
+      memory: {
+        totalMiB: r.maxmem ? Math.round(r.maxmem / 1024 / 1024) : undefined,
+        usedMiB:
+          running && r.mem !== undefined
+            ? Math.round(r.mem / 1024 / 1024)
+            : undefined,
+      },
+      fetchedAt: new Date().toISOString(),
+    };
   }
 
   private async toRecord(r: ProxmoxResource): Promise<VmRecord> {
@@ -85,6 +143,27 @@ export class ProxmoxVmSource implements VmSource {
       annotations,
       url: `${this.baseUrl}/#v1:0:=qemu%2F${r.vmid}`,
     };
+  }
+
+  /** All usable addresses from the guest agent; empty without an agent. */
+  private async guestAddresses(r: ProxmoxResource): Promise<string[]> {
+    try {
+      const data = await this.get<{ result: GuestInterface[] }>(
+        `/api2/json/nodes/${encodeURIComponent(r.node)}/qemu/${r.vmid}/agent/network-get-interfaces`,
+      );
+      return usableAddresses(
+        (data.result ?? [])
+          .filter(iface => iface.name !== 'lo')
+          .flatMap(iface =>
+            (iface['ip-addresses'] ?? []).map(a => a['ip-address']),
+          ),
+      );
+    } catch (e) {
+      this.options.logger.debug(
+        `No guest agent addresses for VM ${r.vmid}: ${(e as Error).message}`,
+      );
+      return [];
+    }
   }
 
   /** First non-loopback IPv4 from the guest agent; undefined if unavailable. */

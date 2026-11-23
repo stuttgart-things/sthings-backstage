@@ -74,6 +74,13 @@ backend.add(import('@backstage/plugin-devtools-backend'));
 backend.add(
   import('@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms'),
 );
+// Live VM state for the entity page (/api/vm-info, #244), from the same
+// catalog.providers.sthingsVms config and credentials. Read-only.
+backend.add(
+  import('@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms').then(
+    m => ({ default: m.vmInfoPlugin }),
+  ),
+);
 
 // permission plugin
 backend.add(import('@backstage/plugin-permission-backend'));

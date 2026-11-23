@@ -125,6 +125,7 @@ describe('HarvesterVmSource', () => {
         tags: ['team'],
         annotations: {
           'harvester.stuttgart-things.com/namespace': 'vms',
+          'harvester.stuttgart-things.com/name': 'homerun2-dev',
           'harvester.stuttgart-things.com/uid': 'uid-homerun2-dev',
           'harvester.stuttgart-things.com/node': 'harvester-1',
           'harvester.stuttgart-things.com/ipv4': '10.31.103.21',
@@ -143,6 +144,7 @@ describe('HarvesterVmSource', () => {
         tags: [],
         annotations: {
           'harvester.stuttgart-things.com/namespace': 'default',
+          'harvester.stuttgart-things.com/name': 'stopped-one',
           'harvester.stuttgart-things.com/uid': 'uid-stopped-one',
         },
         url: 'https://harvester.sthings.lab/dashboard/harvester/c/local/kubevirt.io.virtualmachine/default/stopped-one',
@@ -269,6 +271,7 @@ describe('HarvesterVmSource', () => {
     expect(hr.description).toBe('homerun2-dev singlenode rke2');
     expect(hr.annotations).toEqual({
       'harvester.stuttgart-things.com/namespace': 'default',
+      'harvester.stuttgart-things.com/name': 'homerun2-dev',
       'harvester.stuttgart-things.com/uid': 'uid-homerun2-dev',
       'harvester.stuttgart-things.com/node': 'harvester',
       // the VM network's, not the pod interface the guest reports first

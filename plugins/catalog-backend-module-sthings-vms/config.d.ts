@@ -126,4 +126,13 @@ export interface Config {
       };
     };
   };
+
+  /** Live VM info on the entity page (vm-info plugin, sthings-backstage#244). */
+  vmInfo?: {
+    /**
+     * Seconds one answer is reused before the hypervisor is asked again.
+     * Default 30.
+     */
+    cacheSeconds?: number;
+  };
 }
