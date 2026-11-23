@@ -1,3 +1,10 @@
+# [1.37.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.36.0...v1.37.0) (2026-11-23)
+
+
+### Features
+
+* **announcements:** announce the running release after each deploy ([#276](https://github.com/stuttgart-things/sthings-backstage/issues/276)) ([c4885f0](https://github.com/stuttgart-things/sthings-backstage/commit/c4885f08661d9681333ad7948f5dd8285d019695))
+
 # [1.36.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.35.2...v1.36.0) (2026-11-23)
 
 
