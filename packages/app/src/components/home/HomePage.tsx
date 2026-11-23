@@ -6,7 +6,6 @@ import {
   HomePageStarredEntities,
   HomePageToolkit,
   HomePageTopVisited,
-  WelcomeTitle,
 } from '@backstage/plugin-home';
 import { HomePageSearchBar } from '@backstage/plugin-search';
 import { SearchContextProvider } from '@backstage/plugin-search-react';
@@ -20,6 +19,7 @@ import ComputerIcon from '@material-ui/icons/Computer';
 import CategoryIcon from '@material-ui/icons/Category';
 import LibraryBooks from '@material-ui/icons/LibraryBooks';
 import AnnouncementIcon from '@material-ui/icons/Announcement';
+import { Greeting } from './Greeting';
 
 const useStyles = makeStyles(theme => ({
   searchBar: {
@@ -60,7 +60,13 @@ export function HomePage() {
   return (
     <SearchContextProvider>
       <Page themeId="home">
-        <Header title={<WelcomeTitle />} subtitle={orgName} />
+        {/* pageTitleOverride: the title is an element, which made the
+            browser tab (and Top Visited) read "[object Object]". */}
+        <Header
+          title={<Greeting />}
+          pageTitleOverride="Home"
+          subtitle={orgName}
+        />
         <Content>
           {/* Unseen announcements; the catalog no longer shows them (#242). */}
           <NewAnnouncementBanner max={3} />
