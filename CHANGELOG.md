@@ -1,3 +1,10 @@
+# [1.34.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.33.1...v1.34.0) (2026-11-23)
+
+
+### Features
+
+* **home:** German/English greeting with Servus and Gude, fix tab title ([#262](https://github.com/stuttgart-things/sthings-backstage/issues/262)) ([4293e33](https://github.com/stuttgart-things/sthings-backstage/commit/4293e337ba502bfac095fe21b43ad26c3d16147a)), closes [#241](https://github.com/stuttgart-things/sthings-backstage/issues/241) [#246](https://github.com/stuttgart-things/sthings-backstage/issues/246) [#251](https://github.com/stuttgart-things/sthings-backstage/issues/251)
+
 ## [1.33.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.33.0...v1.33.1) (2026-11-22)
 
 
