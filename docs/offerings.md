@@ -42,7 +42,10 @@ Every card also has **Details**, the offering's catalog page.
 ## Where offerings live
 
 The platform's own offerings are in [`catalog/offerings.yaml`](../catalog/offerings.yaml),
-registered in `app-config.yaml` under `catalog.locations`. A team can keep its
+registered as the Location `sthings-backstage-offerings` in the catalog index
+([backstage-resources `services/sthings-dev/catalog-index.yaml`](https://github.com/stuttgart-things/backstage-resources/blob/main/services/sthings-dev/catalog-index.yaml)).
+Not in `app-config.yaml`: the deployed instances load only their mounted
+config files, never the image's `app-config.yaml`. A team can keep its
 own offerings in its repository and register that file like any other
 catalog file; the owner should be the team's group.
 

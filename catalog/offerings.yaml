@@ -1,5 +1,6 @@
 # Curated offerings for the /offerings page (#243). Schema: docs/offerings.md.
-# Registered in app-config.yaml (catalog.locations).
+# Registered as Location sthings-backstage-offerings in the catalog index
+# (backstage-resources services/sthings-dev/catalog-index.yaml).
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Resource
@@ -13,8 +14,10 @@ metadata:
     backstage.stuttgart-things.com/offering-icon: vm
   tags: [vm, self-service]
   links:
-    - url: portal:/create
+    - url: portal:/create/templates/default/create-vm
       title: Order
+    - url: portal:/create/templates/default/harvester-vm
+      title: Harvester VM
     - url: portal:/catalog?filters[kind]=resource&filters[type]=vm
       title: My VMs
 spec:
@@ -33,7 +36,7 @@ metadata:
     backstage.stuttgart-things.com/offering-icon: cluster
   tags: [kubernetes]
   links:
-    - url: portal:/create
+    - url: portal:/create/templates/default/create-cluster-stack
       title: Request
     - url: portal:/catalog?filters[kind]=resource&filters[type]=kubernetes-cluster
       title: Clusters
@@ -53,7 +56,7 @@ metadata:
     backstage.stuttgart-things.com/offering-icon: claim
   tags: [crossplane, claim-machinery]
   links:
-    - url: portal:/create
+    - url: portal:/create/templates/default/create-xrs-pr
       title: New claim
     - url: portal:/docs/default/component/sthings-backstage/claim-machinery-plugin/
       title: How it works
