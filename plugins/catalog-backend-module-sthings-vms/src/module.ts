@@ -1,6 +1,7 @@
 import {
   coreServices,
   createBackendModule,
+  LoggerService,
   readSchedulerServiceTaskScheduleDefinitionFromConfig,
   SchedulerServiceTaskScheduleDefinition,
 } from '@backstage/backend-plugin-api';
@@ -66,7 +67,7 @@ export default createBackendModule({
           await scheduler.scheduleTask({
             id: 'sthings-clusters:refresh',
             ...CLUSTER_SCHEDULE,
-            fn: () => processor.refresh(),
+            fn: logged('sthings-clusters', logger, () => processor.refresh()),
           });
         }
 
@@ -114,7 +115,9 @@ export default createBackendModule({
             await scheduler.scheduleTask({
               id: `${orders.getProviderName()}:refresh`,
               ...schedule,
-              fn: () => orders.refresh(),
+              fn: logged(orders.getProviderName(), logger, () =>
+                orders.refresh(),
+              ),
             });
             continue;
           }
@@ -137,10 +140,31 @@ export default createBackendModule({
           await scheduler.scheduleTask({
             id: `${provider.getProviderName()}:refresh`,
             ...schedule,
-            fn: () => provider.refresh(),
+            fn: logged(provider.getProviderName(), logger, () =>
+              provider.refresh(),
+            ),
           });
         }
       },
     });
   },
 });
+
+/**
+ * The scheduler logs a failed task's error as `{}`, hiding e.g. a vCenter
+ * login fault. Log the message ourselves, then fail the task as before.
+ */
+function logged(
+  name: string,
+  logger: LoggerService,
+  fn: () => Promise<void>,
+): () => Promise<void> {
+  return async () => {
+    try {
+      await fn();
+    } catch (e) {
+      logger.error(`${name}: refresh failed: ${(e as Error).message}`);
+      throw e;
+    }
+  };
+}
