@@ -10,6 +10,7 @@ import LayersIcon from '@material-ui/icons/Layers';
 import CloudIcon from '@material-ui/icons/Cloud';
 import ShoppingCartIcon from '@material-ui/icons/ShoppingCart';
 import DescriptionIcon from '@material-ui/icons/Description';
+import StorefrontIcon from '@material-ui/icons/Storefront';
 
 type TypeInfo = {
   /** Shown instead of the raw spec.type. */
@@ -39,6 +40,11 @@ const TYPES: Record<string, TypeInfo> = {
     label: 'Kubernetes Cluster',
     icon: () => <CloudIcon fontSize="small" />,
     color: '#0D9488',
+  },
+  offering: {
+    label: 'Offering',
+    icon: () => <StorefrontIcon fontSize="small" />,
+    color: '#db2777',
   },
   'machinery-order': {
     label: 'Machinery Order',

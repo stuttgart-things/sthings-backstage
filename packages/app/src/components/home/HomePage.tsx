@@ -19,6 +19,7 @@ import ComputerIcon from '@material-ui/icons/Computer';
 import CategoryIcon from '@material-ui/icons/Category';
 import LibraryBooks from '@material-ui/icons/LibraryBooks';
 import AnnouncementIcon from '@material-ui/icons/Announcement';
+import StorefrontIcon from '@material-ui/icons/Storefront';
 import { Greeting } from './Greeting';
 
 const useStyles = makeStyles(theme => ({
@@ -36,6 +37,7 @@ const useStyles = makeStyles(theme => ({
  * only, so they work on every instance.
  */
 export const TOOLS = [
+  { label: 'Offerings', url: '/offerings', icon: <StorefrontIcon /> },
   { label: 'Order', url: '/create', icon: <CreateIcon /> },
   {
     label: 'Clusters',
