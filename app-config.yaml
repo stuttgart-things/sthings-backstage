@@ -180,12 +180,8 @@ catalog:
       target: https://github.com/stuttgart-things/backstage-resources/blob/main/services/sthings-dev/catalog-index.yaml
       rules:
         - allow: [Component, Location, System, API, Resource, Template]
-
-    # Curated offerings for the /offerings page (#243), see docs/offerings.md.
-    - type: url
-      target: https://github.com/stuttgart-things/sthings-backstage/blob/main/catalog/offerings.yaml
-      rules:
-        - allow: [Resource]
+    # The offerings for /offerings (catalog/offerings.yaml) come in through
+    # this index (Location sthings-backstage-offerings), see docs/offerings.md.
 
 kubernetes:
   # see https://backstage.io/docs/features/kubernetes/configuration for kubernetes configuration options
