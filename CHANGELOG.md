@@ -1,3 +1,10 @@
+## [1.35.2](https://github.com/stuttgart-things/sthings-backstage/compare/v1.35.1...v1.35.2) (2026-11-23)
+
+
+### Bug Fixes
+
+* **docker:** drop the isolated-vm smoke check ([#270](https://github.com/stuttgart-things/sthings-backstage/issues/270)) ([c2db1aa](https://github.com/stuttgart-things/sthings-backstage/commit/c2db1aa2be4064b04040340d16d24bcea1a3e705)), closes [#269](https://github.com/stuttgart-things/sthings-backstage/issues/269) [#269](https://github.com/stuttgart-things/sthings-backstage/issues/269)
+
 ## [1.35.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.35.0...v1.35.1) (2026-11-23)
 
 
