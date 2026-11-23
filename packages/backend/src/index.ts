@@ -7,6 +7,7 @@
  */
 
 import { createBackend } from '@backstage/backend-defaults';
+import { vmInfoPlugin } from '@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms';
 
 const backend = createBackend();
 
@@ -76,11 +77,9 @@ backend.add(
 );
 // Live VM state for the entity page (/api/vm-info, #244), from the same
 // catalog.providers.sthingsVms config and credentials. Read-only.
-backend.add(
-  import('@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms').then(
-    m => ({ default: m.vmInfoPlugin }),
-  ),
-);
+// Imported statically: under `yarn start` a dynamic import(...).then(m =>
+// m.vmInfoPlugin) resolves to undefined and the backend refuses to start.
+backend.add(vmInfoPlugin);
 
 // permission plugin
 backend.add(import('@backstage/plugin-permission-backend'));
@@ -121,5 +120,9 @@ backend.add(import('@backstage/plugin-signals-backend'));
 // notification. Creating, editing and deleting is platform-only via the
 // permission policy (announcement.*). See docs/announcements.md.
 backend.add(import('@backstage-community/plugin-announcements-backend'));
+// Announces the release an instance runs once it is deployed (category
+// release). Only in CI images, which carry build-info.json. See
+// docs/announcements.md "Release announcements".
+backend.add(import('./plugins/release-announcements'));
 
 backend.start();
