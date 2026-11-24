@@ -355,16 +355,19 @@ spec:
 ### Common Issues
 
 **"Resource not accessible by integration"**
+
 - Verify the GitHub token has required scopes
 - Check repository visibility and access permissions
 - Ensure the token owner has access to the target organization/repository
 
 **"Workflow does not exist"**
+
 - Verify the workflow file exists in the repository
 - Check the workflow filename is correct (include `.yaml` or `.yml` extension)
 - Ensure the workflow has `workflow_dispatch` trigger enabled
 
 **"Branch protection rules prevent this action"**
+
 - Use a token with admin access or bypass permissions
 - Configure branch protection to allow the integration
 

@@ -34,7 +34,7 @@ curl -sS -k -o /dev/null -w "permission: HTTP %{http_code}\n" \
 
 Expected output:
 
-```
+```text
 catalog:   HTTP 200
 dry-run:   HTTP 200
 permission: HTTP 403

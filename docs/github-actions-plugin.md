@@ -13,7 +13,7 @@ The GitHub Actions plugin adds a CI/CD tab to service and website entity pages t
 
 ## Architecture
 
-```
+```text
 ENTITY PAGE:
 ┌────────────────────────────────┐
 │  EntityPage (CI/CD tab)        │
@@ -146,7 +146,7 @@ External services referenced via `backstage-resources/services/sthings-dev/catal
 
 ## File Structure
 
-```
+```text
 packages/app/
 └── src/
     └── components/

@@ -165,6 +165,6 @@ For production deployments, consider using:
 
 Update the OAuth App callback URL to match your production backend URL:
 
-```
+```text
 https://backstage.example.com/api/auth/github/handler/frame
 ```
