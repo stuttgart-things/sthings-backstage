@@ -262,7 +262,9 @@ seconds.
           message: z
             .string()
             .optional()
-            .describe('Why there is no live info, when found is false'),
+            .describe(
+              'Why there is no live info, or the hypervisor error, when found is false',
+            ),
           info: z
             .object({})
             .passthrough()
@@ -286,7 +288,14 @@ seconds.
           `${stringifyEntityRef(ref)} is not a VM (spec.type ${String(entity.spec?.type)})`,
         );
       }
-      const result = await lookupLiveInfo(entity, sources, cache);
+      // A hypervisor error is an answer, not a failure of the tool: thrown,
+      // it reached MCP clients only as "Request failed with 500".
+      let result: LiveInfoLookup;
+      try {
+        result = await lookupLiveInfo(entity, sources, cache);
+      } catch (e) {
+        result = { found: false, message: (e as Error).message };
+      }
       return {
         output: result.found
           ? { found: true, info: { ...result.info } }

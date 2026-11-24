@@ -143,7 +143,11 @@ export default createBackendModule({
         let done = false;
 
         await scheduler.scheduleTask({
-          id: 'announce-running-release',
+          // One task per build: a global task keeps its schedule in the
+          // database, so with a fixed id a new image inherited the old one's
+          // hourly slot and announced up to an hour late; initialDelay only
+          // applies when a task id is registered for the first time.
+          id: `announce-running-release-${build.sha.slice(0, 12)}`,
           frequency: { hours: 1 },
           timeout: { minutes: 2 },
           initialDelay: { minutes: 2 },
