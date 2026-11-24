@@ -21,7 +21,6 @@ jobs:
       app-directory: "./"
       output-file: "/tmp/sthings-backstage.txt"
       continue-error: "true"
-      dagger-version: v0.20.3
-      dagger-module-version: v1.17.0
+      # no dagger pins: template defaults apply (old v1.17.0 no longer builds, github-workflow-templates#234)
       branch-name: ${{ github.head_ref || github.ref_name }}
     secrets: inherit # pragma: allowlist secret
