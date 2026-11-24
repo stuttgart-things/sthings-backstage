@@ -23,6 +23,7 @@ This Backstage instance serves as the central developer portal for Stuttgart Thi
 | [GitHub Scaffolder Module](github-scaffolder-module.md)       | Extended GitHub actions for software templates                                |
 | [GitHub Actions Plugin](github-actions-plugin.md)             | CI/CD visibility for GitHub Actions workflow runs                             |
 | [Integration into the portal](integration.md)                 | Bring your own entities, TechDocs, templates, claims, offerings and providers |
+| [AI clients (MCP)](mcp.md)                                    | The portal as read-only MCP server for Claude Code and other AI clients       |
 | [Configuration](configuration.md)                             | Environment variables and secrets reference                                   |
 | [External Access (Scaffolder)](external-access-scaffolder.md) | Plugin-scoped service tokens, generation, and dry-run verification            |
 
