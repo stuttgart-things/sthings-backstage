@@ -185,7 +185,9 @@ catalog:
     entityFilename: catalog-info.yaml
     pullRequestBranchName: backstage-integration
   rules:
-    - allow: [Component, System, API, Resource, Location, Template]
+    # AiResource: Claude Code skills, plugins and marketplace (ai-model
+    # module, #277). The labs set the same list in their own config.
+    - allow: [Component, System, API, Resource, Location, Template, AiResource]
   locations:
     # Organizational data from separate repository
     - type: url

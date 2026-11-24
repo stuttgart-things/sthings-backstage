@@ -619,6 +619,18 @@ describe('get-live-vm-info action', () => {
     });
   });
 
+  it('answers a hypervisor error with found: false and the error', async () => {
+    const t = setup({ 'homerun2-proxmox-vm': managed });
+    t.source.liveInfo.mockRejectedValueOnce(
+      new Error('POST /sdk: 500 NoPermission'),
+    );
+    const result = await t.run('homerun2-proxmox-vm');
+    expect(result.output).toEqual({
+      found: false,
+      message: expect.stringContaining('POST /sdk: 500 NoPermission'),
+    });
+  });
+
   it('rejects unknown entities and non-VMs', async () => {
     const cluster = { ...managed, spec: { type: 'kubernetes-cluster' } };
     const t = setup({ cluster });
