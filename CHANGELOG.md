@@ -1,3 +1,10 @@
+# [1.38.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.37.0...v1.38.0) (2026-11-24)
+
+
+### Features
+
+* **ai:** the portal as read-only MCP server for AI clients ([#278](https://github.com/stuttgart-things/sthings-backstage/issues/278)) ([f5eef27](https://github.com/stuttgart-things/sthings-backstage/commit/f5eef2703f06f826dbf7cb604b7544c922d98ec3)), closes [#244](https://github.com/stuttgart-things/sthings-backstage/issues/244) [#277](https://github.com/stuttgart-things/sthings-backstage/issues/277)
+
 # [1.37.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.36.0...v1.37.0) (2026-11-23)
 
 
