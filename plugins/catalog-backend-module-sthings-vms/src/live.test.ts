@@ -8,6 +8,7 @@ import { VsphereVmSource } from './sources/vsphere';
 import {
   createVmInfoRouter,
   LiveInfoCache,
+  registerListLiveVmsAction,
   registerLiveVmInfoAction,
   vmLocatorOf,
 } from './vmInfo';
@@ -626,5 +627,134 @@ describe('get-live-vm-info action', () => {
     );
     await expect(t.run('cluster')).rejects.toThrow('is not a VM');
     expect(t.source.liveInfo).not.toHaveBeenCalled();
+  });
+});
+
+describe('list-live-vms action', () => {
+  const vm = (name: string, vmid: string, provider = 'proxmox-labul') =>
+    ({
+      apiVersion: 'backstage.io/v1alpha1',
+      kind: 'Resource',
+      metadata: {
+        name,
+        namespace: 'default',
+        annotations: {
+          'backstage.io/managed-by-location': `sthings-vms:${provider}`,
+          'proxmox.stuttgart-things.com/vmid': vmid,
+        },
+      },
+      spec: { type: 'vm' },
+    }) as Entity;
+  const live = (status: string) => ({
+    cloud: 'proxmox',
+    status,
+    ipAddresses: [],
+    fetchedAt: '2026-11-24T12:00:00Z',
+  });
+
+  function setup(
+    entities: Entity[],
+    byVmid: Record<number, () => Promise<any>>,
+  ) {
+    let registered: any;
+    const source = {
+      liveInfo: jest.fn(async (l: any) => byVmid[l.vmid]()),
+    };
+    const catalog = {
+      getEntities: jest.fn(async () => ({ items: entities })),
+    };
+    registerListLiveVmsAction({
+      actionsRegistry: { register: (a: any) => (registered = a) },
+      catalog: catalog as any,
+      sources: new Map([['proxmox-labul', source]]),
+      cache: new LiveInfoCache(30_000),
+    });
+    const run = (input: any) =>
+      registered.action({ input, credentials: { principal: 'service' } });
+    return { registered, source, catalog, run };
+  }
+
+  it('is read-only and names the providers it can ask', () => {
+    const { registered } = setup([], {});
+    expect(registered.name).toBe('list-live-vms');
+    expect(registered.attributes.readOnly).toBe(true);
+    expect(registered.description).toContain('proxmox-labul');
+  });
+
+  it('lists every VM of the provider with its live state, sorted', async () => {
+    const t = setup([vm('b-vm', '102'), vm('a-vm', '101')], {
+      101: async () => live('running'),
+      102: async () => live('stopped'),
+    });
+    const { output } = await t.run({ provider: 'proxmox-labul' });
+    expect(output.total).toBe(2);
+    expect(output.vms.map((v: any) => [v.entityRef, v.info.status])).toEqual([
+      ['resource:default/a-vm', 'running'],
+      ['resource:default/b-vm', 'stopped'],
+    ]);
+    expect(t.catalog.getEntities).toHaveBeenCalledWith(
+      {
+        filter: {
+          kind: 'Resource',
+          'spec.type': 'vm',
+          'metadata.annotations.backstage.io/managed-by-location':
+            'sthings-vms:proxmox-labul',
+        },
+      },
+      { credentials: { principal: 'service' } },
+    );
+  });
+
+  it('filters by status but keeps VMs it could not check', async () => {
+    const t = setup([vm('a', '101'), vm('b', '102'), vm('c', '103')], {
+      101: async () => live('running'),
+      102: async () => live('stopped'),
+      103: async () => {
+        throw new Error('GET /cluster/resources: 500');
+      },
+    });
+    const { output } = await t.run({
+      provider: 'proxmox-labul',
+      status: 'stopped',
+    });
+    expect(output.total).toBe(3);
+    expect(output.vms).toEqual([
+      expect.objectContaining({ entityRef: 'resource:default/b', found: true }),
+      expect.objectContaining({
+        entityRef: 'resource:default/c',
+        found: false,
+        message: expect.stringContaining('GET /cluster/resources: 500'),
+      }),
+    ]);
+  });
+
+  it('rejects a provider that is not configured here', async () => {
+    const t = setup([], {});
+    await expect(t.run({ provider: 'vsphere-labda' })).rejects.toThrow(
+      "VM provider 'vsphere-labda' is not configured here; this instance has: proxmox-labul",
+    );
+    expect(t.catalog.getEntities).not.toHaveBeenCalled();
+  });
+
+  it('asks the hypervisor at most four VMs at a time', async () => {
+    let inFlight = 0;
+    let peak = 0;
+    const entities = Array.from({ length: 10 }, (_, i) =>
+      vm(`vm-${i}`, String(200 + i)),
+    );
+    const byVmid: Record<number, () => Promise<any>> = {};
+    for (let i = 0; i < 10; i++) {
+      byVmid[200 + i] = async () => {
+        inFlight++;
+        peak = Math.max(peak, inFlight);
+        await new Promise(r => setTimeout(r, 5));
+        inFlight--;
+        return live('running');
+      };
+    }
+    const t = setup(entities, byVmid);
+    const { output } = await t.run({ provider: 'proxmox-labul' });
+    expect(output.vms).toHaveLength(10);
+    expect(peak).toBeLessThanOrEqual(4);
   });
 });
