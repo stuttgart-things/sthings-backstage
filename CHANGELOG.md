@@ -1,3 +1,10 @@
+# [1.39.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.38.0...v1.39.0) (2026-11-24)
+
+
+### Features
+
+* **vms:** list-live-vms action, the live state of all VMs of a provider in one call ([#281](https://github.com/stuttgart-things/sthings-backstage/issues/281)) ([3d2b2c3](https://github.com/stuttgart-things/sthings-backstage/commit/3d2b2c3bb554ea9d69d34e18dc962c940c0712ea)), closes [#277](https://github.com/stuttgart-things/sthings-backstage/issues/277)
+
 # [1.38.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.37.0...v1.38.0) (2026-11-24)
 
 
