@@ -9,11 +9,14 @@ export {
   createVmInfoRouter,
   LiveInfoCache,
   liveSourcesFromConfig,
+  lookupLiveInfo,
+  registerLiveVmInfoAction,
   vmInfoPlugin,
   vmLocatorOf,
 } from './vmInfo';
 export { VmNotFoundError, usableAddresses } from './live';
 export type { LiveVmSource, VmLiveInfo, VmLocator } from './live';
+export type { LiveInfoLookup } from './vmInfo';
 export { SthingsVmEntityProvider, excludeMatcher } from './provider';
 export type { ProviderOptions } from './provider';
 export { ProxmoxVmSource } from './sources/proxmox';

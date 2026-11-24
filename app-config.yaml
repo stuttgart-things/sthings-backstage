@@ -32,6 +32,24 @@ backend:
           - plugin: scaffolder
           - plugin: catalog
 
+  # Actions offered to AI clients through the MCP server (#277,
+  # docs/mcp.md). Only read-only actions: MCP clients use a static token, a
+  # service principal the permission policy does not see. The filter applies
+  # to every MCP path, also the default /api/mcp-actions/v1. Only plugins
+  # whose REST API gives a token holder nothing worse than reading (catalog
+  # aside, see docs/mcp.md): no kubernetes (its proxy writes to clusters), no
+  # scaffolder, no announcements.
+  actions:
+    pluginSources:
+      - catalog
+      - search
+      - techdocs
+      - vm-info
+    filter:
+      include:
+        - attributes:
+            readOnly: true
+
   baseUrl: ${BACKEND_BASE_URL:-http://localhost:7007}
   listen:
     port: ${BACKEND_PORT:-7007}
@@ -240,3 +258,17 @@ ai:
     pgVector:
       # Chunks added to each question as context.
       amount: ${RAG_CONTEXT_CHUNKS:-6}
+
+# MCP server for AI clients (#277, docs/mcp.md). The token is configured per
+# instance under backend.auth.externalAccess (subject mcp-clients).
+mcpActions:
+  name: sthings-portal
+  description: stuttgart-things developer portal (Backstage), read-only
+  instructions: >-
+    The stuttgart-things developer portal. Use it to find who owns a service,
+    API, VM or cluster, where it runs and what its docs say. Catalog entities
+    are identified by refs like component:default/homerun2-core-catcher or
+    resource:default/<vm>-<cloud>-vm. Query the catalog first, then use
+    TechDocs, search or live VM info for details. VM status in the
+    catalog is the last inventory run; vm-info gives the current state.
+    Everything here is read-only.

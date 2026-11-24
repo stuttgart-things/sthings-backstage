@@ -4,10 +4,22 @@ import {
   HttpAuthService,
   LoggerService,
 } from '@backstage/backend-plugin-api';
-import { Entity, ANNOTATION_LOCATION } from '@backstage/catalog-model';
+import {
+  ActionsRegistryService,
+  actionsRegistryServiceRef,
+} from '@backstage/backend-plugin-api/alpha';
+import {
+  Entity,
+  ANNOTATION_LOCATION,
+  parseEntityRef,
+  stringifyEntityRef,
+} from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
-import { NotFoundError } from '@backstage/errors';
-import { catalogServiceRef } from '@backstage/plugin-catalog-node';
+import { InputError, NotFoundError } from '@backstage/errors';
+import {
+  CatalogService,
+  catalogServiceRef,
+} from '@backstage/plugin-catalog-node';
 import express from 'express';
 import Router from 'express-promise-router';
 import { LiveVmSource, VmLiveInfo, VmLocator, VmNotFoundError } from './live';
@@ -105,6 +117,49 @@ export interface VmInfoRouterOptions {
   logger: LoggerService;
 }
 
+/** Outcome of asking for one entity's live info. */
+export type LiveInfoLookup =
+  { found: true; info: VmLiveInfo } | { found: false; message: string };
+
+/**
+ * Live info for a VM entity the caller could read. Not found when the entity
+ * is not provider-managed, its source is not configured here or the
+ * hypervisor does not know the VM; other hypervisor errors are thrown.
+ * Shared by the HTTP route and the `get-live-vm-info` action.
+ */
+export async function lookupLiveInfo(
+  entity: Entity,
+  sources: Map<string, LiveVmSource>,
+  cache: LiveInfoCache,
+): Promise<LiveInfoLookup> {
+  const target = vmLocatorOf(entity);
+  if (!target) {
+    return {
+      found: false,
+      message: 'This VM is not managed by a live VM source',
+    };
+  }
+  const source = sources.get(target.providerId);
+  if (!source) {
+    return {
+      found: false,
+      message: `VM source '${target.providerId}' is not configured here`,
+    };
+  }
+  const key = `${target.providerId}:${JSON.stringify(target.locator)}`;
+  try {
+    return {
+      found: true,
+      info: await cache.get(key, () => source.liveInfo(target.locator)),
+    };
+  } catch (e) {
+    if (e instanceof VmNotFoundError)
+      return { found: false, message: e.message };
+    // Hypervisor errors carry no credentials (only method, path, status).
+    throw new Error(`Live VM info for ${key} failed: ${(e as Error).message}`);
+  }
+}
+
 /**
  * `GET /entity/:namespace/:name` -- live info for one VM Resource.
  *
@@ -124,40 +179,17 @@ export function createVmInfoRouter(
     if (!entity) {
       throw new NotFoundError(`No resource ${namespace}/${name}`);
     }
-    const target = vmLocatorOf(entity);
-    if (!target) {
-      res.status(404).json({
-        error: {
-          name: 'NotFoundError',
-          message: 'This VM is not managed by a live VM source',
-        },
-      });
-      return;
-    }
-    const source = sources.get(target.providerId);
-    if (!source) {
-      res.status(404).json({
-        error: {
-          name: 'NotFoundError',
-          message: `VM source '${target.providerId}' is not configured here`,
-        },
-      });
-      return;
-    }
-
-    const key = `${target.providerId}:${JSON.stringify(target.locator)}`;
     try {
-      const info = await cache.get(key, () => source.liveInfo(target.locator));
-      res.json(info);
-    } catch (e) {
-      if (e instanceof VmNotFoundError) {
+      const result = await lookupLiveInfo(entity, sources, cache);
+      if (result.found) {
+        res.json(result.info);
+      } else {
         res
           .status(404)
-          .json({ error: { name: 'NotFoundError', message: e.message } });
-        return;
+          .json({ error: { name: 'NotFoundError', message: result.message } });
       }
-      // Hypervisor errors carry no credentials (only method, path, status).
-      logger.warn(`Live VM info for ${key} failed: ${(e as Error).message}`);
+    } catch (e) {
+      logger.warn((e as Error).message);
       res.status(502).json({
         error: { name: 'BadGatewayError', message: (e as Error).message },
       });
@@ -191,6 +223,80 @@ async function userCredentials(
 }
 
 /**
+ * MCP/actions tool `vm-info:get-live-vm-info` (#277): the same live info as
+ * the entity page card, for AI clients. Read-only; the VM is looked up with
+ * the caller's credentials like the HTTP route.
+ */
+export function registerLiveVmInfoAction(options: {
+  actionsRegistry: ActionsRegistryService;
+  catalog: CatalogService;
+  sources: Map<string, LiveVmSource>;
+  cache: LiveInfoCache;
+}) {
+  const { actionsRegistry, catalog, sources, cache } = options;
+  actionsRegistry.register({
+    name: 'get-live-vm-info',
+    title: 'Get live VM info',
+    description: `
+Asks the hypervisor (Proxmox, vSphere or Harvester) right now for the state of
+one VM from the software catalog: power status, uptime, IP addresses, host,
+CPU and memory usage. The catalog's vm.stuttgart-things.com annotations are
+only a snapshot of the last inventory run; use this when the current state
+matters. VMs are catalog entities of kind Resource with spec.type "vm"; find
+them with the catalog query action first. Answers are cached for a few
+seconds.
+    `.trim(),
+    attributes: { readOnly: true, idempotent: true, destructive: false },
+    schema: {
+      input: z =>
+        z.object({
+          entityRef: z
+            .string()
+            .describe(
+              'Entity ref of the VM, e.g. "resource:default/k3s-node1-proxmox-vm" or just its name',
+            ),
+        }),
+      output: z =>
+        z.object({
+          found: z.boolean(),
+          message: z
+            .string()
+            .optional()
+            .describe('Why there is no live info, when found is false'),
+          info: z
+            .object({})
+            .passthrough()
+            .optional()
+            .describe(
+              'cloud, status, uptimeSeconds, ipAddresses, host, cpu {count, usagePercent}, memory {totalMiB, usedMiB}, fetchedAt',
+            ),
+        }),
+    },
+    action: async ({ input, credentials }) => {
+      const ref = parseEntityRef(input.entityRef, {
+        defaultKind: 'resource',
+        defaultNamespace: 'default',
+      });
+      const entity = await catalog.getEntityByRef(ref, { credentials });
+      if (!entity) {
+        throw new InputError(`No entity ${stringifyEntityRef(ref)} found`);
+      }
+      if (entity.spec?.type !== 'vm') {
+        throw new InputError(
+          `${stringifyEntityRef(ref)} is not a VM (spec.type ${String(entity.spec?.type)})`,
+        );
+      }
+      const result = await lookupLiveInfo(entity, sources, cache);
+      return {
+        output: result.found
+          ? { found: true, info: { ...result.info } }
+          : { found: false, message: result.message },
+      };
+    },
+  });
+}
+
+/**
  * Backend plugin `vm-info` (sthings-backstage#244): live state of VM
  * Resources for the entity page, from the same hypervisor config and
  * credentials as the sthings-vms catalog module. Read-only; start/stop is a
@@ -206,8 +312,16 @@ export const vmInfoPlugin = createBackendPlugin({
         httpRouter: coreServices.httpRouter,
         httpAuth: coreServices.httpAuth,
         catalog: catalogServiceRef,
+        actionsRegistry: actionsRegistryServiceRef,
       },
-      async init({ config, logger, httpRouter, httpAuth, catalog }) {
+      async init({
+        config,
+        logger,
+        httpRouter,
+        httpAuth,
+        catalog,
+        actionsRegistry,
+      }) {
         const sources = liveSourcesFromConfig(config, logger);
         const ttl =
           config.getOptionalNumber('vmInfo.cacheSeconds') ??
@@ -215,10 +329,12 @@ export const vmInfoPlugin = createBackendPlugin({
         logger.info(
           `Live VM info for ${sources.size} source(s): ${[...sources.keys()].join(', ') || 'none'}`,
         );
+        const cache = new LiveInfoCache(ttl * 1000);
+        registerLiveVmInfoAction({ actionsRegistry, catalog, sources, cache });
         httpRouter.use(
           createVmInfoRouter({
             sources,
-            cache: new LiveInfoCache(ttl * 1000),
+            cache,
             logger,
             getEntity: async (ref, req) => {
               const credentials = await userCredentials(httpAuth, req);

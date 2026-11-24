@@ -5,7 +5,12 @@ import { usableAddresses, VmLiveInfo, VmNotFoundError } from './live';
 import { HarvesterVmSource } from './sources/harvester';
 import { ProxmoxVmSource } from './sources/proxmox';
 import { VsphereVmSource } from './sources/vsphere';
-import { createVmInfoRouter, LiveInfoCache, vmLocatorOf } from './vmInfo';
+import {
+  createVmInfoRouter,
+  LiveInfoCache,
+  registerLiveVmInfoAction,
+  vmLocatorOf,
+} from './vmInfo';
 
 const logger = {
   debug: jest.fn(),
@@ -545,5 +550,81 @@ describe('createVmInfoRouter', () => {
     } finally {
       gone.close();
     }
+  });
+});
+
+describe('get-live-vm-info action', () => {
+  const managed = vmEntity({
+    'backstage.io/managed-by-location': 'sthings-vms:proxmox-labul',
+    'proxmox.stuttgart-things.com/vmid': '101',
+  });
+  const liveInfo = {
+    cloud: 'proxmox',
+    status: 'running',
+    ipAddresses: ['10.31.103.5'],
+    fetchedAt: '2026-11-24T10:00:00Z',
+  };
+
+  function setup(entities: Record<string, Entity | undefined>) {
+    let registered: any;
+    const source = { liveInfo: jest.fn(async () => liveInfo) };
+    const catalog = {
+      getEntityByRef: jest.fn(async (ref: any) => entities[ref.name]),
+    };
+    registerLiveVmInfoAction({
+      actionsRegistry: { register: (a: any) => (registered = a) },
+      catalog: catalog as any,
+      sources: new Map([['proxmox-labul', source]]),
+      cache: new LiveInfoCache(30_000),
+    });
+    const run = (entityRef: string) =>
+      registered.action({
+        input: { entityRef },
+        credentials: { principal: 'service' },
+      });
+    return { registered, source, catalog, run };
+  }
+
+  it('is registered as a read-only, idempotent action', () => {
+    const { registered } = setup({});
+    expect(registered.name).toBe('get-live-vm-info');
+    expect(registered.attributes).toEqual({
+      readOnly: true,
+      idempotent: true,
+      destructive: false,
+    });
+  });
+
+  it('answers with the live info of a VM, looked up with the caller', async () => {
+    const t = setup({ 'homerun2-proxmox-vm': managed });
+    const result = await t.run('homerun2-proxmox-vm');
+    expect(result.output).toEqual({ found: true, info: liveInfo });
+    expect(t.catalog.getEntityByRef).toHaveBeenCalledWith(
+      { kind: 'resource', namespace: 'default', name: 'homerun2-proxmox-vm' },
+      { credentials: { principal: 'service' } },
+    );
+    expect(t.source.liveInfo).toHaveBeenCalledWith({
+      cloud: 'proxmox',
+      vmid: 101,
+    });
+  });
+
+  it('reports a VM without live source as not found', async () => {
+    const t = setup({ handmade: vmEntity({}) });
+    const result = await t.run('resource:default/handmade');
+    expect(result.output).toEqual({
+      found: false,
+      message: 'This VM is not managed by a live VM source',
+    });
+  });
+
+  it('rejects unknown entities and non-VMs', async () => {
+    const cluster = { ...managed, spec: { type: 'kubernetes-cluster' } };
+    const t = setup({ cluster });
+    await expect(t.run('nope')).rejects.toThrow(
+      'No entity resource:default/nope found',
+    );
+    await expect(t.run('cluster')).rejects.toThrow('is not a VM');
+    expect(t.source.liveInfo).not.toHaveBeenCalled();
   });
 });

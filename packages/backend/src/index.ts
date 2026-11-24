@@ -125,4 +125,12 @@ backend.add(import('@backstage-community/plugin-announcements-backend'));
 // docs/announcements.md "Release announcements".
 backend.add(import('./plugins/release-announcements'));
 
+// AI clients (#277). The portal as MCP server at /api/mcp-actions/v1: the
+// actions of backend.actions.pluginSources as tools, read-only by the global
+// backend.actions.filter. Clients need a static token (no per-user login
+// before the New Frontend System). See docs/mcp.md.
+backend.add(import('@backstage/plugin-mcp-actions-backend'));
+// AiResource kind (skills, rules) and API type mcp-server for the catalog.
+backend.add(import('@backstage/plugin-catalog-backend-module-ai-model'));
+
 backend.start();

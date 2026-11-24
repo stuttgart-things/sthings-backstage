@@ -12,6 +12,7 @@ nav:
   - Home page: home-page.md
   - Announcements: announcements.md
   - Offerings: offerings.md
+  - AI clients (MCP): mcp.md
   - Zitadel Sign-in: zitadel.md
 
 plugins:

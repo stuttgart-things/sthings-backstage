@@ -402,12 +402,19 @@ Read-only. Start/stop/reboot are a later step behind the permission framework
 (docs/permissions.md).
 
 ```ts
-backend.add(
-  import('@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms').then(
-    m => ({ default: m.vmInfoPlugin }),
-  ),
-);
+import { vmInfoPlugin } from '@stuttgart-things/backstage-plugin-catalog-backend-module-sthings-vms';
+
+backend.add(vmInfoPlugin);
 ```
+
+Import it statically: under `yarn start` a dynamic
+`import(...).then(m => ({ default: m.vmInfoPlugin }))` resolves to undefined
+and the backend does not start.
+
+**For AI clients.** The plugin also registers the action
+`get-live-vm-info` (input `entityRef`, read-only) in the actions registry,
+so MCP clients get the same live info as tool `vm-info.get-live-vm-info`
+(sthings-backstage#277, `docs/mcp.md`).
 
 **Checking against real hypervisors.** `src/live.real.test.ts` is skipped
 unless `LIVE_VM_CHECK=1`. It reads a config file with
