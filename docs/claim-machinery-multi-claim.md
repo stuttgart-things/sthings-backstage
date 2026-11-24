@@ -11,7 +11,7 @@ The Multi-Claim extension adds:
 
 ## Architecture
 
-```
+```text
 FRONTEND:
 ┌──────────────────────────────────┐
 │  ClaimMachineryMultiClaim        │  Repeatable template + params rows
@@ -134,7 +134,7 @@ The field outputs a JSON-stringified array:
 
 ## File Structure
 
-```
+```text
 packages/
 ├── app/src/scaffolder/
 │   ├── ClaimMachineryMultiClaimExtension.tsx   # Multi-claim UI component

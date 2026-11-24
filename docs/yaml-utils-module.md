@@ -8,7 +8,7 @@ The YAML Utils module provides a scaffolder action that reads a YAML file from t
 
 ## Architecture
 
-```
+```text
 TEMPLATE WORKFLOW:
 
 1. fetch:plain
@@ -207,7 +207,7 @@ packages:
 
 ## File Structure
 
-```
+```text
 packages/backend/
 └── src/
     ├── index.ts                         # Register backend module

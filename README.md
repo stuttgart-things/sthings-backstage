@@ -42,7 +42,7 @@ This starts the frontend on port 3000 and backend on port 7007.
 
 ## Project Structure
 
-```
+```text
 sthings-backstage/
 ├── packages/app/       # Frontend React application
 ├── packages/backend/   # Backend Node.js API
@@ -361,6 +361,7 @@ Leave `RAG_AI_ENABLED` unset (or `false`): plugin and module are not loaded, the
 entry is hidden, the `rag-ai` database config is never used. With RAG enabled but
 rag-postgres unreachable or `LLM_API_KEY` missing, the backend still starts;
 only `/api/rag-ai` is unavailable and the error is logged.
+
 ## Known Upgrade Constraints
 
 ### React 19

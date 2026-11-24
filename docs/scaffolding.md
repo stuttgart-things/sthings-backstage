@@ -19,11 +19,12 @@ npx @backstage/create-app@latest
 ```
 
 When prompted:
+
 - **App name**: `sthings-backstage`
 
 This generates a monorepo structure with:
 
-```
+```text
 sthings-backstage/
 ├── packages/
 │   ├── app/          # Frontend React application
@@ -74,6 +75,7 @@ The frontend is a React application that provides:
 - User settings and notifications
 
 Key files:
+
 - `src/App.tsx` - Main application with routes
 - `src/components/` - Custom components
 - `public/` - Static assets (icons, favicon)

@@ -12,7 +12,7 @@ The Claim Machinery Plugin provides scaffolder extensions that allow users to:
 
 ## Architecture
 
-```
+```text
 FRONTEND COMPONENTS:
 ┌────────────────────────────────┐
 │  ClaimMachineryPicker          │ Dropdown for selecting templates
@@ -424,7 +424,7 @@ spec:
 
 ## File Structure
 
-```
+```text
 packages/
 ├── app/
 │   └── src/

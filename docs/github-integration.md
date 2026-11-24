@@ -88,7 +88,7 @@ A PAT is required for API operations like catalog imports and scaffolder actions
 
 4. Select scopes:
 
-```
+```text
 ☑ repo (Full control of private repositories)
 ☑ workflow (Update GitHub Action workflows)
 ☑ read:org (Read org and team membership)
@@ -315,20 +315,24 @@ And update the GitHub OAuth App settings:
 ### OAuth Errors
 
 **"redirect_uri_mismatch"**
+
 - Verify the callback URL in GitHub OAuth App settings matches exactly
 - Check for trailing slashes or protocol mismatches (http vs https)
 
 **"User not found"**
+
 - Ensure a User entity exists in the catalog matching the GitHub username
 - Check the sign-in resolver configuration
 
 ### Token Errors
 
 **"Bad credentials"**
+
 - Verify the GITHUB_TOKEN is valid and not expired
 - Ensure required scopes are selected
 
 **"Resource not accessible by integration"**
+
 - Check repository visibility settings
 - Verify token has the `repo` scope for private repositories
 
