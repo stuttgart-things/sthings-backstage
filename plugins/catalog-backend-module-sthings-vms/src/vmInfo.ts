@@ -296,6 +296,157 @@ seconds.
   });
 }
 
+/** At most this many VMs per `list-live-vms` call. */
+export const LIST_LIVE_VMS_MAX = 100;
+/** Hypervisor requests in flight at once for one `list-live-vms` call. */
+const LIST_LIVE_VMS_CONCURRENCY = 4;
+
+/** Runs `fn` over `items` with at most `limit` calls at a time, in order. */
+async function mapLimited<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const out = new Array<R>(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  );
+  return out;
+}
+
+/**
+ * MCP/actions tool `vm-info:list-live-vms` (#277): the live state of every VM
+ * of one provider in one call, instead of a catalog query plus one
+ * `get-live-vm-info` per VM. The VMs are the provider's catalog entities the
+ * caller can read; a VM the hypervisor fails for is reported with its error
+ * and does not fail the list.
+ */
+export function registerListLiveVmsAction(options: {
+  actionsRegistry: ActionsRegistryService;
+  catalog: CatalogService;
+  sources: Map<string, LiveVmSource>;
+  cache: LiveInfoCache;
+}) {
+  const { actionsRegistry, catalog, sources, cache } = options;
+  const configured = [...sources.keys()];
+  actionsRegistry.register({
+    name: 'list-live-vms',
+    title: 'List VMs with their live state',
+    description: `
+Asks the hypervisor right now for every VM of one VM provider (a Proxmox pool,
+a vCenter folder or Harvester namespaces) that is in the software catalog:
+power status, uptime, IP addresses, host, CPU and memory per VM. Use it for
+overviews and questions like "which VMs are stopped" instead of calling
+get-live-vm-info once per VM. The provider is the part after "sthings-vms:" in
+a VM's backstage.io/managed-by-location annotation. Providers this portal
+instance can ask live: ${configured.join(', ') || 'none'}. Optionally filter by
+live status (e.g. "stopped", "running"); VMs without live info (found: false,
+with the reason or the hypervisor error) are always listed. Answers are cached
+for a few seconds.
+    `.trim(),
+    attributes: { readOnly: true, idempotent: true, destructive: false },
+    schema: {
+      input: z =>
+        z.object({
+          provider: z
+            .string()
+            .describe(
+              `VM provider id, e.g. ${configured[0] ?? 'proxmox-labul'}`,
+            ),
+          status: z
+            .string()
+            .optional()
+            .describe(
+              'Only VMs whose live status is this, e.g. "stopped" or "running"',
+            ),
+        }),
+      output: z =>
+        z.object({
+          provider: z.string(),
+          total: z.number().describe('VMs of the provider in the catalog'),
+          vms: z.array(
+            z.object({
+              entityRef: z.string(),
+              found: z.boolean(),
+              message: z
+                .string()
+                .optional()
+                .describe('Why there is no live info, or the hypervisor error'),
+              info: z
+                .object({})
+                .passthrough()
+                .optional()
+                .describe(
+                  'cloud, status, uptimeSeconds, ipAddresses, host, cpu, memory, fetchedAt',
+                ),
+            }),
+          ),
+        }),
+    },
+    action: async ({ input, credentials }) => {
+      if (!sources.has(input.provider)) {
+        throw new InputError(
+          `VM provider '${input.provider}' is not configured here; this instance has: ${configured.join(', ') || 'none'}`,
+        );
+      }
+      const { items } = await catalog.getEntities(
+        {
+          filter: {
+            kind: 'Resource',
+            'spec.type': 'vm',
+            [`metadata.annotations.${ANNOTATION_LOCATION}`]: `sthings-vms:${input.provider}`,
+          },
+        },
+        { credentials },
+      );
+      if (items.length > LIST_LIVE_VMS_MAX) {
+        throw new InputError(
+          `${items.length} VMs for '${input.provider}', more than ${LIST_LIVE_VMS_MAX}; ask per VM with get-live-vm-info`,
+        );
+      }
+      const entities = [...items].sort((a, b) =>
+        a.metadata.name.localeCompare(b.metadata.name),
+      );
+      const results = await mapLimited(
+        entities,
+        LIST_LIVE_VMS_CONCURRENCY,
+        async entity => {
+          const entityRef = stringifyEntityRef(entity);
+          try {
+            const r = await lookupLiveInfo(entity, sources, cache);
+            return r.found
+              ? { entityRef, found: true, info: { ...r.info } }
+              : { entityRef, found: false, message: r.message };
+          } catch (e) {
+            return {
+              entityRef,
+              found: false,
+              message: (e as Error).message,
+            };
+          }
+        },
+      );
+      // VMs without live info stay in the list: "none stopped" must not
+      // look the same as "could not check".
+      const vms = input.status
+        ? results.filter(
+            r => !r.found || (r.info as VmLiveInfo).status === input.status,
+          )
+        : results;
+      return {
+        output: { provider: input.provider, total: entities.length, vms },
+      };
+    },
+  });
+}
+
 /**
  * Backend plugin `vm-info` (sthings-backstage#244): live state of VM
  * Resources for the entity page, from the same hypervisor config and
@@ -331,6 +482,7 @@ export const vmInfoPlugin = createBackendPlugin({
         );
         const cache = new LiveInfoCache(ttl * 1000);
         registerLiveVmInfoAction({ actionsRegistry, catalog, sources, cache });
+        registerListLiveVmsAction({ actionsRegistry, catalog, sources, cache });
         httpRouter.use(
           createVmInfoRouter({
             sources,

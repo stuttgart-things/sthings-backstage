@@ -26,9 +26,10 @@ you --question--> Claude (LLM) --MCP tool calls--> portal --> catalog DB / hyper
    (`mcpActions` in the config). That is all the model knows about the portal,
    which is why the descriptions are written for a model.
 2. For a question like "Which VMs on LabUL are stopped right now?" the model
-   plans the calls itself, e.g. `catalog.query-catalog-entities` for all
-   `Resource`s of type `vm`, then `vm-info.get-live-vm-info` for each of them
-   (19 calls for 18 VMs).
+   plans the calls itself, e.g. `vm-info.list-live-vms` for the provider
+   `proxmox-labul` with `status: stopped`: one call, which asks the
+   hypervisor for all 18 VMs. (Before that tool existed, the model made a
+   catalog query plus one `vm-info.get-live-vm-info` per VM: 19 calls.)
 3. The portal runs each call like any API request: checks the token, runs the
    action (a catalog query, or a live request to Proxmox/vSphere/Harvester with
    the portal's own credentials, cached 30 s) and returns JSON.
@@ -54,6 +55,7 @@ Endpoint: `<backend-url>/api/mcp-actions/v1` (Streamable HTTP), server name
 | `search.query`                          | full-text search over catalog, TechDocs and announcements     |
 | `techdocs.get-techdocs-metadata`        | site name and build info of an entity's docs                  |
 | `vm-info.get-live-vm-info`              | live state of a VM from the hypervisor (status, uptime, IPs…) |
+| `vm-info.list-live-vms`                 | live state of every VM of one provider, optionally by status  |
 
 Where they come from (`app-config.yaml`):
 
@@ -70,8 +72,13 @@ backend:
 `filter` is global: it also applies to the default path
 `/api/mcp-actions/v1`, which otherwise serves every registered action.
 `catalog.register-entity` and `catalog.unregister-entity` are dropped by it.
-`vm-info.get-live-vm-info` is our own action
+`vm-info.get-live-vm-info` and `vm-info.list-live-vms` are our own actions
 (`plugins/catalog-backend-module-sthings-vms/src/vmInfo.ts`).
+`list-live-vms` takes a provider id (the part after `sthings-vms:` in a VM's
+`backstage.io/managed-by-location`, e.g. `proxmox-labul`); its description
+lists the providers the instance can ask live. It asks at most 4 VMs at a
+time, at most 100 per call, and lists a VM it could not ask with
+`found: false` and the reason, also when filtering by status.
 
 ## Token
 
@@ -211,7 +218,7 @@ and run it with the instance's token:
 sops exec-env ~/.secrets.d/$LAB/backstage.env ./mcp-check.sh
 ```
 
-Expected: `no token: 401` and the seven tools of [Tools](#tools). A tool
+Expected: `no token: 401` and the eight tools of [Tools](#tools). A tool
 missing from the list usually means its plugin is missing from the token's
 `accessRestrictions`; the backend then logs
 `Failed to fetch actions from <plugin>`.

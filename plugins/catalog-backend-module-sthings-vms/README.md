@@ -411,10 +411,15 @@ Import it statically: under `yarn start` a dynamic
 `import(...).then(m => ({ default: m.vmInfoPlugin }))` resolves to undefined
 and the backend does not start.
 
-**For AI clients.** The plugin also registers the action
-`get-live-vm-info` (input `entityRef`, read-only) in the actions registry,
-so MCP clients get the same live info as tool `vm-info.get-live-vm-info`
-(sthings-backstage#277, `docs/mcp.md`).
+**For AI clients.** The plugin also registers two read-only actions in the
+actions registry, so MCP clients get the same live info as tools
+(sthings-backstage#277, `docs/mcp.md`):
+
+- `get-live-vm-info` (input `entityRef`): one VM.
+- `list-live-vms` (input `provider`, optional `status`): every VM of one
+  provider that the caller can read in the catalog, 4 hypervisor requests at a
+  time, at most 100 VMs. A VM the hypervisor fails for is listed with
+  `found: false` and the error instead of failing the call.
 
 **Checking against real hypervisors.** `src/live.real.test.ts` is skipped
 unless `LIVE_VM_CHECK=1`. It reads a config file with

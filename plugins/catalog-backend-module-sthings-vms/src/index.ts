@@ -10,7 +10,9 @@ export {
   LiveInfoCache,
   liveSourcesFromConfig,
   lookupLiveInfo,
+  registerListLiveVmsAction,
   registerLiveVmInfoAction,
+  LIST_LIVE_VMS_MAX,
   vmInfoPlugin,
   vmLocatorOf,
 } from './vmInfo';
