@@ -1,3 +1,10 @@
+## [1.39.1](https://github.com/stuttgart-things/sthings-backstage/compare/v1.39.0...v1.39.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* release announcement after start, readable VM errors, AiResource rule ([#282](https://github.com/stuttgart-things/sthings-backstage/issues/282)) ([34ebd45](https://github.com/stuttgart-things/sthings-backstage/commit/34ebd454d08a7725c1414541328e9bea7d106fbe)), closes [#277](https://github.com/stuttgart-things/sthings-backstage/issues/277)
+
 # [1.39.0](https://github.com/stuttgart-things/sthings-backstage/compare/v1.38.0...v1.39.0) (2026-11-24)
 
 
