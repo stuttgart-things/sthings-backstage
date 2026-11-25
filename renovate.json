@@ -31,6 +31,17 @@
       "enabled": false
     },
     {
+      "description": "Stay on Express 4 until Backstage moves: the backend's httpRouter and express-promise-router use Express 4 types, so Express 5 in our plugins breaks yarn tsc in vmInfo.ts (#274)",
+      "matchPackageNames": [
+        "express",
+        "@types/express"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Defer isolated-vm major — native module (scaffolder), needs image build + scaffolder verification",
       "matchPackageNames": [
         "isolated-vm"
