@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   stage:
-    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-stage-image.yaml@main
+    uses: stuttgart-things/github-workflow-templates/.github/workflows/call-stage-image.yaml@15bb803fd72658fda50120f8a566d5594061e6ee # v1.2.0
     with:
       source-image: ttl.sh/stuttgart-things-sthings-backstage:${{ github.sha }}
       target-image: ghcr.io/stuttgart-things/sthings-backstage:${{ inputs.tag }}
