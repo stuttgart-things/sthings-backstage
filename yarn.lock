@@ -8350,8 +8350,8 @@ __metadata:
   linkType: hard
 
 "@langchain/core@npm:^1.1.0, @langchain/core@npm:^1.2.17":
-  version: 1.5.0
-  resolution: "@langchain/core@npm:1.5.0"
+  version: 1.5.1
+  resolution: "@langchain/core@npm:1.5.1"
   dependencies:
     "@cfworker/json-schema": "npm:^4.1.4"
     "@standard-schema/spec": "npm:^1.1.0"
@@ -8360,7 +8360,7 @@ __metadata:
     mustache: "npm:^4.2.0"
     p-queue: "npm:^6.6.2"
     zod: "npm:^4.6.6"
-  checksum: 10c0/2a8c48efb08279e102cfbb654354c352dbe1addec438dc7822676540ff1f9f898c07be9f0625999db3226ca44e52179ed45eab13900b2e4faf4e4b6c9fcfa29c
+  checksum: 10c0/1a485a10c2b5ba4df7a336ceb7c82872f18cc219efca2c919446256995ddc35fce48b11147e4893060926cbbfe831cc3a906586ae1a840b5d07ff335f523c5e8
   languageName: node
   linkType: hard
 
